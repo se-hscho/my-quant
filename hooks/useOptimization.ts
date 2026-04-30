@@ -4,7 +4,7 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import { fetchPrices } from "@/lib/yahoo-finance";
 import { runOptimization } from "@/lib/optimization";
-import { saveTempResult } from "@/lib/storage";
+import { saveResultRemote, saveTempResult } from "@/lib/storage";
 import type {
   OptimizationMethod,
   PortfolioResult,
@@ -91,7 +91,11 @@ export function useOptimization(args: UseOptimizationArgs): UseOptimizationApi {
         frontier,
         savedAt: new Date().toISOString(),
       };
-      saveTempResult(result);
+      const saved = saveTempResult(result);
+      if (!saved) throw new Error("결과 저장 실패: 브라우저 저장 공간이 부족합니다. 기록을 일부 삭제 후 다시 시도해 주세요.");
+      // 서버(KV)에도 best-effort 저장 — 다른 기기/브라우저에서 공유 링크 접근 가능.
+      // 실패해도 로컬 캐시가 있으므로 흐름은 막지 않는다.
+      void saveResultRemote(result);
       setStatus("done");
 
       if (onComplete) onComplete(id);
