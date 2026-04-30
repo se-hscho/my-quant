@@ -22,11 +22,24 @@ export async function fetchPrices(
     };
   }
 
-  const res = await fetch(
-    `/api/prices?ticker=${encodeURIComponent(ticker)}&range=${encodeURIComponent(range)}`
-  );
+  let res: Response;
+  try {
+    res = await fetch(
+      `/api/prices?ticker=${encodeURIComponent(ticker)}&range=${encodeURIComponent(range)}`,
+      { signal: AbortSignal.timeout(15_000) }
+    );
+  } catch (err) {
+    const isTimeout =
+      err instanceof Error && (err.name === "TimeoutError" || /timeout|abort/i.test(err.message));
+    throw new Error(
+      isTimeout
+        ? `${ticker}: 데이터 응답 시간 초과 (재시도해 주세요)`
+        : `${ticker}: 네트워크 오류`
+    );
+  }
+
   if (!res.ok) {
-    let msg = `prices fetch failed (${res.status})`;
+    let msg = `${ticker}: 데이터 가져오기 실패 (${res.status})`;
     try {
       const j = (await res.json()) as { error?: string };
       if (j.error) msg = j.error;

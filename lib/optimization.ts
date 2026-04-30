@@ -253,12 +253,18 @@ export function runOptimization(
     sharpe: optStats.sharpe,
   };
 
-  // Replace last frontier point with optimal so it's drawn alongside samples
-  // (actually we keep frontier as-is and draw optimal separately)
+  // 시각화용 frontier는 균일 샘플링으로 다운사이징한다 — 10k 포인트 전체를
+  // localStorage에 저장하면 result 1건당 ~1.5MB로 5MB 쿼터를 빠르게 소진한다.
+  const FRONTIER_OUT = 500;
+  const stride = Math.max(1, Math.floor(samples / FRONTIER_OUT));
+  const frontierOut: PortfolioPoint[] = [];
+  for (let i = 0; i < frontier.length; i += stride) {
+    frontierOut.push(frontier[i]);
+  }
 
   const metrics = calcMetrics(optimalWeights, aligned);
 
-  return { optimal, frontier, metrics };
+  return { optimal, frontier: frontierOut, metrics };
 }
 
 export function riskContributions(

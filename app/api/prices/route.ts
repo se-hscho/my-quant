@@ -49,18 +49,31 @@ export async function GET(request: Request) {
     yahooRes = await fetch(url, {
       headers: { "User-Agent": "Mozilla/5.0 (compatible; quant-portfolio/1.0)" },
       cache: "no-store",
+      signal: AbortSignal.timeout(10_000),
     });
   } catch (err) {
+    const isTimeout =
+      err instanceof Error && (err.name === "TimeoutError" || /timeout|abort/i.test(err.message));
     return NextResponse.json(
-      { error: "upstream fetch failed", detail: String(err) },
-      { status: 502 }
+      {
+        error: isTimeout
+          ? `${ticker}: Yahoo Finance 응답 시간 초과`
+          : `${ticker}: 외부 API 호출 실패`,
+        detail: String(err),
+      },
+      { status: isTimeout ? 504 : 502 }
     );
   }
 
   if (!yahooRes.ok) {
     return NextResponse.json(
-      { error: `upstream ${yahooRes.status}` },
-      { status: 502 }
+      {
+        error:
+          yahooRes.status === 429
+            ? `${ticker}: Yahoo Finance 요청 제한 (잠시 후 재시도)`
+            : `${ticker}: Yahoo ${yahooRes.status}`,
+      },
+      { status: yahooRes.status === 429 ? 429 : 502 }
     );
   }
 

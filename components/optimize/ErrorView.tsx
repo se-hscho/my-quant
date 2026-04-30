@@ -8,7 +8,7 @@ export interface ErrorViewProps {
   message?: string;
 }
 
-export function ErrorView({ onRetry }: ErrorViewProps) {
+export function ErrorView({ onRetry, message }: ErrorViewProps) {
   return (
     <div
       role="alert"
@@ -19,6 +19,9 @@ export function ErrorView({ onRetry }: ErrorViewProps) {
       <p className="text-sm font-medium">
         데이터를 가져오지 못했습니다. 잠시 후 다시 시도해주세요.
       </p>
+      {message ? (
+        <p className="max-w-md text-center text-xs text-muted-foreground">{message}</p>
+      ) : null}
       <Button onClick={onRetry}>재시도</Button>
     </div>
   );
