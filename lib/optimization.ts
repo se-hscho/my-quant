@@ -156,13 +156,12 @@ export function calcMetrics(
   const covAnn = cov.map((row) => row.map((v) => v * TRADING_DAYS));
   const stats = portfolioStats(weights, muAnn, covAnn);
 
-  // MDD on portfolio cumulative simple returns
+  // MDD + CAGR on portfolio cumulative simple returns
   const T = ret.length;
   const portReturns = new Array(T);
   for (let t = 0; t < T; t++) {
     let r = 0;
     for (let i = 0; i < weights.length; i++) {
-      // approximate simple return ~ log return for small daily moves
       r += weights[i] * (Math.exp(ret[t][i]) - 1);
     }
     portReturns[t] = r;
@@ -177,8 +176,11 @@ export function calcMetrics(
     if (dd < mdd) mdd = dd;
   }
 
+  // CAGR: 백테스팅 실제 기간 기준 복리 연환산 수익률
+  const cagr = Math.pow(Math.max(cum, 1e-12), TRADING_DAYS / T) - 1;
+
   return {
-    annualReturn: stats.expectedReturn,
+    annualReturn: cagr,
     volatility: stats.volatility,
     sharpe: stats.sharpe,
     mdd,
