@@ -5,7 +5,7 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { CompareView } from "@/components/compare/CompareView";
-import { loadResult } from "@/lib/storage";
+import { loadResultRemoteFallback } from "@/lib/storage";
 import { Button } from "@/components/ui/button";
 import { ArrowLeftIcon } from "lucide-react";
 import type { PortfolioResult } from "@/types";
@@ -20,10 +20,16 @@ function CompareInner() {
   }>({ a: null, b: null });
 
   React.useEffect(() => {
-    setPair({
-      a: aId ? loadResult(aId) : null,
-      b: bId ? loadResult(bId) : null,
+    let cancelled = false;
+    Promise.all([
+      aId ? loadResultRemoteFallback(aId) : Promise.resolve(null),
+      bId ? loadResultRemoteFallback(bId) : Promise.resolve(null),
+    ]).then(([a, b]) => {
+      if (!cancelled) setPair({ a, b });
     });
+    return () => {
+      cancelled = true;
+    };
   }, [aId, bId]);
 
   return <CompareView a={pair.a} b={pair.b} />;

@@ -4,7 +4,7 @@ import * as React from "react";
 import { notFound, useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
-import { loadResult, saveResult } from "@/lib/storage";
+import { loadResultRemoteFallback, saveResult } from "@/lib/storage";
 import type { PortfolioResult } from "@/types";
 import { MetricCards } from "@/components/results/MetricCards";
 import { EfficientFrontierChart } from "@/components/results/EfficientFrontierChart";
@@ -27,7 +27,13 @@ export function ResultView({ id }: { id: string }) {
   );
 
   React.useEffect(() => {
-    setResult(loadResult(id));
+    let cancelled = false;
+    loadResultRemoteFallback(id).then((r) => {
+      if (!cancelled) setResult(r);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [id]);
 
   const handleSave = React.useCallback(() => {
