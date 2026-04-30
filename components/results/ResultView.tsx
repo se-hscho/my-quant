@@ -1,16 +1,17 @@
 "use client";
 
 import * as React from "react";
-import { notFound } from "next/navigation";
+import { notFound, useRouter } from "next/navigation";
 import Link from "next/link";
-import { loadResult } from "@/lib/storage";
+import { toast } from "sonner";
+import { loadResult, saveResult } from "@/lib/storage";
 import type { PortfolioResult } from "@/types";
 import { MetricCards } from "@/components/results/MetricCards";
 import { EfficientFrontierChart } from "@/components/results/EfficientFrontierChart";
 import { WeightPieChart } from "@/components/results/WeightPieChart";
 import { BacktestChart } from "@/components/results/BacktestChart";
 import { Button } from "@/components/ui/button";
-import { ArrowLeftIcon } from "lucide-react";
+import { ArrowLeftIcon, SaveIcon } from "lucide-react";
 
 const METHOD_LABEL: Record<string, string> = {
   "max-sharpe": "Max Sharpe",
@@ -19,6 +20,7 @@ const METHOD_LABEL: Record<string, string> = {
 };
 
 export function ResultView({ id }: { id: string }) {
+  const router = useRouter();
   const [result, setResult] = React.useState<PortfolioResult | null | undefined>(
     undefined
   );
@@ -26,6 +28,18 @@ export function ResultView({ id }: { id: string }) {
   React.useEffect(() => {
     setResult(loadResult(id));
   }, [id]);
+
+  const handleSave = React.useCallback(() => {
+    if (!result) return;
+    saveResult(result);
+    toast.success("저장됨", {
+      description: "기록 페이지에서 다시 볼 수 있습니다.",
+      action: {
+        label: "기록 보기",
+        onClick: () => router.push("/history"),
+      },
+    });
+  }, [result, router]);
 
   if (result === undefined) {
     return <div className="container mx-auto p-8 text-sm text-muted-foreground">불러오는 중…</div>;
@@ -47,6 +61,10 @@ export function ResultView({ id }: { id: string }) {
             방법: {METHOD_LABEL[result.method] ?? result.method}
           </p>
         </div>
+        <Button onClick={handleSave}>
+          <SaveIcon className="h-4 w-4" data-icon="inline-start" />
+          결과 저장
+        </Button>
       </header>
 
       <section className="mb-6">
