@@ -5,7 +5,7 @@ import { saveCustomBundle } from "@/lib/custom-bundles";
 import { BundleDetailView } from "./BundleDetailView";
 
 vi.mock("next/navigation", () => ({
-  notFound: vi.fn(() => { throw new Error("NEXT_NOT_FOUND"); }),
+  notFound: vi.fn(),
 }));
 
 vi.mock("@/hooks/useOptimization", () => ({
@@ -52,11 +52,9 @@ describe("BundleDetailView — custom bundle", () => {
   });
 
   it("존재하지 않는 id를 전달하면 로딩 완료 후 notFound()가 호출된다", async () => {
-    await expect(
-      act(async () => {
-        render(<BundleDetailView bundleId="does-not-exist" />);
-      })
-    ).rejects.toThrow("NEXT_NOT_FOUND");
+    await act(async () => {
+      render(<BundleDetailView bundleId="does-not-exist" />);
+    });
 
     expect(notFound).toHaveBeenCalled();
   });

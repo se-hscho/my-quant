@@ -30,6 +30,10 @@ export function BundleDetailView({ bundleId }: BundleDetailViewProps) {
     if (found) setStocks(found.stocks);
   }, [bundleId]);
 
+  React.useEffect(() => {
+    if (bundle === null) notFound();
+  }, [bundle]);
+
   const opt = useOptimization({
     bundleId,
     bundleName: bundle?.name ?? "",
@@ -37,8 +41,7 @@ export function BundleDetailView({ bundleId }: BundleDetailViewProps) {
     tickers: stocks.map((s) => s.ticker),
   });
 
-  if (bundle === undefined) return null;
-  if (bundle === null) notFound();
+  if (bundle === undefined || bundle === null) return null;
 
   const isLoading = opt.status === "fetching" || opt.status === "computing" || opt.status === "done";
   const isError = opt.status === "error";

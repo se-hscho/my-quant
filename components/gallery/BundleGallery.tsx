@@ -44,7 +44,10 @@ export function BundleGallery({ bundles }: { bundles: Bundle[] }) {
 
   const handleDelete = (id: string) => {
     deleteCustomBundle(id);
-    setCustomBundles(loadCustomBundles());
+    const next = loadCustomBundles();
+    setCustomBundles(next);
+    const updatedCategories = [...new Set([...bundles, ...next].map((b) => b.category))];
+    if (!updatedCategories.includes(filter)) setFilter("전체");
   };
 
   return (

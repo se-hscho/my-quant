@@ -82,8 +82,10 @@ export function CreateBundleDialog({
     setTickerInput("");
   };
 
-  const removeTicker = (t: string) =>
+  const removeTicker = (t: string) => {
     setTickers((prev) => prev.filter((x) => x !== t));
+    setTickerError("");
+  };
 
   const handleSave = () => {
     let valid = true;
@@ -182,11 +184,17 @@ export function CreateBundleDialog({
                   <Badge
                     key={t}
                     variant="secondary"
-                    className="cursor-pointer gap-1 font-mono"
-                    onClick={() => removeTicker(t)}
+                    className="gap-1 font-mono"
                   >
                     {t}
-                    <XIcon className="h-3 w-3" />
+                    <button
+                      type="button"
+                      aria-label={`${t} 삭제`}
+                      onClick={() => removeTicker(t)}
+                      className="rounded-full hover:text-destructive"
+                    >
+                      <XIcon className="h-3 w-3" />
+                    </button>
                   </Badge>
                 ))}
               </div>

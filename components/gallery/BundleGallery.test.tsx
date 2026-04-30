@@ -65,4 +65,38 @@ describe("BundleGallery — custom bundle", () => {
     await act(async () => { render(<BundleGallery bundles={bundles} />); });
     expect(screen.getByRole("button", { name: "내 전략" })).toBeInTheDocument();
   });
+
+  it("custom bundle 삭제 확인 후 카드가 목록에서 사라진다", async () => {
+    const user = userEvent.setup();
+    saveCustomBundle({
+      id: "my-del", name: "삭제할 번들", category: "내 전략",
+      description: "", stocks: [], isCustom: true,
+    });
+    await act(async () => { render(<BundleGallery bundles={bundles} />); });
+
+    expect(screen.getByText("삭제할 번들")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "삭제" }));
+    await user.click(screen.getByRole("button", { name: /^삭제$/ }));
+
+    expect(screen.queryByText("삭제할 번들")).not.toBeInTheDocument();
+  });
+
+  it("활성 필터 카테고리의 마지막 번들 삭제 후 전체 필터로 리셋된다", async () => {
+    const user = userEvent.setup();
+    saveCustomBundle({
+      id: "my-only", name: "유일한 번들", category: "내 전략",
+      description: "", stocks: [], isCustom: true,
+    });
+    await act(async () => { render(<BundleGallery bundles={bundles} />); });
+
+    await user.click(screen.getByRole("button", { name: "내 전략" }));
+    expect(screen.getByText("유일한 번들")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "삭제" }));
+    await user.click(screen.getByRole("button", { name: /^삭제$/ }));
+
+    // 필터가 전체로 리셋되어 정적 번들도 다시 표시된다
+    expect(screen.getByText("테마A")).toBeInTheDocument();
+  });
 });

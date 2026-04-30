@@ -16,7 +16,11 @@ function readList(): Bundle[] {
 
 function writeList(list: Bundle[]): void {
   if (typeof localStorage === "undefined") return;
-  localStorage.setItem(BUNDLES_KEY, JSON.stringify(list));
+  try {
+    localStorage.setItem(BUNDLES_KEY, JSON.stringify(list));
+  } catch {
+    // QuotaExceededError: silently skip — caller shows stale state
+  }
 }
 
 export function loadCustomBundles(): Bundle[] {
