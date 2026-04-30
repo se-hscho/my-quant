@@ -4,14 +4,13 @@ export interface Stock {
   description: string;
 }
 
-export type BundleCategory = "테마형" | "팩터형" | "전통 배분" | "기관 따라하기";
-
 export interface Bundle {
   id: string;
   name: string;
-  category: BundleCategory;
+  category: string;
   description: string;
   stocks: Stock[];
+  isCustom?: boolean;
 }
 
 export type OptimizationMethod = "max-sharpe" | "min-variance" | "risk-parity";

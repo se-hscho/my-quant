@@ -6,6 +6,7 @@ import {
   Cell,
   Legend,
   Tooltip as RechartsTooltip,
+  ResponsiveContainer,
 } from "recharts";
 
 const COLORS = [
@@ -30,29 +31,31 @@ export function WeightPieChart({
 
   return (
     <div className="h-[320px] w-full">
-      <PieChart width={undefined} height={undefined}>
-        <Pie
-          data={data}
-          dataKey="value"
-          nameKey="name"
-          cx="50%"
-          cy="50%"
-          outerRadius={100}
-          label={(entry) =>
-            `${entry.name} ${(((entry.value as number) ?? 0) * 100).toFixed(1)}%`
-          }
-        >
-          {data.map((_, idx) => (
-            <Cell key={idx} fill={COLORS[idx % COLORS.length]} />
-          ))}
-        </Pie>
-        <RechartsTooltip
-          formatter={(v) =>
-            typeof v === "number" ? `${(v * 100).toFixed(2)}%` : String(v)
-          }
-        />
-        <Legend />
-      </PieChart>
+      <ResponsiveContainer width="100%" height="100%">
+        <PieChart>
+          <Pie
+            data={data}
+            dataKey="value"
+            nameKey="name"
+            cx="50%"
+            cy="50%"
+            outerRadius="55%"
+            label={(entry) =>
+              `${entry.name} ${(((entry.value as number) ?? 0) * 100).toFixed(1)}%`
+            }
+          >
+            {data.map((_, idx) => (
+              <Cell key={idx} fill={COLORS[idx % COLORS.length]} />
+            ))}
+          </Pie>
+          <RechartsTooltip
+            formatter={(v) =>
+              typeof v === "number" ? `${(v * 100).toFixed(2)}%` : String(v)
+            }
+          />
+          <Legend />
+        </PieChart>
+      </ResponsiveContainer>
     </div>
   );
 }

@@ -44,9 +44,10 @@ describe("logReturns", () => {
 });
 
 describe("runOptimization — 10,000 sample frontier", () => {
-  it("frontier에 N samples 배열이 반환된다", () => {
+  it("frontier에 시각화용 다운샘플 배열이 반환된다 (≤ 1000)", () => {
     const r = runOptimization(syntheticPrices(), "max-sharpe");
-    expect(r.frontier).toHaveLength(10_000);
+    expect(r.frontier.length).toBeGreaterThan(0);
+    expect(r.frontier.length).toBeLessThanOrEqual(1000);
   });
 
   it("Max Sharpe 결과는 weights 합이 1.0 (±0.001) 이고 frontier 내 sharpe 최대다", () => {

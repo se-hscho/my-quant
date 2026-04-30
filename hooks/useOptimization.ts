@@ -48,7 +48,9 @@ export function useOptimization(args: UseOptimizationArgs): UseOptimizationApi {
   const [status, setStatus] = React.useState<OptimizationStatus>("idle");
   const [error, setError] = React.useState<string | null>(null);
   const argsRef = React.useRef(args);
-  argsRef.current = args;
+  React.useLayoutEffect(() => {
+    argsRef.current = args;
+  });
 
   const execute = React.useCallback(async () => {
     const { bundleId, bundleName, method, tickers, range = "10y", onComplete } =

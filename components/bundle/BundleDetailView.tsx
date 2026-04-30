@@ -4,7 +4,8 @@ import * as React from "react";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getBundleById } from "@/config/bundles";
-import type { OptimizationMethod, Stock } from "@/types";
+import { getCustomBundleById } from "@/lib/custom-bundles";
+import type { Bundle, OptimizationMethod, Stock } from "@/types";
 import { StockList } from "@/components/bundle/StockList";
 import { OptimizationPanel } from "@/components/bundle/OptimizationPanel";
 import { LoadingView } from "@/components/optimize/LoadingView";
@@ -19,18 +20,28 @@ export interface BundleDetailViewProps {
 }
 
 export function BundleDetailView({ bundleId }: BundleDetailViewProps) {
-  const bundle = getBundleById(bundleId);
-  if (!bundle) notFound();
-
-  const [stocks, setStocks] = React.useState<Stock[]>(bundle.stocks);
+  const [bundle, setBundle] = React.useState<Bundle | null | undefined>(undefined);
+  const [stocks, setStocks] = React.useState<Stock[]>([]);
   const [method, setMethod] = React.useState<OptimizationMethod>("max-sharpe");
+
+  React.useEffect(() => {
+    const found = getBundleById(bundleId) ?? getCustomBundleById(bundleId) ?? null;
+    setBundle(found);
+    if (found) setStocks(found.stocks);
+  }, [bundleId]);
+
+  React.useEffect(() => {
+    if (bundle === null) notFound();
+  }, [bundle]);
 
   const opt = useOptimization({
     bundleId,
-    bundleName: bundle.name,
+    bundleName: bundle?.name ?? "",
     method,
     tickers: stocks.map((s) => s.ticker),
   });
+
+  if (bundle === undefined || bundle === null) return null;
 
   const isLoading = opt.status === "fetching" || opt.status === "computing" || opt.status === "done";
   const isError = opt.status === "error";
@@ -54,7 +65,7 @@ export function BundleDetailView({ bundleId }: BundleDetailViewProps) {
       </header>
 
       {isError ? (
-        <ErrorView onRetry={opt.retry} />
+        <ErrorView onRetry={opt.retry} message={opt.error ?? undefined} />
       ) : isLoading ? (
         <LoadingView message={opt.message} />
       ) : (
