@@ -8,9 +8,9 @@ export default function HomePage() {
     <main className="container mx-auto max-w-6xl px-4 py-8">
       <header className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">퀀트 포트폴리오 최적화</h1>
+          <h1 className="text-2xl font-bold">MyQuant</h1>
           <p className="text-sm text-muted-foreground">
-            큐레이션된 번들에서 시작해 최적 포트폴리오를 계산해보세요.
+            스마트 포트폴리오 최적화 — 큐레이션된 번들에서 시작해 최적 가중치를 계산해보세요.
           </p>
         </div>
         <Button asChild variant="outline">
