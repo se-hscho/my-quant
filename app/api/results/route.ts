@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getKv, RESULT_KEY_PREFIX } from "@/lib/kv";
+import { getRedis, RESULT_KEY_PREFIX } from "@/lib/redis";
 import type { PortfolioResult } from "@/types";
 
 const ID_RE = /^[0-9a-zA-Z_-]{8,128}$/;
@@ -21,9 +21,9 @@ function isPortfolioResult(v: unknown): v is PortfolioResult {
 }
 
 export async function POST(request: Request) {
-  const kv = getKv();
-  if (!kv) {
-    return NextResponse.json({ error: "KV not configured" }, { status: 503 });
+  const redis = getRedis();
+  if (!redis) {
+    return NextResponse.json({ error: "Redis not configured" }, { status: 503 });
   }
 
   let body: unknown;
@@ -43,10 +43,10 @@ export async function POST(request: Request) {
   }
 
   try {
-    await kv.set(`${RESULT_KEY_PREFIX}${body.id}`, serialized);
+    await redis.set(`${RESULT_KEY_PREFIX}${body.id}`, serialized);
   } catch (err) {
     return NextResponse.json(
-      { error: "kv write failed", detail: String(err) },
+      { error: "redis write failed", detail: String(err) },
       { status: 502 }
     );
   }

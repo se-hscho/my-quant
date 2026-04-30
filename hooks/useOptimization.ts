@@ -91,11 +91,17 @@ export function useOptimization(args: UseOptimizationArgs): UseOptimizationApi {
         frontier,
         savedAt: new Date().toISOString(),
       };
-      const saved = saveTempResult(result);
-      if (!saved) throw new Error("결과 저장 실패: 브라우저 저장 공간이 부족합니다. 기록을 일부 삭제 후 다시 시도해 주세요.");
-      // 서버(KV)에도 best-effort 저장 — 다른 기기/브라우저에서 공유 링크 접근 가능.
-      // 실패해도 로컬 캐시가 있으므로 흐름은 막지 않는다.
-      void saveResultRemote(result);
+      // 우선 서버(KV)에 저장 — 공유 링크와 다른 기기 접근의 source of truth.
+      // localStorage 저장은 best-effort 캐시이며, 실패(quota 등)해도 KV가 성공하면 흐름은 막지 않는다.
+      const [remoteOk, localOk] = await Promise.all([
+        saveResultRemote(result),
+        Promise.resolve(saveTempResult(result)),
+      ]);
+      if (!remoteOk && !localOk) {
+        throw new Error(
+          "결과 저장 실패: 서버 저장과 브라우저 저장이 모두 실패했습니다. 잠시 후 다시 시도해 주세요."
+        );
+      }
       setStatus("done");
 
       if (onComplete) onComplete(id);
