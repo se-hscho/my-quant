@@ -66,15 +66,15 @@ export async function GET(request: Request) {
   }
 
   if (!yahooRes.ok) {
-    return NextResponse.json(
-      {
-        error:
-          yahooRes.status === 429
-            ? `${ticker}: Yahoo Finance 요청 제한 (잠시 후 재시도)`
-            : `${ticker}: Yahoo ${yahooRes.status}`,
-      },
-      { status: yahooRes.status === 429 ? 429 : 502 }
-    );
+    const status =
+      yahooRes.status === 429 ? 429 :
+      yahooRes.status === 404 ? 404 :
+      502;
+    const message =
+      yahooRes.status === 429 ? `${ticker}: Yahoo Finance 요청 제한 (잠시 후 재시도)` :
+      yahooRes.status === 404 ? `${ticker}: 존재하지 않는 종목입니다` :
+      `${ticker}: Yahoo ${yahooRes.status}`;
+    return NextResponse.json({ error: message }, { status });
   }
 
   const data = (await yahooRes.json()) as YahooChartResponse;
