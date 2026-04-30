@@ -8,6 +8,7 @@ import type { PortfolioResult } from "@/types";
 import { MetricCards } from "@/components/results/MetricCards";
 import { EfficientFrontierChart } from "@/components/results/EfficientFrontierChart";
 import { WeightPieChart } from "@/components/results/WeightPieChart";
+import { BacktestChart } from "@/components/results/BacktestChart";
 import { Button } from "@/components/ui/button";
 import { ArrowLeftIcon } from "lucide-react";
 
@@ -69,6 +70,11 @@ export function ResultView({ id }: { id: string }) {
           <h2 className="mb-2 text-sm font-semibold">최적 가중치</h2>
           <WeightPieChart weights={result.weights} />
         </div>
+      </section>
+
+      <section className="mb-6">
+        <h2 className="mb-2 text-sm font-semibold">백테스팅</h2>
+        <BacktestChart tickers={result.tickers} weights={result.weights} />
       </section>
     </main>
   );
