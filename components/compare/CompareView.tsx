@@ -25,6 +25,28 @@ function MetricRow({ label, a, b }: { label: string; a: string; b: string }) {
   );
 }
 
+function WeightTable({ weights }: { weights: Record<string, number> }) {
+  const rows = Object.entries(weights).sort(([, a], [, b]) => b - a);
+  return (
+    <table className="w-full text-sm">
+      <thead>
+        <tr className="border-b text-xs text-muted-foreground">
+          <th className="pb-1 text-left font-medium">종목</th>
+          <th className="pb-1 text-right font-medium">가중치</th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map(([ticker, w]) => (
+          <tr key={ticker} className="border-b last:border-0">
+            <td className="py-1.5 font-mono">{ticker}</td>
+            <td className="py-1.5 text-right font-mono">{pct(w)}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
 function ResultColumn({ result }: { result: PortfolioResult }) {
   return (
     <Card>
@@ -36,8 +58,9 @@ function ResultColumn({ result }: { result: PortfolioResult }) {
           </Badge>
         </CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="flex flex-col gap-4">
         <WeightPieChart weights={result.weights} />
+        <WeightTable weights={result.weights} />
       </CardContent>
     </Card>
   );
