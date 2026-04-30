@@ -1,6 +1,6 @@
 import type { PriceCache } from "@/types";
 
-const PREFIX = "quant:cache:";
+const PREFIX = "quant:cache:v2:";
 
 function keyFor(ticker: string, range: string) {
   return `${PREFIX}${ticker}:${range}`;

@@ -25,7 +25,7 @@ export interface PriceCache {
 }
 
 export interface PortfolioPoint {
-  weights: Record<string, number>;
+  weights?: Record<string, number>;
   expectedReturn: number;
   volatility: number;
   sharpe: number;

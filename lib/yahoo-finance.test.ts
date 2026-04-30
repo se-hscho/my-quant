@@ -26,7 +26,7 @@ describe("fetchPrices", () => {
     const r = await fetchPrices("AAPL", "10y");
     expect(r.closes).toEqual([180.5, 182.1]);
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    expect(localStorage.getItem("quant:cache:AAPL:10y")).toBeTruthy();
+    expect(localStorage.getItem("quant:cache:v2:AAPL:10y")).toBeTruthy();
   });
 
   it("두 번째 호출은 캐시에서 반환되어 fetch가 호출되지 않는다", async () => {

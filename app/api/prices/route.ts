@@ -4,10 +4,15 @@ interface YahooQuote {
   close: (number | null)[];
 }
 
+interface YahooAdjClose {
+  adjclose: (number | null)[];
+}
+
 interface YahooResult {
   timestamp: number[];
   indicators: {
     quote: YahooQuote[];
+    adjclose?: YahooAdjClose[];
   };
 }
 
@@ -69,12 +74,14 @@ export async function GET(request: Request) {
   }
 
   const timestamps = result.timestamp ?? [];
-  const closes = result.indicators.quote[0]?.close ?? [];
+  const adjcloses = result.indicators.adjclose?.[0]?.adjclose;
+  const rawCloses = result.indicators.quote[0]?.close ?? [];
+  const series = adjcloses ?? rawCloses;
 
   const dates: string[] = [];
   const closeValues: number[] = [];
   for (let i = 0; i < timestamps.length; i++) {
-    const c = closes[i];
+    const c = series[i];
     if (c == null) continue;
     dates.push(new Date(timestamps[i] * 1000).toISOString().slice(0, 10));
     closeValues.push(c);

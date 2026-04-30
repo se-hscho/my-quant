@@ -6,6 +6,7 @@ import {
   Legend,
   Line,
   LineChart,
+  ResponsiveContainer,
   Tooltip as RechartsTooltip,
   XAxis,
   YAxis,
@@ -82,34 +83,34 @@ export function BacktestChart({ tickers, weights }: BacktestChartProps) {
         <p className="text-sm text-muted-foreground">백테스트 계산 중...</p>
       ) : (
         <div className="h-[320px] w-full">
-          <LineChart
-            width={undefined}
-            height={undefined}
-            data={chartData}
-            margin={{ top: 16, right: 16, left: 8, bottom: 16 }}
-          >
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="date" tick={false} />
-            <YAxis tickFormatter={(v) => `${v.toFixed(0)}%`} />
-            <RechartsTooltip
-              formatter={(v) =>
-                typeof v === "number" ? `${v.toFixed(2)}%` : String(v)
-              }
-            />
-            <Legend />
-            <Line
-              type="monotone"
-              dataKey="최적 포트폴리오"
-              stroke="hsl(220 80% 55%)"
-              dot={false}
-            />
-            <Line
-              type="monotone"
-              dataKey="Buy & Hold"
-              stroke="hsl(0 70% 55%)"
-              dot={false}
-            />
-          </LineChart>
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart
+              data={chartData}
+              margin={{ top: 16, right: 16, left: 8, bottom: 16 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="date" tick={false} />
+              <YAxis tickFormatter={(v) => `${v.toFixed(0)}%`} />
+              <RechartsTooltip
+                formatter={(v) =>
+                  typeof v === "number" ? `${v.toFixed(2)}%` : String(v)
+                }
+              />
+              <Legend />
+              <Line
+                type="monotone"
+                dataKey="최적 포트폴리오"
+                stroke="hsl(220 80% 55%)"
+                dot={false}
+              />
+              <Line
+                type="monotone"
+                dataKey="Buy & Hold"
+                stroke="hsl(0 70% 55%)"
+                dot={false}
+              />
+            </LineChart>
+          </ResponsiveContainer>
         </div>
       )}
     </div>

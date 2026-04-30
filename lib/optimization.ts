@@ -216,26 +216,31 @@ export function runOptimization(
   const frontier: PortfolioPoint[] = [];
   let bestSharpeIdx = 0;
   let bestVolIdx = 0;
+  let bestSharpeW: number[] = [];
+  let bestVolW: number[] = [];
   for (let i = 0; i < samples; i++) {
     const w = sampleSimplex(rng, n);
     const stats = portfolioStats(w, muAnn, covAnn);
-    const weightsObj: Record<string, number> = {};
-    for (let k = 0; k < n; k++) weightsObj[tickers[k]] = w[k];
     frontier.push({
-      weights: weightsObj,
       expectedReturn: stats.expectedReturn,
       volatility: stats.volatility,
       sharpe: stats.sharpe,
     });
-    if (stats.sharpe > frontier[bestSharpeIdx].sharpe) bestSharpeIdx = i;
-    if (stats.volatility < frontier[bestVolIdx].volatility) bestVolIdx = i;
+    if (i === 0 || stats.sharpe > frontier[bestSharpeIdx].sharpe) {
+      bestSharpeIdx = i;
+      bestSharpeW = w;
+    }
+    if (i === 0 || stats.volatility < frontier[bestVolIdx].volatility) {
+      bestVolIdx = i;
+      bestVolW = w;
+    }
   }
 
   let optimalWeights: number[];
   if (method === "max-sharpe") {
-    optimalWeights = tickers.map((t) => frontier[bestSharpeIdx].weights[t]);
+    optimalWeights = bestSharpeW;
   } else if (method === "min-variance") {
-    optimalWeights = tickers.map((t) => frontier[bestVolIdx].weights[t]);
+    optimalWeights = bestVolW;
   } else {
     optimalWeights = riskParity(covAnn);
   }

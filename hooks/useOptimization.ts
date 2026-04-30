@@ -84,7 +84,7 @@ export function useOptimization(args: UseOptimizationArgs): UseOptimizationApi {
         bundleName,
         method,
         tickers,
-        weights: optimal.weights,
+        weights: optimal.weights ?? {},
         metrics,
         frontier,
         savedAt: new Date().toISOString(),

@@ -31,14 +31,26 @@ export function ResultView({ id }: { id: string }) {
 
   const handleSave = React.useCallback(() => {
     if (!result) return;
-    saveResult(result);
-    toast.success("저장됨", {
-      description: "기록 페이지에서 다시 볼 수 있습니다.",
-      action: {
-        label: "기록 보기",
-        onClick: () => router.push("/history"),
-      },
-    });
+    const status = saveResult(result);
+    if (status === "saved") {
+      toast.success("저장됨", {
+        description: "기록 페이지에서 다시 볼 수 있습니다.",
+        action: {
+          label: "기록 보기",
+          onClick: () => router.push("/history"),
+        },
+      });
+    } else if (status === "duplicate") {
+      toast.info("이미 저장됨", {
+        description: "이 결과는 이미 기록에 있습니다.",
+      });
+    } else if (status === "quota-exceeded") {
+      toast.error("저장 공간 부족", {
+        description: "기록을 일부 삭제한 뒤 다시 시도해 주세요.",
+      });
+    } else {
+      toast.error("저장 실패", { description: "다시 시도해 주세요." });
+    }
   }, [result, router]);
 
   if (result === undefined) {

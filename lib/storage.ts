@@ -5,7 +5,11 @@ const RESULTS_KEY = "quant:results:v1";
 
 export function saveTempResult(result: PortfolioResult): void {
   if (typeof localStorage === "undefined") return;
-  localStorage.setItem(`${TEMP_PREFIX}${result.id}`, JSON.stringify(result));
+  try {
+    localStorage.setItem(`${TEMP_PREFIX}${result.id}`, JSON.stringify(result));
+  } catch {
+    // 용량 초과 등 무시 — 저장 실패는 saveResult가 사용자에게 표면화한다
+  }
 }
 
 function loadTempResult(id: string): PortfolioResult | null {
@@ -43,11 +47,21 @@ export function loadResult(id: string): PortfolioResult | null {
   return loadTempResult(id);
 }
 
-export function saveResult(result: PortfolioResult): void {
+export type SaveResultStatus = "saved" | "duplicate" | "quota-exceeded" | "error";
+
+export function saveResult(result: PortfolioResult): SaveResultStatus {
   const list = readResultsList();
-  if (list.some((r) => r.id === result.id)) return;
+  if (list.some((r) => r.id === result.id)) return "duplicate";
   list.unshift({ ...result, savedAt: new Date().toISOString() });
-  writeResultsList(list);
+  try {
+    writeResultsList(list);
+    return "saved";
+  } catch (err) {
+    if (err instanceof Error && /quota/i.test(err.name + err.message)) {
+      return "quota-exceeded";
+    }
+    return "error";
+  }
 }
 
 export function listResults(): PortfolioResult[] {
