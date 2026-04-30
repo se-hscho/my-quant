@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wireframe: 퀀트 포트폴리오 최적화</title>
+<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+  :root { --w-bg:#f5f5f5; --w-border:#ccc; --w-text:#555; --w-muted:#aaa; --w-fill:#eee; }
+  * { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace; color: var(--w-text); }
+  body { background: var(--w-bg); }
+  nav { position:sticky; top:0; z-index:40; background:var(--w-bg); border-bottom:1px solid var(--w-border); }
+  nav button { cursor:pointer; font-size:13px; }
+  nav button:hover { background:var(--w-fill); border-radius:4px; }
+  nav button.active { font-weight:bold; border-bottom:2px solid var(--w-text); }
+  .screen { display:none; }
+  .screen.active { display:block; }
+  .vp-toggle button { font-size:12px; padding:2px 8px; border:1px solid var(--w-border); cursor:pointer; background:white; }
+  .vp-toggle button:first-child { border-radius:4px 0 0 4px; }
+  .vp-toggle button:last-child { border-radius:0 4px 4px 0; border-left:none; }
+  .vp-toggle button.active { background:var(--w-text); color:white; }
+  body.viewport-mobile .screen-content { max-width:375px !important; margin:24px auto !important; border:2px solid var(--w-border); border-radius:24px; min-height:667px; background:white; box-shadow:0 4px 24px rgba(0,0,0,0.08); padding:32px 16px !important; }
+  .screen-notes { background:#fffde7; border-left:3px solid #ffd54f; padding:12px 16px; margin-top:24px; font-size:13px; border-radius:0 4px 4px 0; }
+  .screen-notes summary { cursor:pointer; font-weight:bold; font-size:12px; color:#b0a050; text-transform:uppercase; letter-spacing:.05em; }
+  .screen-notes p { margin:6px 0 2px; color:#777; }
+  .screen-notes ul { margin:4px 0 0 16px; padding:0; color:#777; }
+  .screen-notes li { margin:2px 0; }
+
+  .w-card { background:white; border:1px solid var(--w-border); border-radius:8px; padding:16px; }
+  .w-btn { border:1px solid var(--w-border); background:white; padding:6px 14px; border-radius:4px; font-size:13px; cursor:pointer; display:inline-flex; align-items:center; gap:4px; }
+  .w-btn-primary { border:1px solid var(--w-text); background:var(--w-text); color:white; padding:6px 14px; border-radius:4px; font-size:13px; cursor:pointer; display:inline-flex; align-items:center; gap:4px; }
+  .w-badge { display:inline-block; border:1px solid var(--w-border); background:var(--w-fill); padding:2px 8px; border-radius:99px; font-size:11px; }
+  .w-tag { display:inline-flex; align-items:center; border:1px solid var(--w-border); padding:1px 6px; border-radius:4px; font-size:11px; }
+  .w-tooltip { display:inline-flex; align-items:center; justify-content:center; width:15px; height:15px; border:1px solid var(--w-border); border-radius:50%; font-size:9px; cursor:pointer; color:var(--w-muted); flex-shrink:0; }
+  .w-input { border:1px solid var(--w-border); background:white; padding:5px 10px; border-radius:4px; font-size:12px; }
+  .w-metric { background:white; border:1px solid var(--w-border); border-radius:8px; padding:14px; text-align:center; }
+  .w-period { border:1px solid var(--w-border); background:white; padding:3px 12px; font-size:12px; cursor:pointer; }
+  .w-period:first-child { border-radius:4px 0 0 4px; }
+  .w-period:last-child { border-radius:0 4px 4px 0; border-left:none; }
+  .w-period.on { background:var(--w-text); color:white; }
+  .w-chart { background:var(--w-fill); border:1px dashed var(--w-border); border-radius:8px; display:flex; align-items:center; justify-content:center; color:var(--w-muted); font-size:12px; }
+  .w-pie { border-radius:50%; background:var(--w-fill); border:1px dashed var(--w-border); display:flex; align-items:center; justify-content:center; font-size:11px; color:var(--w-muted); }
+  .w-dot { position:absolute; width:6px; height:6px; background:var(--w-muted); border-radius:50%; }
+  .w-star { position:absolute; width:12px; height:12px; background:var(--w-text); border-radius:50%; }
+  .w-check { width:16px; height:16px; border:1px solid var(--w-border); border-radius:3px; background:white; flex-shrink:0; }
+  .w-check.on { background:var(--w-text); border-color:var(--w-text); }
+  .w-disabled { opacity:.4; cursor:not-allowed !important; }
+  .w-appbar { background:white; border-bottom:1px solid var(--w-border); padding:12px 24px; display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; }
+  .w-divider { border:none; border-top:1px solid var(--w-border); margin:14px 0; }
+</style>
+</head>
+<body class="p-0 m-0 viewport-desktop">
+
+<nav class="flex items-center gap-1 px-4 py-2 flex-wrap">
+  <span class="text-xs mr-2" style="color:var(--w-muted)">wireframe</span>
+  <button id="nav-0" onclick="show(0)" class="px-2 py-1">① 번들 갤러리</button>
+  <button id="nav-1" onclick="show(1)" class="px-2 py-1">② 번들 상세</button>
+  <button id="nav-2" onclick="show(2)" class="px-2 py-1">③ 실행 중</button>
+  <button id="nav-3" onclick="show(3)" class="px-2 py-1">④ 결과</button>
+  <button id="nav-4" onclick="show(4)" class="px-2 py-1">⑤ 기록</button>
+  <button id="nav-5" onclick="show(5)" class="px-2 py-1">⑥ 비교</button>
+  <button id="nav-6" onclick="show(6)" class="px-2 py-1">⑦ 에러</button>
+  <div class="vp-toggle flex ml-auto">
+    <button id="vp-desktop" onclick="setViewport('desktop')" class="active">Desktop</button>
+    <button id="vp-mobile" onclick="setViewport('mobile')">Mobile</button>
+  </div>
+</nav>
+
+<!-- ① 번들 갤러리 -->
+<div id="screen-0" class="screen" data-scenario="scenario-1">
+  <div class="screen-content @container max-w-5xl mx-auto p-6">
+    <div class="w-appbar" style="margin-left:-24px;margin-right:-24px;margin-top:-24px;padding:12px 24px;">
+      <div>
+        <div class="font-bold" style="font-size:15px;">퀀트 포트폴리오</div>
+        <div class="text-xs" style="color:var(--w-muted)">Portfolio Optimizer</div>
+      </div>
+      <button class="w-btn text-xs"><i data-lucide="history" style="width:13px;height:13px"></i> 기록 보기</button>
+    </div>
+
+    <h2 class="font-bold mb-4" style="color:var(--w-muted); border-bottom:1px solid var(--w-border); padding-bottom:8px;">번들 갤러리</h2>
+
+    <!-- 카테고리 필터 -->
+    <div class="flex gap-2 mb-5 flex-wrap">
+      <button class="w-badge" style="border-color:var(--w-text);">전체</button>
+      <button class="w-badge">테마형</button>
+      <button class="w-badge">팩터형</button>
+      <button class="w-badge">전통 배분</button>
+      <button class="w-badge">기관 따라하기</button>
+    </div>
+
+    <!-- 번들 그리드 -->
+    <div class="grid gap-4" style="grid-template-columns:repeat(auto-fill,minmax(260px,1fr))">
+
+      <div class="w-card">
+        <div class="flex justify-between items-start mb-2">
+          <span class="font-bold text-sm">AI & 반도체</span>
+          <span class="w-badge">테마형</span>
+        </div>
+        <div class="text-xs mb-3" style="color:var(--w-muted)">AI·반도체 대표 기업 8종목. 높은 성장성과 변동성.</div>
+        <div class="flex flex-wrap gap-1 mb-4">
+          <span class="w-tag">NVDA</span><span class="w-tag">AMD</span><span class="w-tag">INTC</span>
+          <span class="w-tag" style="color:var(--w-muted)">+5</span>
+        </div>
+        <div class="flex justify-between items-center">
+          <span class="text-xs" style="color:var(--w-muted)">8개 종목</span>
+          <button class="w-btn-primary" style="font-size:12px;padding:4px 12px;">선택 →</button>
+        </div>
+      </div>
+
+      <div class="w-card">
+        <div class="flex justify-between items-start mb-2">
+          <span class="font-bold text-sm">빅테크 & 클라우드</span>
+          <span class="w-badge">테마형</span>
+        </div>
+        <div class="text-xs mb-3" style="color:var(--w-muted)">미국 대형 기술주 중심. 안정적 성장.</div>
+        <div class="flex flex-wrap gap-1 mb-4">
+          <span class="w-tag">MSFT</span><span class="w-tag">AAPL</span><span class="w-tag">GOOG</span>
+          <span class="w-tag" style="color:var(--w-muted)">+4</span>
+        </div>
+        <div class="flex justify-between items-center">
+          <span class="text-xs" style="color:var(--w-muted)">7개 종목</span>
+          <button class="w-btn-primary" style="font-size:12px;padding:4px 12px;">선택 →</button>
+        </div>
+      </div>
+
+      <div class="w-card">
+        <div class="flex justify-between items-start mb-2">
+          <span class="font-bold text-sm">Low Volatility</span>
+          <span class="w-badge">팩터형</span>
+        </div>
+        <div class="text-xs mb-3" style="color:var(--w-muted)">변동성 낮은 배당 우량주. 방어적 포트폴리오.</div>
+        <div class="flex flex-wrap gap-1 mb-4">
+          <span class="w-tag">JNJ</span><span class="w-tag">PG</span><span class="w-tag">KO</span>
+          <span class="w-tag" style="color:var(--w-muted)">+5</span>
+        </div>
+        <div class="flex justify-between items-center">
+          <span class="text-xs" style="color:var(--w-muted)">8개 종목</span>
+          <button class="w-btn-primary" style="font-size:12px;padding:4px 12px;">선택 →</button>
+        </div>
+      </div>
+
+      <div class="w-card">
+        <div class="flex justify-between items-start mb-2">
+          <span class="font-bold text-sm">All-Weather</span>
+          <span class="w-badge">전통 배분</span>
+        </div>
+        <div class="text-xs mb-3" style="color:var(--w-muted)">Ray Dalio 방식. 경제 환경에 무관하게 안정적.</div>
+        <div class="flex flex-wrap gap-1 mb-4">
+          <span class="w-tag">SPY</span><span class="w-tag">TLT</span><span class="w-tag">GLD</span>
+          <span class="w-tag" style="color:var(--w-muted)">+2</span>
+        </div>
+        <div class="flex justify-between items-center">
+          <span class="text-xs" style="color:var(--w-muted)">5개 종목</span>
+          <button class="w-btn-primary" style="font-size:12px;padding:4px 12px;">선택 →</button>
+        </div>
+      </div>
+
+      <div class="w-card">
+        <div class="flex justify-between items-start mb-2">
+          <span class="font-bold text-sm">Berkshire Top 10</span>
+          <span class="w-badge">기관 따라하기</span>
+        </div>
+        <div class="text-xs mb-3" style="color:var(--w-muted)">워런 버핏의 버크셔 해서웨이 상위 보유 종목.</div>
+        <div class="flex flex-wrap gap-1 mb-4">
+          <span class="w-tag">AAPL</span><span class="w-tag">BAC</span><span class="w-tag">AXP</span>
+          <span class="w-tag" style="color:var(--w-muted)">+7</span>
+        </div>
+        <div class="flex justify-between items-center">
+          <span class="text-xs" style="color:var(--w-muted)">10개 종목</span>
+          <button class="w-btn-primary" style="font-size:12px;padding:4px 12px;">선택 →</button>
+        </div>
+      </div>
+
+      <div class="w-card">
+        <div class="flex justify-between items-start mb-2">
+          <span class="font-bold text-sm">Quality</span>
+          <span class="w-badge">팩터형</span>
+        </div>
+        <div class="text-xs mb-3" style="color:var(--w-muted)">높은 ROE·낮은 부채 우량주. 장기 안정 성장.</div>
+        <div class="flex flex-wrap gap-1 mb-4">
+          <span class="w-tag">MSFT</span><span class="w-tag">V</span><span class="w-tag">MA</span>
+          <span class="w-tag" style="color:var(--w-muted)">+4</span>
+        </div>
+        <div class="flex justify-between items-center">
+          <span class="text-xs" style="color:var(--w-muted)">7개 종목</span>
+          <button class="w-btn-primary" style="font-size:12px;padding:4px 12px;">선택 →</button>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="screen-notes"><details open><summary>Notes</summary>
+      <ul>
+        <li>트리거: 앱 첫 접속 시 기본 화면</li>
+        <li>인터랙션: 카테고리 필터 → 해당 번들만 표시 / "선택 →" → 번들 상세</li>
+        <li>전환: 번들 선택 → ② 번들 상세 / 기록 보기 → ⑤ 기록</li>
+      </ul>
+    </details></div>
+  </div>
+</div>
+
+<!-- ② 번들 상세 -->
+<div id="screen-1" class="screen" data-scenario="scenario-2, scenario-3, scenario-4">
+  <div class="screen-content @container max-w-5xl mx-auto p-6">
+    <div class="w-appbar" style="margin-left:-24px;margin-right:-24px;margin-top:-24px;">
+      <div class="flex items-center gap-3">
+        <button class="w-btn text-xs"><i data-lucide="arrow-left" style="width:13px;height:13px"></i> 갤러리</button>
+        <div>
+          <div class="font-bold" style="font-size:15px;">AI & 반도체</div>
+          <span class="w-badge">테마형</span>
+        </div>
+      </div>
+      <button class="w-btn text-xs"><i data-lucide="history" style="width:13px;height:13px"></i> 기록 보기</button>
+    </div>
+
+    <h2 class="font-bold mb-4" style="color:var(--w-muted); border-bottom:1px solid var(--w-border); padding-bottom:8px;">번들 상세 / 최적화 설정</h2>
+
+    <div class="grid gap-6" style="grid-template-columns:1fr 300px;">
+
+      <!-- 종목 목록 -->
+      <div>
+        <div class="flex justify-between items-center mb-3">
+          <span class="text-sm font-bold">포함 종목 <span style="color:var(--w-muted);font-weight:normal">(8개)</span></span>
+          <div class="flex gap-2">
+            <input class="w-input" style="width:140px;" placeholder="티커 추가 (예: TSLA)" />
+            <button class="w-btn text-xs">추가</button>
+          </div>
+        </div>
+
+        <div class="flex flex-col gap-2">
+          <div class="w-card flex items-center gap-3">
+            <div class="flex-1">
+              <div class="flex items-center gap-2"><span class="font-bold text-sm">NVDA</span><span class="text-xs" style="color:var(--w-muted)">NVIDIA Corporation</span></div>
+              <div class="text-xs mt-1" style="color:var(--w-muted)">AI·데이터센터용 GPU 세계 1위 반도체 기업</div>
+            </div>
+            <button class="w-btn text-xs"><i data-lucide="x" style="width:11px;height:11px"></i> 제거</button>
+          </div>
+          <div class="w-card flex items-center gap-3">
+            <div class="flex-1">
+              <div class="flex items-center gap-2"><span class="font-bold text-sm">AMD</span><span class="text-xs" style="color:var(--w-muted)">Advanced Micro Devices</span></div>
+              <div class="text-xs mt-1" style="color:var(--w-muted)">CPU·GPU 설계 반도체. AI 시장 점유율 확대 중.</div>
+            </div>
+            <button class="w-btn text-xs"><i data-lucide="x" style="width:11px;height:11px"></i> 제거</button>
+          </div>
+          <div class="w-card flex items-center gap-3">
+            <div class="flex-1">
+              <div class="flex items-center gap-2"><span class="font-bold text-sm">INTC</span><span class="text-xs" style="color:var(--w-muted)">Intel Corporation</span></div>
+              <div class="text-xs mt-1" style="color:var(--w-muted)">PC·서버 CPU 시장 전통 강자. 파운드리 전환 추진 중.</div>
+            </div>
+            <button class="w-btn text-xs"><i data-lucide="x" style="width:11px;height:11px"></i> 제거</button>
+          </div>
+          <!-- 2개 남았을 때 예시 -->
+          <div class="text-xs mt-1" style="color:var(--w-muted)">… + 5개 (종목이 2개만 남으면 제거 버튼 비활성화)</div>
+        </div>
+      </div>
+
+      <!-- 최적화 설정 -->
+      <div class="w-card" style="align-self:start;">
+        <div class="font-bold text-sm mb-4">최적화 설정</div>
+
+        <div class="text-xs font-bold mb-2 flex items-center gap-1">
+          최적화 방법 <span class="w-tooltip">?</span>
+        </div>
+
+        <div class="flex flex-col gap-2 mb-5">
+          <label class="w-card flex items-start gap-2" style="cursor:pointer;border-color:var(--w-text);padding:10px;">
+            <input type="radio" name="m" checked style="margin-top:2px;flex-shrink:0;" />
+            <div>
+              <div class="text-xs font-bold flex items-center gap-1">Max Sharpe <span class="w-tooltip">?</span></div>
+              <div class="text-xs mt-1" style="color:var(--w-muted)">리스크 1단위당 수익을 최대화. 수익·안정 균형.</div>
+            </div>
+          </label>
+          <label class="w-card flex items-start gap-2" style="cursor:pointer;padding:10px;">
+            <input type="radio" name="m" style="margin-top:2px;flex-shrink:0;" />
+            <div>
+              <div class="text-xs font-bold flex items-center gap-1">Min Variance <span class="w-tooltip">?</span></div>
+              <div class="text-xs mt-1" style="color:var(--w-muted)">변동성 최소화. 손실을 최대한 줄이고 싶을 때.</div>
+            </div>
+          </label>
+          <label class="w-card flex items-start gap-2" style="cursor:pointer;padding:10px;">
+            <input type="radio" name="m" style="margin-top:2px;flex-shrink:0;" />
+            <div>
+              <div class="text-xs font-bold flex items-center gap-1">Risk Parity <span class="w-tooltip">?</span></div>
+              <div class="text-xs mt-1" style="color:var(--w-muted)">모든 종목이 동등한 리스크 기여. 분산 극대화.</div>
+            </div>
+          </label>
+        </div>
+
+        <button class="w-btn-primary" style="width:100%;justify-content:center;padding:10px;">
+          <i data-lucide="play" style="width:13px;height:13px;color:white"></i>
+          최적화 실행
+        </button>
+      </div>
+    </div>
+
+    <div class="screen-notes"><details open><summary>Notes</summary>
+      <ul>
+        <li>트리거: 갤러리에서 번들 선택 시</li>
+        <li>인터랙션: 제거 버튼 → 종목 즉시 제거 / "?" hover → 툴팁 팝오버 / 라디오 선택 → 방법 변경</li>
+        <li>전환: "최적화 실행" → ③ 실행 중</li>
+      </ul>
+    </details></div>
+  </div>
+</div>
+
+<!-- ③ 실행 중 -->
+<div id="screen-2" class="screen" data-scenario="scenario-5">
+  <div class="screen-content @container max-w-5xl mx-auto p-6">
+    <div class="w-appbar" style="margin-left:-24px;margin-right:-24px;margin-top:-24px;">
+      <div>
+        <div class="font-bold" style="font-size:15px;">AI & 반도체 — Max Sharpe</div>
+        <div class="text-xs" style="color:var(--w-muted)">최적화 실행 중…</div>
+      </div>
+    </div>
+
+    <h2 class="font-bold mb-4" style="color:var(--w-muted); border-bottom:1px solid var(--w-border); padding-bottom:8px;">최적화 실행 중</h2>
+
+    <div class="flex flex-col items-center justify-center gap-6" style="min-height:380px;">
+      <div style="width:44px;height:44px;border:3px solid var(--w-fill);border-top:3px solid var(--w-text);border-radius:50%;"></div>
+      <div class="w-card" style="min-width:300px;">
+        <div class="font-bold text-sm mb-4 text-center">진행 상태</div>
+        <div class="flex flex-col gap-3">
+          <div class="flex items-center gap-3">
+            <i data-lucide="check-circle" style="width:15px;height:15px;color:var(--w-text);flex-shrink:0"></i>
+            <span class="text-xs">데이터 가져오는 중...</span>
+          </div>
+          <div class="flex items-center gap-3">
+            <div style="width:15px;height:15px;border:2px solid var(--w-fill);border-top:2px solid var(--w-text);border-radius:50%;flex-shrink:0;"></div>
+            <span class="text-xs font-bold">계산 중...</span>
+          </div>
+          <div class="flex items-center gap-3" style="opacity:.35">
+            <div class="w-check"></div>
+            <span class="text-xs">결과 준비 중...</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="screen-notes"><details open><summary>Notes</summary>
+      <ul>
+        <li>트리거: "최적화 실행" 클릭 직후</li>
+        <li>인터랙션: 단계 메시지 순차 표시</li>
+        <li>전환: 완료 → ④ 결과 / 실패 → ⑦ 에러</li>
+      </ul>
+    </details></div>
+  </div>
+</div>
+
+<!-- ④ 최적화 결과 -->
+<div id="screen-3" class="screen" data-scenario="scenario-6, scenario-7, scenario-8, scenario-9">
+  <div class="screen-content @container max-w-5xl mx-auto p-6">
+    <div class="w-appbar" style="margin-left:-24px;margin-right:-24px;margin-top:-24px;">
+      <div class="flex items-center gap-3">
+        <button class="w-btn text-xs"><i data-lucide="arrow-left" style="width:13px;height:13px"></i> 번들로</button>
+        <div>
+          <div class="font-bold" style="font-size:15px;">AI & 반도체 — Max Sharpe</div>
+          <div class="text-xs" style="color:var(--w-muted)">8개 종목 · 5년 백테스팅</div>
+        </div>
+      </div>
+      <button class="w-btn-primary text-xs"><i data-lucide="save" style="width:13px;height:13px;color:white"></i> 결과 저장</button>
+    </div>
+
+    <h2 class="font-bold mb-4" style="color:var(--w-muted); border-bottom:1px solid var(--w-border); padding-bottom:8px;">최적화 결과</h2>
+
+    <!-- 지표 4개 -->
+    <div class="grid grid-cols-4 gap-3 mb-5">
+      <div class="w-metric">
+        <div class="flex items-center justify-center gap-1 mb-1 text-xs" style="color:var(--w-muted);">연환산 수익률 <span class="w-tooltip">?</span></div>
+        <div class="text-xl font-bold">+24.7%</div>
+      </div>
+      <div class="w-metric">
+        <div class="flex items-center justify-center gap-1 mb-1 text-xs" style="color:var(--w-muted);">변동성 <span class="w-tooltip">?</span></div>
+        <div class="text-xl font-bold">18.3%</div>
+      </div>
+      <div class="w-metric">
+        <div class="flex items-center justify-center gap-1 mb-1 text-xs" style="color:var(--w-muted);">샤프비율 <span class="w-tooltip">?</span></div>
+        <div class="text-xl font-bold">1.35</div>
+      </div>
+      <div class="w-metric">
+        <div class="flex items-center justify-center gap-1 mb-1 text-xs" style="color:var(--w-muted);">MDD <span class="w-tooltip">?</span></div>
+        <div class="text-xl font-bold">-32.1%</div>
+      </div>
+    </div>
+
+    <!-- 효율적 프론티어 + 파이차트 -->
+    <div class="grid gap-5 mb-5" style="grid-template-columns:1fr 260px;">
+      <div class="w-card">
+        <div class="flex items-center gap-1 mb-3 text-sm font-bold">효율적 프론티어 <span class="w-tooltip">?</span></div>
+        <div style="height:240px;position:relative;background:white;border:1px solid var(--w-border);border-radius:6px;overflow:hidden;">
+          <div class="text-xs absolute" style="color:var(--w-muted);left:6px;top:6px;">기대수익률 ↑</div>
+          <div class="text-xs absolute" style="color:var(--w-muted);bottom:6px;right:8px;">변동성 →</div>
+          <div class="w-dot" style="left:18%;top:62%"></div>
+          <div class="w-dot" style="left:28%;top:48%"></div>
+          <div class="w-dot" style="left:38%;top:38%"></div>
+          <div class="w-dot" style="left:32%;top:44%"></div>
+          <div class="w-dot" style="left:45%;top:34%"></div>
+          <div class="w-dot" style="left:52%;top:30%"></div>
+          <div class="w-dot" style="left:62%;top:28%"></div>
+          <div class="w-dot" style="left:68%;top:32%"></div>
+          <div class="w-dot" style="left:75%;top:38%"></div>
+          <div class="w-dot" style="left:22%;top:56%"></div>
+          <div class="w-dot" style="left:42%;top:36%"></div>
+          <div class="w-dot" style="left:58%;top:29%"></div>
+          <!-- 최적 포트폴리오 -->
+          <div class="w-star" style="left:calc(60% - 6px);top:calc(27% - 6px);"></div>
+          <div class="text-xs font-bold absolute" style="color:var(--w-text);left:64%;top:20%;">★ 최적</div>
+          <!-- 범례 -->
+          <div class="absolute flex gap-4" style="bottom:18px;left:18px;">
+            <div class="flex items-center gap-1"><div style="width:8px;height:8px;background:var(--w-muted);border-radius:50%;"></div><span class="text-xs" style="color:var(--w-muted)">조합</span></div>
+            <div class="flex items-center gap-1"><div style="width:12px;height:12px;background:var(--w-text);border-radius:50%;"></div><span class="text-xs">최적</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="w-card">
+        <div class="font-bold text-sm mb-3">최적 가중치</div>
+        <div class="w-pie mx-auto mb-4" style="width:120px;height:120px;">파이차트</div>
+        <div class="flex flex-col gap-1">
+          <div class="flex justify-between text-xs"><span class="flex items-center gap-1"><span style="display:inline-block;width:9px;height:9px;background:var(--w-text);border-radius:2px;"></span>NVDA</span><span class="font-bold">34.2%</span></div>
+          <div class="flex justify-between text-xs"><span class="flex items-center gap-1"><span style="display:inline-block;width:9px;height:9px;background:var(--w-muted);border-radius:2px;"></span>AMD</span><span class="font-bold">18.7%</span></div>
+          <div class="flex justify-between text-xs" style="color:var(--w-muted)"><span>INTC</span><span>12.1%</span></div>
+          <div class="flex justify-between text-xs" style="color:var(--w-muted)"><span>QCOM</span><span>10.8%</span></div>
+          <div class="flex justify-between text-xs" style="color:var(--w-muted)"><span>기타 4개</span><span>24.2%</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 백테스팅 -->
+    <div class="w-card">
+      <div class="flex justify-between items-center mb-3">
+        <div class="flex items-center gap-1 text-sm font-bold">백테스팅 <span class="w-tooltip">?</span></div>
+        <div class="flex">
+          <button class="w-period">1년</button>
+          <button class="w-period">3년</button>
+          <button class="w-period on">5년</button>
+          <button class="w-period">10년</button>
+        </div>
+      </div>
+      <div class="w-chart" style="height:180px;">
+        <div class="text-center">
+          <div class="mb-2">수익률 곡선 차트</div>
+          <div class="flex gap-6 text-xs justify-center">
+            <span>─── 최적 포트폴리오 (+24.7%)</span>
+            <span style="color:var(--w-muted)">- - - Buy &amp; Hold (+18.3%)</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="screen-notes"><details open><summary>Notes</summary>
+      <ul>
+        <li>트리거: 최적화 계산 완료 직후 자동 전환</li>
+        <li>인터랙션: "?" hover → 툴팁 / 기간 프리셋 클릭 → 차트 갱신 / "결과 저장" → "저장됨" 토스트</li>
+        <li>전환: 저장 후 ⑤ 기록 페이지에서 확인 가능</li>
+      </ul>
+    </details></div>
+  </div>
+</div>
+
+<!-- ⑤ 기록 페이지 -->
+<div id="screen-4" class="screen" data-scenario="scenario-10, scenario-11">
+  <div class="screen-content @container max-w-5xl mx-auto p-6">
+    <div class="w-appbar" style="margin-left:-24px;margin-right:-24px;margin-top:-24px;">
+      <div class="flex items-center gap-3">
+        <button class="w-btn text-xs"><i data-lucide="arrow-left" style="width:13px;height:13px"></i> 갤러리</button>
+        <div class="font-bold" style="font-size:15px;">결과 기록</div>
+      </div>
+      <button class="w-btn-primary text-xs" id="cmp-btn" style="opacity:.4;cursor:not-allowed;">
+        <i data-lucide="git-compare" style="width:13px;height:13px;color:white"></i>
+        비교하기 (2/2)
+      </button>
+    </div>
+
+    <h2 class="font-bold mb-1" style="color:var(--w-muted); border-bottom:1px solid var(--w-border); padding-bottom:8px;">기록 페이지</h2>
+
+    <div class="text-xs mb-4 mt-3" style="color:var(--w-muted)">최신순 · 2개 선택 후 비교 가능</div>
+
+    <div class="flex flex-col gap-3">
+      <div class="w-card flex items-center gap-4" style="border-color:var(--w-text);">
+        <div class="w-check on flex items-center justify-center"><i data-lucide="check" style="width:10px;height:10px;color:white"></i></div>
+        <div class="flex-1">
+          <div class="flex items-center gap-2 mb-1"><span class="font-bold text-sm">AI & 반도체</span><span class="w-badge">Max Sharpe</span></div>
+          <div class="text-xs" style="color:var(--w-muted)">2025-04-30 14:23 · +24.7% · 샤프 1.35 · MDD -32.1%</div>
+        </div>
+        <button class="w-btn text-xs">결과 보기</button>
+      </div>
+
+      <div class="w-card flex items-center gap-4" style="border-color:var(--w-text);">
+        <div class="w-check on flex items-center justify-center"><i data-lucide="check" style="width:10px;height:10px;color:white"></i></div>
+        <div class="flex-1">
+          <div class="flex items-center gap-2 mb-1"><span class="font-bold text-sm">All-Weather</span><span class="w-badge">Min Variance</span></div>
+          <div class="text-xs" style="color:var(--w-muted)">2025-04-29 09:11 · +12.3% · 샤프 0.98 · MDD -14.5%</div>
+        </div>
+        <button class="w-btn text-xs">결과 보기</button>
+      </div>
+
+      <div class="w-card flex items-center gap-4">
+        <div class="w-check"></div>
+        <div class="flex-1">
+          <div class="flex items-center gap-2 mb-1"><span class="font-bold text-sm">Berkshire Top 10</span><span class="w-badge">Risk Parity</span></div>
+          <div class="text-xs" style="color:var(--w-muted)">2025-04-28 16:45 · +15.8% · 샤프 1.12 · MDD -21.3%</div>
+        </div>
+        <button class="w-btn text-xs">결과 보기</button>
+      </div>
+
+      <div class="w-card flex items-center gap-4">
+        <div class="w-check"></div>
+        <div class="flex-1">
+          <div class="flex items-center gap-2 mb-1"><span class="font-bold text-sm">Low Volatility</span><span class="w-badge">Max Sharpe</span></div>
+          <div class="text-xs" style="color:var(--w-muted)">2025-04-27 11:30 · +9.4% · 샤프 0.87 · MDD -11.2%</div>
+        </div>
+        <button class="w-btn text-xs">결과 보기</button>
+      </div>
+    </div>
+
+    <div class="screen-notes"><details open><summary>Notes</summary>
+      <ul>
+        <li>트리거: "기록 보기" 클릭 시</li>
+        <li>인터랙션: 체크박스 → 선택(최대 2개) / 2개 선택 시 "비교하기" 활성화</li>
+        <li>전환: "비교하기" → ⑥ 비교 / "결과 보기" → ④ 결과</li>
+      </ul>
+    </details></div>
+  </div>
+</div>
+
+<!-- ⑥ 비교 화면 -->
+<div id="screen-5" class="screen" data-scenario="scenario-11">
+  <div class="screen-content @container max-w-5xl mx-auto p-6">
+    <div class="w-appbar" style="margin-left:-24px;margin-right:-24px;margin-top:-24px;">
+      <div class="flex items-center gap-3">
+        <button class="w-btn text-xs"><i data-lucide="arrow-left" style="width:13px;height:13px"></i> 기록</button>
+        <div class="font-bold" style="font-size:15px;">결과 비교</div>
+      </div>
+    </div>
+
+    <h2 class="font-bold mb-4" style="color:var(--w-muted); border-bottom:1px solid var(--w-border); padding-bottom:8px;">비교 화면</h2>
+
+    <div class="grid grid-cols-2 gap-6">
+      <!-- A -->
+      <div>
+        <div class="w-badge mb-3" style="border-color:var(--w-text);font-size:12px;font-weight:bold;">A — AI & 반도체 · Max Sharpe</div>
+        <div class="grid grid-cols-2 gap-2 mb-4">
+          <div class="w-metric"><div class="text-xs mb-1" style="color:var(--w-muted);">연환산 수익률</div><div class="text-lg font-bold">+24.7%</div></div>
+          <div class="w-metric"><div class="text-xs mb-1" style="color:var(--w-muted);">변동성</div><div class="text-lg font-bold">18.3%</div></div>
+          <div class="w-metric"><div class="text-xs mb-1" style="color:var(--w-muted);">샤프비율</div><div class="text-lg font-bold">1.35</div></div>
+          <div class="w-metric"><div class="text-xs mb-1" style="color:var(--w-muted);">MDD</div><div class="text-lg font-bold">-32.1%</div></div>
+        </div>
+        <div class="w-pie mx-auto mb-3" style="width:110px;height:110px;">파이차트 A</div>
+        <div class="flex flex-col gap-1">
+          <div class="flex justify-between text-xs"><span>NVDA</span><span class="font-bold">34.2%</span></div>
+          <div class="flex justify-between text-xs"><span>AMD</span><span class="font-bold">18.7%</span></div>
+          <div class="flex justify-between text-xs" style="color:var(--w-muted)"><span>기타 6개</span><span>47.1%</span></div>
+        </div>
+      </div>
+
+      <!-- B -->
+      <div style="border-left:1px dashed var(--w-border);padding-left:24px;">
+        <div class="w-badge mb-3" style="font-size:12px;font-weight:bold;">B — All-Weather · Min Variance</div>
+        <div class="grid grid-cols-2 gap-2 mb-4">
+          <div class="w-metric"><div class="text-xs mb-1" style="color:var(--w-muted);">연환산 수익률</div><div class="text-lg font-bold">+12.3%</div></div>
+          <div class="w-metric"><div class="text-xs mb-1" style="color:var(--w-muted);">변동성</div><div class="text-lg font-bold">8.1%</div></div>
+          <div class="w-metric"><div class="text-xs mb-1" style="color:var(--w-muted);">샤프비율</div><div class="text-lg font-bold">0.98</div></div>
+          <div class="w-metric"><div class="text-xs mb-1" style="color:var(--w-muted);">MDD</div><div class="text-lg font-bold">-14.5%</div></div>
+        </div>
+        <div class="w-pie mx-auto mb-3" style="width:110px;height:110px;">파이차트 B</div>
+        <div class="flex flex-col gap-1">
+          <div class="flex justify-between text-xs"><span>SPY</span><span class="font-bold">30.0%</span></div>
+          <div class="flex justify-between text-xs"><span>TLT</span><span class="font-bold">28.3%</span></div>
+          <div class="flex justify-between text-xs" style="color:var(--w-muted)"><span>기타 3개</span><span>41.7%</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="screen-notes"><details open><summary>Notes</summary>
+      <ul>
+        <li>트리거: 기록에서 2개 선택 후 "비교하기" 클릭</li>
+        <li>인터랙션: 읽기 전용 — 지표·가중치 나란히 비교</li>
+        <li>전환: "기록" → ⑤ 기록 페이지</li>
+      </ul>
+    </details></div>
+  </div>
+</div>
+
+<!-- ⑦ 에러 상태 -->
+<div id="screen-6" class="screen" data-scenario="scenario-12">
+  <div class="screen-content @container max-w-5xl mx-auto p-6">
+    <div class="w-appbar" style="margin-left:-24px;margin-right:-24px;margin-top:-24px;">
+      <div>
+        <div class="font-bold" style="font-size:15px;">AI & 반도체 — Max Sharpe</div>
+        <div class="text-xs" style="color:var(--w-muted)">오류 발생</div>
+      </div>
+    </div>
+
+    <h2 class="font-bold mb-4" style="color:var(--w-muted); border-bottom:1px solid var(--w-border); padding-bottom:8px;">에러 상태</h2>
+
+    <div class="flex flex-col items-center justify-center gap-4" style="min-height:360px;">
+      <i data-lucide="alert-circle" style="width:44px;height:44px;color:var(--w-muted)"></i>
+      <div class="text-center">
+        <div class="font-bold text-sm mb-1">데이터를 가져오지 못했습니다</div>
+        <div class="text-xs" style="color:var(--w-muted)">잠시 후 다시 시도해주세요.</div>
+      </div>
+      <button class="w-btn"><i data-lucide="refresh-cw" style="width:13px;height:13px"></i> 다시 시도</button>
+    </div>
+
+    <div class="screen-notes"><details open><summary>Notes</summary>
+      <ul>
+        <li>트리거: 최적화 실행 중 데이터 수집 실패</li>
+        <li>인터랙션: "다시 시도" → 최적화 재실행</li>
+        <li>전환: 재시도 성공 → ④ 결과 / 재시도 실패 → 동일 화면 유지</li>
+      </ul>
+    </details></div>
+  </div>
+</div>
+
+<script>
+var screenIds = [];
+function show(id) {
+  document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active');});
+  document.getElementById('screen-'+id).classList.add('active');
+  document.querySelectorAll('nav button[id^="nav-"]').forEach(function(b){b.classList.remove('active');});
+  document.getElementById('nav-'+id).classList.add('active');
+}
+function setViewport(mode) {
+  document.body.classList.remove('viewport-mobile','viewport-desktop');
+  document.body.classList.add('viewport-'+mode);
+  document.querySelectorAll('.vp-toggle button').forEach(function(b){b.classList.remove('active');});
+  document.getElementById('vp-'+mode).classList.add('active');
+}
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('nav button[id^="nav-"]').forEach(function(b){
+    screenIds.push(parseInt(b.id.replace('nav-','')));
+  });
+  document.querySelector('nav button[id^="nav-"]').click();
+  lucide.createIcons();
+});
+</script>
+</body>
+</html>
