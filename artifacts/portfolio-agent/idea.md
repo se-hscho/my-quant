@@ -476,4 +476,4 @@ HMW — 개인 투자자가 기관·외국인의 자금 흐름을 **그대로 �
 
 ## Next Step
 
-`/write-spec portfolio-agent` — 시나리오·수용 기준 확정
+`/sketch-wireframe portfolio-agent` — 요약·상세 레이아웃 검증 후 `/draft-plan portfolio-agent`
