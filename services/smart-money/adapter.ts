@@ -7,8 +7,8 @@ export function getSmartMoneyFixture(): SmartMoneyData {
     return {
       sector: s.id,
       label: s.label,
-      flowScore: fixture?.flowScore ?? 0.3 + Math.random() * 0.3,
-      relativeStrength7d: (fixture?.flowScore ?? 0.4) * 100 - 50,
+      flowScore: fixture?.flowScore ?? 0.35,
+      relativeStrength7d: (fixture?.flowScore ?? 0.35) * 100 - 50,
     };
   });
 
