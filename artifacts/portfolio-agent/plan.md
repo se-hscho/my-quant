@@ -151,8 +151,8 @@
   - `app/agent/layout.tsx`, `app/agent/page.tsx`
   - `components/agent/EmptyHoldingsState.tsx` + `.test.tsx`
 - **수용 기준**:
-  - [ ] 보유가 비어 있을 때 `/agent`에 접속하면 보유 미등록 안내 문구가 표시된다
-  - [ ] 같은 화면에서 보유 편집(`/agent/holdings`)으로 이동하는 버튼 또는 링크가 보인다
+  - [x] 보유가 비어 있을 때 `/agent`에 접속하면 보유 미등록 안내 문구가 표시된다
+  - [x] 같은 화면에서 보유 편집(`/agent/holdings`)으로 이동하는 버튼 또는 링크가 보인다
 - **검증**: `bun run test -- holdings-storage EmptyHoldingsState`
 
 ---
