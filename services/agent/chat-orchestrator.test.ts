@@ -58,11 +58,13 @@ describe("processAgentChat", () => {
     expect(result.reply).toMatch(/입력 해석/);
   });
 
-  it("GEMINI 미설정 시 규칙 파서만 사용한다", async () => {
+  it("GEMINI 미설정 시 규칙 파서만 사용하고 안내를 붙인다", async () => {
     mockConfigured.mockReturnValue(false);
 
     const result = await processAgentChat({ message: "이상한 말" });
     expect(mockNormalize).not.toHaveBeenCalled();
     expect(result.reply).toMatch(/이해하지 못했습니다/);
+    expect(result.reply).toMatch(/GEMINI_API_KEY/);
+    expect(result.llmStatus).toBe("unconfigured");
   });
 });

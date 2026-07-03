@@ -11,8 +11,8 @@ export function AgentShell({ children }: { children: ReactNode }) {
   return (
     <AgentPersonalProvider>
       <AgentChatProvider>
-        <div className="flex min-h-screen flex-col bg-background pb-28">
-          <header className="border-b bg-card px-4 py-3">
+        <div className="flex min-h-[100dvh] flex-col bg-background">
+          <header className="shrink-0 border-b bg-card px-4 py-3">
             <div className="flex items-center justify-between gap-2">
               <h1 className="text-lg font-semibold">
                 <Link href="/agent" className="hover:underline">
@@ -29,7 +29,9 @@ export function AgentShell({ children }: { children: ReactNode }) {
               </div>
             </div>
           </header>
-          <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-8">{children}</main>
+          <main className="mx-auto w-full max-w-3xl flex-1 overflow-y-auto px-4 py-8">
+            {children}
+          </main>
           <AgentChatDock />
         </div>
       </AgentChatProvider>

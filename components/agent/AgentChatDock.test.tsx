@@ -9,7 +9,13 @@ describe("AgentChatDock", () => {
     localStorage.clear();
     vi.stubGlobal(
       "fetch",
-      vi.fn().mockImplementation(async (_url, init) => {
+      vi.fn().mockImplementation(async (url: string, init?: RequestInit) => {
+        if (url === "/api/agent/chat/status") {
+          return {
+            ok: true,
+            json: async () => ({ geminiConfigured: true }),
+          };
+        }
         const body = JSON.parse((init as RequestInit).body as string);
         if (body.message.includes("SOXX")) {
           return {

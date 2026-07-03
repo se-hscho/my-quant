@@ -4,10 +4,9 @@ import { isGeminiConfigured } from "@/services/ai/gemini";
 import { normalizeChatInputWithLlm } from "@/services/agent/chat-llm";
 
 export interface AgentChatResponse extends ChatCommandResult {
-  /** LLM이 변환한 명령 문자열 (원문과 다를 때만) */
   normalizedCommand?: string | null;
-  /** LLM 정규화 사용 여부 */
   usedLlm?: boolean;
+  llmStatus?: "active" | "unconfigured" | "failed" | "skipped";
 }
 
 function isUnrecognizedCommand(result: ChatCommandResult): boolean {
@@ -28,26 +27,45 @@ function appendNormalizationNote(
   return `${result.reply}\n\n📝 입력 해석: \`${normalized}\``;
 }
 
+function withLlmHint(reply: string, llmStatus: AgentChatResponse["llmStatus"]): string {
+  if (llmStatus === "unconfigured") {
+    return `${reply}\n\n💡 자연어 인식은 Preview에 GEMINI_API_KEY 설정 후 재배포가 필요합니다. 지금은 \`SOXX 10주 등록\` 형식을 사용해 주세요.`;
+  }
+  if (llmStatus === "failed") {
+    return `${reply}\n\n💡 AI 해석에 실패했습니다. 명령 형식으로 다시 입력해 주세요.`;
+  }
+  return reply;
+}
+
 export async function processAgentChat(
   options: ParseChatOptions
 ): Promise<AgentChatResponse> {
   const message = options.message.trim();
   if (!message) {
-    return { reply: "질문을 입력해 주세요.", actions: [] };
+    return { reply: "질문을 입력해 주세요.", actions: [], llmStatus: "skipped" };
   }
 
   const direct = parseChatCommand(options);
   if (!isUnrecognizedCommand(direct)) {
-    return direct;
+    return { ...direct, llmStatus: "skipped" };
   }
 
   if (!isGeminiConfigured()) {
-    return direct;
+    return {
+      ...direct,
+      llmStatus: "unconfigured",
+      reply: withLlmHint(direct.reply, "unconfigured"),
+    };
   }
 
   const llm = await normalizeChatInputWithLlm(message);
   if (!llm?.normalizedCommand) {
-    return { ...direct, usedLlm: true };
+    return {
+      ...direct,
+      usedLlm: true,
+      llmStatus: "failed",
+      reply: withLlmHint(direct.reply, "failed"),
+    };
   }
 
   const normalized = llm.normalizedCommand;
@@ -61,9 +79,16 @@ export async function processAgentChat(
       ...fromNormalized,
       normalizedCommand: normalized,
       usedLlm: true,
+      llmStatus: "active",
       reply: appendNormalizationNote(fromNormalized, message, normalized),
     };
   }
 
-  return { ...direct, normalizedCommand: normalized, usedLlm: true };
+  return {
+    ...direct,
+    normalizedCommand: normalized,
+    usedLlm: true,
+    llmStatus: "failed",
+    reply: withLlmHint(direct.reply, "failed"),
+  };
 }

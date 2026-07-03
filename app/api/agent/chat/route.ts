@@ -21,10 +21,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "message required" }, { status: 400 });
   }
 
-  const { reply, actions, normalizedCommand, usedLlm } = await processAgentChat({
-    message,
-    snapshot,
-  });
+  const { reply, actions, normalizedCommand, usedLlm, llmStatus } =
+    await processAgentChat({
+      message,
+      snapshot,
+    });
 
-  return NextResponse.json({ reply, actions, normalizedCommand, usedLlm });
+  return NextResponse.json({ reply, actions, normalizedCommand, usedLlm, llmStatus });
 }

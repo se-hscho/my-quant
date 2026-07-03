@@ -21,6 +21,7 @@ export interface ChatCommandResult {
 export interface AgentChatApiResponse extends ChatCommandResult {
   normalizedCommand?: string | null;
   usedLlm?: boolean;
+  llmStatus?: "active" | "unconfigured" | "failed" | "skipped";
 }
 
 export interface ParseChatOptions {
