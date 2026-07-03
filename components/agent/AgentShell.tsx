@@ -20,6 +20,12 @@ export function AgentShell({ children }: { children: ReactNode }) {
                 </Link>
               </h1>
               <div className="flex items-center gap-2">
+                <Button variant="ghost" size="sm" asChild>
+                  <Link href="/agent/history">히스토리</Link>
+                </Button>
+                <Button variant="ghost" size="sm" asChild>
+                  <Link href="/agent/settings">설정</Link>
+                </Button>
                 <Button variant="outline" size="sm" asChild>
                   <Link href="/agent/holdings">보유 편집</Link>
                 </Button>

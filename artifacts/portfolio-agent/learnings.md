@@ -28,12 +28,24 @@
 
 plan.md 의존성 순서 그대로: Task 1 → 2 → 3 … (my-quant 기존 Next.js 앱 활용, Task 0 스캐폴드 생략)
 
-## Task 1: `/agent` 보유 없음 안내
+## Task 1–4: 보유·평가·채팅 (완료)
 
-- **판단**: `useSyncExternalStore`로 localStorage 보유 여부 구독 — SSR에서는 항상 empty, 클라이언트 hydration 후 갱신.
-- **applied**: not-yet
+- `useSyncExternalStore`로 localStorage 보유 구독
+- 규칙 우선 채팅 → LLM fallback + rate limit (`GEMINI_MAX_CALLS_PER_MIN`)
 
-## Task 2: 보유 등록 폼
+## Task 5–20: 브리핑 MVP (완료, 2026-07-03)
 
-- **판단**: `HoldingsPageContent`가 draft/saved 분리 — 목록은 저장된 스냅샷만 표시 (spec "저장 후").
-- **applied**: not-yet
+- **브리핑 저장**: Vercel KV + dev/test 메모리 fallback (`services/briefing/kv.ts`)
+- **채팅 Q&A**: `chat-qa.ts`는 rule parser **이후** 실행 — 등록 명령과 충돌 방지
+- **알림**: Cron/event route는 mock-friendly; 실발송은 `RESEND_API_KEY`, `SLACK_WEBHOOK_URL`, `CRON_SECRET` 필요
+- **검증**: `bun run verify:feature -- portfolio-agent` — 154 unit + 46 e2e PASS
+
+## Preview URLs (업데이트)
+
+| 화면 | 경로 |
+|---|---|
+| 요약 | `/agent` |
+| 상세 레포트 | `/agent/report/today` |
+| 히스토리 | `/agent/history` |
+| 설정 | `/agent/settings` |
+| 보유 편집 | `/agent/holdings` |

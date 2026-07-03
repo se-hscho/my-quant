@@ -49,10 +49,10 @@ test.describe("Agent usability", () => {
     await expect(page.getByTestId("portfolio-value-card")).toBeVisible({
       timeout: 30_000,
     });
-    await expect(page.getByText(/오늘 포트폴리오 요약|오늘 요약/)).toBeVisible();
-    await expect(
-      page.getByRole("main").getByRole("link", { name: "보유 편집" })
-    ).toBeVisible();
+    await expect(page.getByTestId("summary-page")).toBeVisible({
+      timeout: 60_000,
+    });
+    await expect(page.getByRole("link", { name: "상세 레포트 보기" })).toBeVisible();
   });
 
   test("holdings edit page is reachable from header", async ({ page }) => {

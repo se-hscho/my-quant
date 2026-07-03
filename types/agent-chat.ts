@@ -1,4 +1,5 @@
 import type { AssetType, Currency, HoldingsSnapshot } from "@/types/agent";
+import type { Briefing } from "@/services/briefing/types";
 
 export type CashField = "krw" | "usd" | "jpy";
 
@@ -27,4 +28,5 @@ export interface AgentChatApiResponse extends ChatCommandResult {
 export interface ParseChatOptions {
   message: string;
   snapshot?: HoldingsSnapshot | null;
+  briefing?: Briefing | null;
 }

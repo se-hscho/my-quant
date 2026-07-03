@@ -7,6 +7,7 @@ import {
   isGeminiConfigured,
   isTransientGeminiError,
 } from "@/services/ai/gemini";
+import { answerBriefingQuestion } from "@/services/briefing/chat-qa";
 import {
   canInvokeLlm,
   getLlmRateLimitStatus,
@@ -172,6 +173,13 @@ export async function processAgentChat(
   const direct = parseChatCommand(options);
   if (!isUnrecognizedCommand(direct)) {
     return { ...direct, llmStatus: "skipped" };
+  }
+
+  if (options.briefing) {
+    const qa = answerBriefingQuestion(message, options.briefing);
+    if (qa) {
+      return { reply: qa, actions: [], llmStatus: "skipped" };
+    }
   }
 
   if (!isGeminiConfigured()) {
