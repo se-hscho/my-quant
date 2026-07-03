@@ -49,3 +49,16 @@ git pull origin cursor/portfolio-agent-spec-f106
 ```
 
 와이어프레임·스펙 수정 후 이 브랜치에 push → Vercel이 자동 재배포합니다.
+
+## my-quant Next.js Preview (`/agent` 앱)
+
+에이전트 구현 확인용 Vercel 프로젝트 (레포 루트 `/`, Framework **Next.js**):
+
+| 화면 | URL |
+|---|---|
+| 에이전트 홈 | `https://<preview-host>/agent` |
+| 보유 편집 | `https://<preview-host>/agent/holdings` |
+
+**`/`를 에이전트 홈으로:** Vercel → Settings → Environment Variables → `AGENT_ROOT_REDIRECT` = `true` (Preview만 체크 권장) → Redeploy
+
+프로덕션 퀀트 홈(`/`)은 이 env 없으면 그대로 유지됩니다.
