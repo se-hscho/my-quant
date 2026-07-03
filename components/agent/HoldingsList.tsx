@@ -6,6 +6,7 @@ import {
   formatQuantity,
   TOTAL_ASSETS_PLACEHOLDER,
 } from "@/lib/agent/holdings-display";
+import { AGENT_SECTOR_LABELS, type AgentSectorId } from "@/config/agent";
 import {
   Card,
   CardContent,
@@ -46,6 +47,7 @@ export function HoldingsList({ snapshot }: HoldingsListProps) {
                     <th className="py-2 pr-2 font-medium">티커</th>
                     <th className="py-2 pr-2 font-medium">수량</th>
                     <th className="py-2 pr-2 font-medium">유형</th>
+                    <th className="py-2 pr-2 font-medium">섹터</th>
                     <th className="py-2 font-medium">통화</th>
                   </tr>
                 </thead>
@@ -55,6 +57,11 @@ export function HoldingsList({ snapshot }: HoldingsListProps) {
                       <td className="py-2 pr-2">{h.ticker}</td>
                       <td className="py-2 pr-2">{formatQuantity(h.quantity)}</td>
                       <td className="py-2 pr-2">{ASSET_TYPE_LABELS[h.assetType]}</td>
+                      <td className="py-2 pr-2">
+                        {h.sector
+                          ? AGENT_SECTOR_LABELS[h.sector as AgentSectorId] ?? h.sector
+                          : "—"}
+                      </td>
                       <td className="py-2">{CURRENCY_LABELS[h.currency]}</td>
                     </tr>
                   ))}

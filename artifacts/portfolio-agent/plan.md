@@ -190,8 +190,8 @@
   - `lib/agent/sector-classify.ts` + `.test.ts`
   - `components/agent/SectorTagDialog.tsx` + `.test.tsx`
 - **수용 기준**:
-  - [ ] 자동 분류에 실패한 티커 저장 시도 시 섹터 선택 UI가 표시된다
-  - [ ] 섹터 지정 후 저장하면 보유 목록에 해당 섹터 정보가 표시된다
+  - [x] 자동 분류에 실패한 티커 저장 시도 시 섹터 선택 UI가 표시된다
+  - [x] 섹터 지정 후 저장하면 보유 목록에 해당 섹터 정보가 표시된다
 - **검증**: `bun run test -- sector-classify SectorTagDialog`
 
 ---

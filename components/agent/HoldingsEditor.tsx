@@ -3,6 +3,14 @@
 import { useState } from "react";
 import type { AssetType, Currency, Holding, HoldingsSnapshot } from "@/types/agent";
 import { ASSET_TYPE_LABELS, CURRENCY_LABELS, parseNumericInput } from "@/lib/agent/holdings-display";
+import {
+  applySectorTag,
+  classifyTicker,
+  type TickerClassification,
+} from "@/lib/agent/sector-classify";
+import type { AgentSectorId } from "@/config/agent";
+import type { Region } from "@/types/agent";
+import { SectorTagDialog } from "./SectorTagDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,11 +25,20 @@ export interface HoldingsEditorProps {
 const ASSET_TYPES = Object.keys(ASSET_TYPE_LABELS) as AssetType[];
 const CURRENCIES = Object.keys(CURRENCY_LABELS) as Currency[];
 
+interface PendingHolding {
+  ticker: string;
+  quantity: number;
+  assetType: AssetType;
+  currency: Currency;
+}
+
 export function HoldingsEditor({ draft, onDraftChange }: HoldingsEditorProps) {
   const [ticker, setTicker] = useState("");
   const [quantity, setQuantity] = useState("");
   const [assetType, setAssetType] = useState<AssetType>("stock");
   const [currency, setCurrency] = useState<Currency>("KRW");
+  const [sectorDialogOpen, setSectorDialogOpen] = useState(false);
+  const [pendingHolding, setPendingHolding] = useState<PendingHolding | null>(null);
 
   function updateCash(key: keyof HoldingsSnapshot["cash"], value: string) {
     onDraftChange({
@@ -30,24 +47,54 @@ export function HoldingsEditor({ draft, onDraftChange }: HoldingsEditorProps) {
     });
   }
 
+  function appendHolding(
+    base: PendingHolding,
+    classification?: TickerClassification | { sector: AgentSectorId; region?: Region }
+  ) {
+    const holding: Holding = {
+      id: crypto.randomUUID(),
+      ticker: base.ticker,
+      quantity: base.quantity,
+      assetType: base.assetType,
+      currency: base.currency,
+    };
+    const tagged = classification
+      ? applySectorTag(holding, classification.sector, classification.region)
+      : holding;
+    onDraftChange({
+      ...draft,
+      holdings: [...draft.holdings, tagged],
+    });
+    setTicker("");
+    setQuantity("");
+    setPendingHolding(null);
+  }
+
   function addHolding() {
     const trimmed = ticker.trim().toUpperCase();
     const qty = parseNumericInput(quantity);
     if (!trimmed || qty <= 0) return;
 
-    const holding: Holding = {
-      id: crypto.randomUUID(),
+    const pending: PendingHolding = {
       ticker: trimmed,
       quantity: qty,
       assetType,
       currency,
     };
-    onDraftChange({
-      ...draft,
-      holdings: [...draft.holdings, holding],
-    });
-    setTicker("");
-    setQuantity("");
+
+    const classification = classifyTicker(trimmed);
+    if (classification) {
+      appendHolding(pending, classification);
+      return;
+    }
+
+    setPendingHolding(pending);
+    setSectorDialogOpen(true);
+  }
+
+  function handleSectorConfirm(sector: AgentSectorId, region?: Region) {
+    if (!pendingHolding) return;
+    appendHolding(pendingHolding, { sector, region });
   }
 
   function removeHolding(id: string) {
@@ -161,6 +208,7 @@ export function HoldingsEditor({ draft, onDraftChange }: HoldingsEditorProps) {
               <span>
                 {h.ticker} · {h.quantity} · {ASSET_TYPE_LABELS[h.assetType]} ·{" "}
                 {CURRENCY_LABELS[h.currency]}
+                {h.sector ? ` · ${h.sector}` : ""}
               </span>
               <Button
                 type="button"
@@ -175,6 +223,13 @@ export function HoldingsEditor({ draft, onDraftChange }: HoldingsEditorProps) {
           ))}
         </ul>
       ) : null}
+
+      <SectorTagDialog
+        open={sectorDialogOpen}
+        ticker={pendingHolding?.ticker ?? ""}
+        onOpenChange={setSectorDialogOpen}
+        onConfirm={handleSectorConfirm}
+      />
     </div>
   );
 }
