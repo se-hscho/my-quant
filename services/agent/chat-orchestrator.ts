@@ -56,9 +56,9 @@ function withLlmHint(
   }
   if (llmStatus === "failed") {
     const detail = llmError
-      ? `\n(원인: ${llmError.slice(0, 240)})`
+      ? `\n(원인: ${llmError.slice(0, 320)})`
       : "";
-    return `${reply}\n\n💡 AI 해석에 실패했습니다. 명령 형식으로 다시 입력해 주세요.${detail}`;
+    return `${reply}\n\n💡 AI 해석에 실패했습니다. GEMINI_MODEL을 gemini-2.5-flash 로 설정했는지 확인해 주세요.${detail}`;
   }
   return reply;
 }

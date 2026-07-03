@@ -1,10 +1,14 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
+/** Google AI Studio 기준 안정 모델 (2026). 1.5-flash 계열은 404. */
+export const GEMINI_DEFAULT_MODEL = "gemini-2.5-flash";
+
 const DEFAULT_MODELS = [
-  "gemini-1.5-flash",
-  "gemini-1.5-flash-8b",
+  GEMINI_DEFAULT_MODEL,
+  "gemini-2.5-flash-lite",
   "gemini-2.0-flash",
-  "gemini-2.0-flash-lite",
+  "gemini-3.5-flash",
+  "gemini-3.1-flash-lite",
 ] as const;
 
 let client: GoogleGenerativeAI | null = null;
@@ -25,6 +29,12 @@ export function isGeminiConfigured(): boolean {
   return getGeminiApiKey() !== null;
 }
 
+export function getGeminiModelCandidates(): string[] {
+  const preferred = process.env.GEMINI_MODEL?.trim();
+  const list = preferred ? [preferred, ...DEFAULT_MODELS] : [...DEFAULT_MODELS];
+  return [...new Set(list)];
+}
+
 function getClient(): GoogleGenerativeAI | null {
   const apiKey = getGeminiApiKey();
   if (!apiKey) return null;
@@ -32,12 +42,6 @@ function getClient(): GoogleGenerativeAI | null {
     client = new GoogleGenerativeAI(apiKey);
   }
   return client;
-}
-
-function modelCandidates(): string[] {
-  const preferred = process.env.GEMINI_MODEL?.trim();
-  const list = preferred ? [preferred, ...DEFAULT_MODELS] : [...DEFAULT_MODELS];
-  return [...new Set(list)];
 }
 
 /** ```json ... ``` 또는 본문에서 JSON 추출 */
@@ -52,6 +56,31 @@ export function extractJsonText(text: string): string {
   return text.trim();
 }
 
+async function generateWithModel<T>(
+  genAI: GoogleGenerativeAI,
+  modelName: string,
+  systemInstruction: string,
+  userPrompt: string,
+  jsonMode: boolean
+): Promise<T> {
+  const model = genAI.getGenerativeModel({
+    model: modelName,
+    systemInstruction,
+    generationConfig: jsonMode
+      ? { responseMimeType: "application/json", temperature: 0.1 }
+      : { temperature: 0.1 },
+  });
+
+  const result = await model.generateContent(userPrompt);
+  const rawText = result.response.text()?.trim();
+  if (!rawText) {
+    throw new Error("empty response");
+  }
+
+  const jsonText = extractJsonText(rawText);
+  return JSON.parse(jsonText) as T;
+}
+
 export async function generateGeminiJson<T>(
   systemInstruction: string,
   userPrompt: string
@@ -63,42 +92,25 @@ export async function generateGeminiJson<T>(
 
   const errors: string[] = [];
 
-  for (const modelName of modelCandidates()) {
-    try {
-      const model = genAI.getGenerativeModel({
-        model: modelName,
-        systemInstruction,
-        generationConfig: {
-          responseMimeType: "application/json",
-          temperature: 0.1,
-        },
-      });
-
-      const result = await model.generateContent(userPrompt);
-      const rawText = result.response.text()?.trim();
-      if (!rawText) {
-        errors.push(`${modelName}: empty response`);
-        continue;
+  for (const modelName of getGeminiModelCandidates()) {
+    for (const jsonMode of [true, false] as const) {
+      try {
+        const data = await generateWithModel<T>(
+          genAI,
+          modelName,
+          systemInstruction,
+          userPrompt,
+          jsonMode
+        );
+        return { ok: true, data, model: modelName };
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        const tag = jsonMode ? "json" : "text";
+        errors.push(`${modelName}(${tag}): ${message}`);
+        console.error(`[gemini] ${modelName}(${tag}) failed:`, message);
       }
-
-      const jsonText = extractJsonText(rawText);
-      const data = JSON.parse(jsonText) as T;
-      return { ok: true, data, model: modelName };
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      errors.push(`${modelName}: ${message}`);
-      console.error(`[gemini] ${modelName} failed:`, message);
     }
   }
 
   return { ok: false, error: errors.join(" | ") || "all models failed" };
-}
-
-/** @deprecated generateGeminiJson 사용 */
-export async function generateGeminiJsonLegacy<T>(
-  systemInstruction: string,
-  userPrompt: string
-): Promise<T | null> {
-  const result = await generateGeminiJson<T>(systemInstruction, userPrompt);
-  return result.ok ? result.data : null;
 }
