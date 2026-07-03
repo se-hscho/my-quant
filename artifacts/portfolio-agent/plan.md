@@ -170,10 +170,10 @@
   - `components/agent/HoldingsEditor.tsx` + `.test.tsx`
   - `components/agent/HoldingsList.tsx` + `.test.tsx`
 - **수용 기준**:
-  - [ ] 티커·수량·자산 유형·결제 통화를 입력하는 폼이 있다
-  - [ ] KRW·USD·JPY 현금을 각각 입력할 수 있다
-  - [ ] 저장 후 보유 목록에 종목과 통화별 현금이 표시된다
-  - [ ] 총자산 금액(KRW 환산) placeholder 또는 "시세 로딩 중"이 화면에 표시된다 (정확한 금액은 Task 4)
+  - [x] 티커·수량·자산 유형·결제 통화를 입력하는 폼이 있다
+  - [x] KRW·USD·JPY 현금을 각각 입력할 수 있다
+  - [x] 저장 후 보유 목록에 종목과 통화별 현금이 표시된다
+  - [x] 총자산 금액(KRW 환산) placeholder 또는 "시세 로딩 중"이 화면에 표시된다 (정확한 금액은 Task 4)
 - **검증**: `bun run test -- HoldingsEditor HoldingsList`
 
 ---
