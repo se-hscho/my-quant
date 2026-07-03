@@ -40,10 +40,19 @@ describe("processAgentChat", () => {
     expect(result.usedLlm).toBeUndefined();
   });
 
-  it("인식 실패 시 LLM으로 변환한 명령을 재파싱한다", async () => {
+  it("인식 실패 시 LLM actions를 직접 사용한다", async () => {
     mockConfigured.mockReturnValue(true);
     mockNormalize.mockResolvedValue({
       normalizedCommand: "SOXX 10주 등록",
+      actions: [
+        {
+          type: "add_holding",
+          ticker: "SOXX",
+          quantity: 10,
+          assetType: "etf",
+          currency: "USD",
+        },
+      ],
       confidence: "high",
     });
 
@@ -53,9 +62,21 @@ describe("processAgentChat", () => {
 
     expect(mockNormalize).toHaveBeenCalledWith("필라델피아 반도체 etf 10주 샀어");
     expect(result.actions[0]).toMatchObject({ ticker: "SOXX", quantity: 10 });
-    expect(result.normalizedCommand).toBe("SOXX 10주 등록");
-    expect(result.usedLlm).toBe(true);
+    expect(result.llmStatus).toBe("active");
     expect(result.reply).toMatch(/입력 해석/);
+  });
+
+  it("LLM API 오류 시 원인을 답변에 포함한다", async () => {
+    mockConfigured.mockReturnValue(true);
+    mockNormalize.mockResolvedValue({
+      normalizedCommand: null,
+      actions: [],
+      error: "gemini-2.0-flash: API key invalid",
+    });
+
+    const result = await processAgentChat({ message: "반도체 10주 샀어" });
+    expect(result.llmStatus).toBe("failed");
+    expect(result.reply).toMatch(/API key invalid/);
   });
 
   it("GEMINI 미설정 시 규칙 파서만 사용하고 안내를 붙인다", async () => {

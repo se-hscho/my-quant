@@ -14,28 +14,38 @@ describe("normalizeChatInputWithLlm", () => {
     mockGenerate.mockReset();
   });
 
-  it("자연어를 명령 형식으로 변환한다", async () => {
+  it("구조화된 actions를 반환한다", async () => {
     mockGenerate.mockResolvedValue({
-      normalizedCommand: "SOXX 10주 등록",
-      confidence: "high",
+      ok: true,
+      model: "gemini-2.0-flash",
+      data: {
+        normalizedCommand: "SOXX 10주 등록",
+        actions: [
+          {
+            type: "add_holding",
+            ticker: "SOXX",
+            quantity: 10,
+            assetType: "etf",
+            currency: "USD",
+          },
+        ],
+        confidence: "high",
+      },
     });
 
     const result = await normalizeChatInputWithLlm("반도체 etf 10주 샀어요");
+    expect(result?.actions[0]).toMatchObject({ ticker: "SOXX", quantity: 10 });
     expect(result?.normalizedCommand).toBe("SOXX 10주 등록");
   });
 
-  it("명령이 아니면 normalizedCommand가 null이다", async () => {
+  it("API 실패 시 error를 담는다", async () => {
     mockGenerate.mockResolvedValue({
-      normalizedCommand: null,
-      confidence: "low",
+      ok: false,
+      error: "404 model not found",
     });
 
-    const result = await normalizeChatInputWithLlm("안 2가 뭐야?");
-    expect(result?.normalizedCommand).toBeNull();
-  });
-
-  it("LLM 실패 시 null을 반환한다", async () => {
-    mockGenerate.mockResolvedValue(null);
-    expect(await normalizeChatInputWithLlm("뭔가 해줘")).toBeNull();
+    const result = await normalizeChatInputWithLlm("뭔가 해줘");
+    expect(result?.error).toMatch(/404/);
+    expect(result?.actions).toEqual([]);
   });
 });

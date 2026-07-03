@@ -1,5 +1,10 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { generateGeminiJson, getGeminiApiKey, isGeminiConfigured } from "./gemini";
+import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
+import {
+  extractJsonText,
+  generateGeminiJson,
+  getGeminiApiKey,
+  isGeminiConfigured,
+} from "./gemini";
 
 describe("gemini", () => {
   const originalKey = process.env.GEMINI_API_KEY;
@@ -27,9 +32,16 @@ describe("gemini", () => {
     expect(isGeminiConfigured()).toBe(true);
   });
 
-  it("API 키 없으면 generateGeminiJson은 null을 반환한다", async () => {
+  it("API 키 없으면 generateGeminiJson은 ok:false를 반환한다", async () => {
     delete process.env.GEMINI_API_KEY;
     const result = await generateGeminiJson<{ ok: boolean }>("sys", "user");
-    expect(result).toBeNull();
+    expect(result.ok).toBe(false);
+  });
+});
+
+describe("extractJsonText", () => {
+  it("markdown fence JSON을 추출한다", () => {
+    const text = '```json\n{"normalizedCommand":"SOXX 10주 등록"}\n```';
+    expect(extractJsonText(text)).toBe('{"normalizedCommand":"SOXX 10주 등록"}');
   });
 });
