@@ -1,7 +1,6 @@
 import type { HoldingsSnapshot } from "@/types/agent";
 import { AGENT_SECTORS, SECTOR_FLOW_FIXTURE } from "@/config/agent";
-import { computeValuation, type ValuationResult } from "@/lib/agent/valuation";
-import { fetchFxRatesFromYahoo, fetchYahooLatestClose } from "@/lib/agent/yahoo-quote";
+import { resolveValuation, type PriceSource } from "@/lib/agent/market-data";
 import { getAnalystReports } from "@/services/analyst/adapter";
 import { getContextFixture } from "@/services/context/adapter";
 import { getEventsFixture } from "@/services/events/adapter";
@@ -15,19 +14,16 @@ export interface GenerateBriefingInput {
   snapshot: HoldingsSnapshot;
   date?: string;
   forceFail?: boolean;
+  /** 미보유 데모 — Yahoo/KV 실패 시 참고 시세 seed 사용 */
+  allowDemoFallback?: boolean;
 }
 
-async function fetchValuation(snapshot: HoldingsSnapshot): Promise<ValuationResult | null> {
-  const fxRaw = await fetchFxRatesFromYahoo();
-  if (!fxRaw.usdKrw || !fxRaw.jpyKrw) return null;
-  const fx = { usdKrw: fxRaw.usdKrw, jpyKrw: fxRaw.jpyKrw };
-  const tickers = [...new Set(snapshot.holdings.map((h) => h.ticker.toUpperCase()))];
-  const prices = Object.fromEntries(
-    await Promise.all(
-      tickers.map(async (t) => [t, await fetchYahooLatestClose(t)] as const)
-    )
-  );
-  return computeValuation(snapshot, prices, fx);
+function priceSourceDisclaimer(source: PriceSource): string {
+  if (source === "yahoo") return "";
+  if (source === "yahoo-partial") {
+    return " 일부 시세는 Yahoo 연동 실패로 참고용 추정치를 사용했습니다.";
+  }
+  return " 시세·환율 연동에 실패해 참고용 추정치(데모 seed)로 계산했습니다.";
 }
 
 function sectorTop3(snapshot: HoldingsSnapshot, totalKrw: number) {
@@ -61,10 +57,13 @@ export async function generateBriefing(
   }
 
   const date = input.date ?? new Date().toISOString().slice(0, 10);
-  const valuation = await fetchValuation(input.snapshot);
-  if (!valuation) {
+  const resolved = await resolveValuation(input.snapshot, {
+    allowDemoFallback: input.allowDemoFallback,
+  });
+  if (!resolved) {
     throw new Error("FX or price data unavailable");
   }
+  const { valuation, priceSource } = resolved;
 
   const scenarios = buildScenarios(
     input.snapshot,
@@ -159,7 +158,7 @@ export async function generateBriefing(
           })),
       },
     },
-    disclaimer: BRIEFING_DISCLAIMER,
+    disclaimer: `${BRIEFING_DISCLAIMER}${priceSourceDisclaimer(priceSource)}`,
     status: "complete",
   };
 

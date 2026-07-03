@@ -40,7 +40,13 @@ function AgentHomeInner() {
   }
 
   if (error || !briefing || !snapshot) {
-    return <BriefingErrorState onRetry={() => void refresh()} loading={loading} />;
+    return (
+      <BriefingErrorState
+        onRetry={() => void refresh()}
+        loading={loading}
+        error={error}
+      />
+    );
   }
 
   return (

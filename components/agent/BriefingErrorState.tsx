@@ -7,13 +7,15 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import type { BriefingErrorInfo } from "@/types/agent-briefing";
 
 export interface BriefingErrorStateProps {
   onRetry: () => void;
   loading?: boolean;
+  error?: BriefingErrorInfo | null;
 }
 
-export function BriefingErrorState({ onRetry, loading }: BriefingErrorStateProps) {
+export function BriefingErrorState({ onRetry, loading, error }: BriefingErrorStateProps) {
   return (
     <Card data-testid="briefing-error-state">
       <CardHeader>
@@ -24,6 +26,24 @@ export function BriefingErrorState({ onRetry, loading }: BriefingErrorStateProps
           시세·환율 또는 저장소 연결 문제일 수 있습니다. 잠시 후 다시 시도해 주세요.
           불완전한 시나리오 안은 표시하지 않습니다.
         </p>
+
+        {error ? (
+          <div
+            className="rounded-md border border-destructive/30 bg-destructive/5 p-3 text-xs"
+            data-testid="briefing-error-detail"
+            role="alert"
+          >
+            <p className="font-mono font-medium text-destructive">
+              [{error.code}]
+              {error.httpStatus != null ? ` HTTP ${error.httpStatus}` : ""}
+            </p>
+            <p className="mt-1 text-foreground">{error.message}</p>
+            {error.detail ? (
+              <p className="mt-2 break-all font-mono text-muted-foreground">{error.detail}</p>
+            ) : null}
+          </div>
+        ) : null}
+
         <Button type="button" onClick={onRetry} disabled={loading}>
           {loading ? "재시도 중…" : "재시도"}
         </Button>

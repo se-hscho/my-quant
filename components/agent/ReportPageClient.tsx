@@ -4,6 +4,9 @@ import { use, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import type { Briefing } from "@/services/briefing/types";
+import type { BriefingErrorInfo } from "@/types/agent-briefing";
+import { BriefingFetchError } from "@/types/agent-briefing";
+import { fetchBriefingByDate } from "@/lib/agent/briefing-fetch";
 import { ReportPageContent } from "./ReportPageContent";
 import { DemoPreviewBanner } from "./DemoPreviewBanner";
 import { BriefingErrorState } from "./BriefingErrorState";
@@ -20,21 +23,24 @@ export function ReportPageClient({
   const isDemo = searchParams.get("demo") === "1";
   const [briefing, setBriefing] = useState<Briefing | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
+  const [error, setError] = useState<BriefingErrorInfo | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
-    setError(false);
+    setError(null);
     try {
-      const q = isDemo ? "?demo=1" : "";
-      const res = await fetch(`/api/agent/briefing/${date}${q}`, { cache: "no-store" });
-      if (!res.ok) throw new Error("not found");
-      const b = (await res.json()) as Briefing;
-      if (b.status !== "complete") throw new Error("incomplete");
+      const b = await fetchBriefingByDate(date, isDemo);
       setBriefing(b);
-    } catch {
-      setError(true);
+    } catch (e) {
       setBriefing(null);
+      if (e instanceof BriefingFetchError) {
+        setError(e.info);
+      } else {
+        setError({
+          code: "UNKNOWN",
+          message: e instanceof Error ? e.message : "브리핑 로드 실패",
+        });
+      }
     } finally {
       setLoading(false);
     }
@@ -56,7 +62,7 @@ export function ReportPageClient({
   if (error || !briefing) {
     return (
       <div className="space-y-4">
-        <BriefingErrorState onRetry={() => void load()} loading={loading} />
+        <BriefingErrorState onRetry={() => void load()} loading={loading} error={error} />
         <Button variant="outline" size="sm" asChild>
           <Link href="/agent">요약으로 돌아가기</Link>
         </Button>

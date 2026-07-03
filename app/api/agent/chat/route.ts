@@ -18,7 +18,10 @@ async function resolveBriefingForChat(snapshot: HoldingsSnapshot | null | undefi
 
   if (useDemo) {
     try {
-      briefing = await generateBriefing({ snapshot: DEMO_PORTFOLIO_SNAPSHOT });
+      briefing = await generateBriefing({
+        snapshot: DEMO_PORTFOLIO_SNAPSHOT,
+        allowDemoFallback: true,
+      });
       await saveBriefing(briefing);
       return briefing;
     } catch {

@@ -7,15 +7,6 @@ const briefingKey = (date: string) => `agent:briefing:${date}`;
 const memoryStore = new Map<string, Briefing>();
 let memoryIndex: string[] = [];
 
-function useMemoryFallback(): boolean {
-  return (
-    process.env.NODE_ENV === "development" ||
-    process.env.BRIEFING_DEV_MEMORY === "1" ||
-    process.env.VITEST === "true" ||
-    !getKv()
-  );
-}
-
 function saveBriefingToMemory(briefing: Briefing): void {
   memoryStore.set(briefing.date, briefing);
   memoryIndex = [briefing.date, ...memoryIndex.filter((d) => d !== briefing.date)].slice(
@@ -25,46 +16,55 @@ function saveBriefingToMemory(briefing: Briefing): void {
 }
 
 export async function saveBriefing(briefing: Briefing): Promise<boolean> {
+  saveBriefingToMemory(briefing);
+
   const kv = getKv();
-  if (kv) {
+  if (!kv) return true;
+
+  try {
     await kv.set(briefingKey(briefing.date), briefing);
     const index = ((await kv.get<string[]>(INDEX_KEY)) ?? []).filter(
       (d) => d !== briefing.date
     );
     index.unshift(briefing.date);
     await kv.set(INDEX_KEY, index.slice(0, 90));
-    saveBriefingToMemory(briefing);
+    return true;
+  } catch {
     return true;
   }
-  if (useMemoryFallback()) {
-    saveBriefingToMemory(briefing);
-    return true;
-  }
-  return false;
 }
 
 export async function getBriefing(date: string): Promise<Briefing | null> {
+  const cached = memoryStore.get(date);
+  if (cached) return cached;
+
   const kv = getKv();
-  if (kv) {
+  if (!kv) return null;
+
+  try {
     const fromKv = await kv.get<Briefing>(briefingKey(date));
-    if (fromKv) return fromKv;
-  }
-  if (useMemoryFallback()) {
+    if (fromKv) {
+      saveBriefingToMemory(fromKv);
+      return fromKv;
+    }
+  } catch {
     return memoryStore.get(date) ?? null;
   }
+
   return null;
 }
 
 export async function listBriefingDates(): Promise<string[]> {
+  if (memoryIndex.length > 0) return [...memoryIndex];
+
   const kv = getKv();
-  if (kv) {
-    const fromKv = (await kv.get<string[]>(INDEX_KEY)) ?? [];
-    if (fromKv.length > 0) return fromKv;
-  }
-  if (useMemoryFallback()) {
+  if (!kv) return [];
+
+  try {
+    return (await kv.get<string[]>(INDEX_KEY)) ?? [];
+  } catch {
     return [...memoryIndex];
   }
-  return [];
 }
 
 export function clearBriefingMemoryForTests(): void {
