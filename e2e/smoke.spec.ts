@@ -1,4 +1,7 @@
 import { expect, test } from "@playwright/test";
+import { registerDeployPreflight } from "./helpers/deploy-preflight";
+
+registerDeployPreflight();
 
 test("agent entry loads", async ({ page }) => {
   await page.goto("/agent");

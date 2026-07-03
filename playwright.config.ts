@@ -7,6 +7,17 @@ const baseURL =
 
 const isRemoteTarget = !/^https?:\/\/localhost(?::\d+)?$/.test(baseURL);
 
+const vercelBypass =
+  process.env.VERCEL_AUTOMATION_BYPASS_SECRET ||
+  process.env.VERCEL_PROTECTION_BYPASS;
+
+const vercelHeaders = vercelBypass
+  ? {
+      "x-vercel-protection-bypass": vercelBypass,
+      "x-vercel-set-bypass-cookie": "true",
+    }
+  : undefined;
+
 export default defineConfig({
   testDir: "./e2e",
   testMatch: /.*\.spec\.ts$/,
@@ -18,6 +29,7 @@ export default defineConfig({
     baseURL,
     trace: "on-first-retry",
     actionTimeout: isRemoteTarget ? 30_000 : 15_000,
+    extraHTTPHeaders: vercelHeaders,
   },
   projects: [
     {

@@ -4,6 +4,9 @@ import {
   postAgentChat,
   REGISTER_REPLY,
 } from "./helpers/agent-chat";
+import { registerDeployPreflight } from "./helpers/deploy-preflight";
+
+registerDeployPreflight();
 
 test.describe("Agent API", () => {
   test("GET /api/agent/chat/status returns health payload", async ({ request }) => {

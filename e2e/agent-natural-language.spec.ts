@@ -5,6 +5,9 @@ import {
   postAgentChat,
   REGISTER_REPLY,
 } from "./helpers/agent-chat";
+import { registerDeployPreflight } from "./helpers/deploy-preflight";
+
+registerDeployPreflight();
 
 test.describe("Agent natural language API", () => {
   test("반도체 etf 10주 샀어 → SOXX", async ({ request }) => {
