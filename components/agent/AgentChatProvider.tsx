@@ -8,6 +8,9 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import type { ChatAction } from "@/types/agent-chat";
+import { applyChatActions } from "@/lib/agent/apply-chat-actions";
+import { loadHoldingsSnapshot } from "@/lib/agent/holdings-storage";
 
 export interface ChatMessage {
   id: string;
@@ -31,17 +34,26 @@ export function useAgentChat() {
   return ctx;
 }
 
-async function fetchChatReply(message: string): Promise<string> {
+interface ChatApiResponse {
+  reply: string;
+  actions?: ChatAction[];
+}
+
+async function fetchChatReply(
+  message: string
+): Promise<ChatApiResponse> {
   const res = await fetch("/api/agent/chat", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ message }),
+    body: JSON.stringify({
+      message,
+      snapshot: loadHoldingsSnapshot(),
+    }),
   });
   if (!res.ok) {
     throw new Error("chat failed");
   }
-  const data = (await res.json()) as { reply: string };
-  return data.reply;
+  return res.json() as Promise<ChatApiResponse>;
 }
 
 export function AgentChatProvider({ children }: { children: ReactNode }) {
@@ -61,7 +73,10 @@ export function AgentChatProvider({ children }: { children: ReactNode }) {
     setIsPending(true);
 
     try {
-      const reply = await fetchChatReply(trimmed);
+      const { reply, actions = [] } = await fetchChatReply(trimmed);
+      if (actions.length > 0) {
+        applyChatActions(actions);
+      }
       setMessages((prev) => [
         ...prev,
         { id: crypto.randomUUID(), role: "assistant", content: reply },

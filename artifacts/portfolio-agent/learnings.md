@@ -21,7 +21,9 @@
 
 채팅 **첫 화면**으로 바꾸려면 spec/와이어프레임 변경 필요 — `/idea-refine` 또는 spec 수정으로 논의.
 
-**2026-07-03 결정:** 브리핑 홈은 유지하되, `/agent/*` 모든 화면 **하단 고정 채팅 독** (`AgentChatDock`) — 항상 질의 가능. Task 20 Gemini는 `/api/agent/chat`에 연동 예정 (현재 스텁).
+**2026-07-03 결정:** 브리핑 홈은 유지하되, `/agent/*` 모든 화면 **하단 고정 채팅 독** (`AgentChatDock`) — 항상 질의 가능.
+
+**2026-07-03 채팅 명령:** 자연어 → `parseChatCommand` → `actions` → 클라이언트 `applyChatActions` (localStorage). 예: `SOXX 10주 등록`, `KRW 현금 5000만 등록`, `보유 목록`, `도움말`.
 
 
 plan.md 의존성 순서 그대로: Task 1 → 2 → 3 … (my-quant 기존 Next.js 앱 활용, Task 0 스캐폴드 생략)

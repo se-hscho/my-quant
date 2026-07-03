@@ -85,7 +85,7 @@ export function AgentChatDock() {
           <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="질문을 입력하세요… (예: 안 2만 자세히 설명해줘)"
+            placeholder="질문을 입력하세요… (예: SOXX 10주 등록, 보유 목록)"
             aria-label="에이전트에게 질문"
             disabled={isPending}
             className="flex-1"
