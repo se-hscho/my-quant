@@ -1,10 +1,10 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const DEFAULT_MODELS = [
-  "gemini-2.0-flash",
   "gemini-1.5-flash",
-  "gemini-2.0-flash-lite",
   "gemini-1.5-flash-8b",
+  "gemini-2.0-flash",
+  "gemini-2.0-flash-lite",
 ] as const;
 
 let client: GoogleGenerativeAI | null = null;
@@ -14,7 +14,10 @@ export type GeminiJsonResult<T> =
   | { ok: false; error: string };
 
 export function getGeminiApiKey(): string | null {
-  const key = process.env.GEMINI_API_KEY?.trim();
+  const key =
+    process.env.GEMINI_API_KEY?.trim() ||
+    process.env.GOOGLE_GENERATIVE_AI_API_KEY?.trim() ||
+    process.env.GOOGLE_API_KEY?.trim();
   return key || null;
 }
 

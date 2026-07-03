@@ -55,7 +55,9 @@ function withLlmHint(
     return `${reply}\n\n💡 자연어 인식은 Preview에 GEMINI_API_KEY 설정 후 재배포가 필요합니다. 지금은 \`SOXX 10주 등록\` 형식을 사용해 주세요.`;
   }
   if (llmStatus === "failed") {
-    const detail = llmError ? `\n(원인: ${llmError.slice(0, 120)})` : "";
+    const detail = llmError
+      ? `\n(원인: ${llmError.slice(0, 240)})`
+      : "";
     return `${reply}\n\n💡 AI 해석에 실패했습니다. 명령 형식으로 다시 입력해 주세요.${detail}`;
   }
   return reply;

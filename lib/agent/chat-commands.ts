@@ -6,6 +6,9 @@ import type {
   ParseChatOptions,
 } from "@/types/agent-chat";
 import { ASSET_TYPE_LABELS, formatCashAmount } from "./holdings-display";
+import { parseKoreanAmount } from "./korean-amount";
+
+export { parseKoreanAmount } from "./korean-amount";
 
 const REGISTER =
   /(?:등록|추가|넣어|설정|업데이트|변경)/;
@@ -20,18 +23,22 @@ const HOLDING_PATTERN_ALT =
   /([A-Z0-9][A-Z0-9.\-]{0,11})\s+(\d+(?:\.\d+)?)\s*(?:주|개)?\s*(?:등록|추가)/i;
 
 const CASH_PATTERN =
-  /(KRW|USD|JPY|원|달러|엔|₩|\$|¥)\s*(?:현금|캐시)?\s*([\d,]+(?:\.\d+)?(?:만|억)?)/i;
+  /(KRW|USD|JPY|원화?|달러|엔|₩|\$|¥)\s*(?:현금|캐시)?\s*([\d,일이삼사오육칠팔구십백천만억]+(?:\.\d+)?(?:만|억|원)?)/i;
+
+const CASH_KR_LEADING =
+  /현금\s+([\d,일이삼사오육칠팔구십백천만억]+(?:\.\d+)?(?:만|억|원)?)\s*(?:추가|등록|넣|설정)/i;
+
+const CASH_KR_TRAILING =
+  /([\d,일이삼사오육칠팔구십백천만억]+(?:\.\d+)?(?:만|억|원)?)\s*(?:원\s*)?현금\s*(?:추가|등록|넣|설정)/i;
 
 const REMOVE_PATTERN = /([A-Z0-9][A-Z0-9.\-]{0,11})\s*(?:삭제|제거)/i;
 
-export function parseKoreanAmount(raw: string): number {
-  const cleaned = raw.replace(/,/g, "").trim();
-  const man = cleaned.match(/^(\d+(?:\.\d+)?)만$/);
-  if (man) return Math.round(parseFloat(man[1]) * 10_000);
-  const eok = cleaned.match(/^(\d+(?:\.\d+)?)억$/);
-  if (eok) return Math.round(parseFloat(eok[1]) * 100_000_000);
-  const n = Number(cleaned);
-  return Number.isFinite(n) && n >= 0 ? n : 0;
+function defaultCashField(message: string): CashField {
+  const inferred = parseCashField(message);
+  if (inferred) return inferred;
+  if (/usd|달러|\$/i.test(message)) return "usd";
+  if (/jpy|엔|¥/i.test(message)) return "jpy";
+  return "krw";
 }
 
 function parseCashField(token: string): CashField | null {
@@ -87,7 +94,7 @@ function helpReply(): string {
     "다음처럼 입력하면 보유 편집이 실행됩니다. (참고용)",
     "• 종목: `SOXX 10주 등록` / `자산 005930.KS 50주 등록`",
     "• 유형·통화: `AAPL 10 etf usd 등록`",
-    "• 현금: `KRW 현금 5000만 등록` / `usd 현금 12000 추가`",
+    "• 현금: `KRW 현금 5000만 등록` / `현금 오만원 추가` / `usd 현금 12000 추가`",
     "• 삭제: `SOXX 삭제`",
     "• 조회: `보유 목록 보여줘`",
     "브리핑·시나리오 질문도 이어서 할 수 있습니다.",
@@ -115,15 +122,27 @@ function tryParseHolding(message: string): ChatAction | null {
 }
 
 function tryParseCash(message: string): ChatAction | null {
+  if (!REGISTER.test(message)) return null;
+
   const match = message.match(CASH_PATTERN);
-  if (!match || !REGISTER.test(message)) return null;
+  if (match) {
+    const field = parseCashField(match[1]) ?? defaultCashField(message);
+    const amount = parseKoreanAmount(match[2]);
+    if (amount > 0) {
+      return { type: "set_cash", field, amount };
+    }
+  }
 
-  const field = parseCashField(match[1]);
-  if (!field) return null;
-  const amount = parseKoreanAmount(match[2]);
-  if (amount <= 0) return null;
+  const krMatch =
+    message.match(CASH_KR_LEADING) ?? message.match(CASH_KR_TRAILING);
+  if (krMatch) {
+    const amount = parseKoreanAmount(krMatch[1]);
+    if (amount > 0) {
+      return { type: "set_cash", field: defaultCashField(message), amount };
+    }
+  }
 
-  return { type: "set_cash", field, amount };
+  return null;
 }
 
 function tryParseRemove(message: string): ChatAction | null {

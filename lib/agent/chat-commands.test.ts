@@ -46,6 +46,15 @@ describe("parseChatCommand", () => {
     });
   });
 
+  it("현금 오만원 추가 → set_cash krw 50000", () => {
+    const r = parseChatCommand({ message: "현금 오만원 추가" });
+    expect(r.actions[0]).toEqual({
+      type: "set_cash",
+      field: "krw",
+      amount: 50_000,
+    });
+  });
+
   it("usd 현금 12000 추가", () => {
     const r = parseChatCommand({ message: "usd 현금 12000 추가" });
     expect(r.actions[0]).toEqual({
