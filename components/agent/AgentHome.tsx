@@ -2,9 +2,10 @@
 
 import { useSyncExternalStore } from "react";
 import { hasRegisteredHoldings, loadHoldingsSnapshot } from "@/lib/agent/holdings-storage";
+import { DEMO_PORTFOLIO_SNAPSHOT } from "@/lib/agent/demo-portfolio";
 import { BriefingProvider, useBriefing } from "./BriefingProvider";
 import { BriefingErrorState } from "./BriefingErrorState";
-import { EmptyHoldingsState } from "./EmptyHoldingsState";
+import { DemoPreviewBanner } from "./DemoPreviewBanner";
 import { SummaryPage } from "./SummaryPage";
 import { useAgentPersonal } from "./AgentPersonalProvider";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -27,8 +28,7 @@ function getServerHoldingsRegistered() {
 }
 
 function AgentHomeInner() {
-  const { briefing, loading, error, refresh } = useBriefing();
-  const snapshot = loadHoldingsSnapshot()!;
+  const { briefing, loading, error, refresh, isDemo, snapshot } = useBriefing();
 
   if (loading && !briefing) {
     return (
@@ -39,11 +39,41 @@ function AgentHomeInner() {
     );
   }
 
-  if (error || !briefing) {
+  if (error || !briefing || !snapshot) {
     return <BriefingErrorState onRetry={() => void refresh()} loading={loading} />;
   }
 
-  return <SummaryPage briefing={briefing} snapshot={snapshot} />;
+  return (
+    <SummaryPage
+      briefing={briefing}
+      snapshot={snapshot}
+      isDemo={isDemo}
+      reportHref={
+        isDemo
+          ? `/agent/report/${briefing.date}?demo=1`
+          : `/agent/report/${briefing.date}`
+      }
+    />
+  );
+}
+
+function AgentHomeDemo() {
+  return (
+    <BriefingProvider snapshotOverride={DEMO_PORTFOLIO_SNAPSHOT} isDemo>
+      <div className="space-y-4">
+        <DemoPreviewBanner />
+        <AgentHomeInner />
+      </div>
+    </BriefingProvider>
+  );
+}
+
+function AgentHomeRegistered() {
+  return (
+    <BriefingProvider>
+      <AgentHomeInner />
+    </BriefingProvider>
+  );
 }
 
 export function AgentHome() {
@@ -64,12 +94,20 @@ export function AgentHome() {
   }
 
   if (!registered) {
-    return <EmptyHoldingsState />;
+    return <AgentHomeDemo />;
   }
 
-  return (
-    <BriefingProvider>
-      <AgentHomeInner />
-    </BriefingProvider>
-  );
+  // 등록됐지만 스냅샷이 비어 있으면 데모 폴백 (손상된 localStorage)
+  const snap = loadHoldingsSnapshot();
+  if (
+    snap &&
+    snap.holdings.length === 0 &&
+    snap.cash.krw === 0 &&
+    snap.cash.usd === 0 &&
+    snap.cash.jpy === 0
+  ) {
+    return <AgentHomeDemo />;
+  }
+
+  return <AgentHomeRegistered />;
 }

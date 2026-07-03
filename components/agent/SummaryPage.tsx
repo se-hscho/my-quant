@@ -20,14 +20,24 @@ import {
 export function SummaryPage({
   briefing,
   snapshot,
+  isDemo = false,
+  reportHref,
 }: {
   briefing: Briefing;
   snapshot: HoldingsSnapshot;
+  isDemo?: boolean;
+  reportHref?: string;
 }) {
   const { valuation, loading, error, refresh } = usePortfolioValuation(snapshot);
+  const detailHref = reportHref ?? `/agent/report/${briefing.date}`;
 
   return (
     <div className="space-y-4" data-testid="summary-page">
+      {isDemo ? (
+        <p className="text-xs text-amber-700 dark:text-amber-400">
+          아래 수치는 예시 포트폴리오 기준이며, Yahoo 시세·환율로 계산됩니다.
+        </p>
+      ) : null}
       <PortfolioValueCard
         valuation={valuation}
         loading={loading}
@@ -64,7 +74,7 @@ export function SummaryPage({
 
       <div className="flex flex-wrap gap-2">
         <Button variant="default" size="sm" asChild>
-          <Link href={`/agent/report/${briefing.date}`}>상세 레포트 보기</Link>
+          <Link href={detailHref}>상세 레포트 보기</Link>
         </Button>
         <Button variant="outline" size="sm" asChild>
           <Link href="/agent/holdings">보유 편집</Link>

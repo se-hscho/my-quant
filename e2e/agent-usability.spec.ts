@@ -14,10 +14,15 @@ test.describe("Agent usability", () => {
     await page.reload();
   });
 
-  test("empty state guides user to register holdings", async ({ page }) => {
-    await expect(page.getByText(/보유|등록|시작/i).first()).toBeVisible({
-      timeout: 30_000,
+  test("empty state shows demo portfolio preview with real briefing", async ({ page }) => {
+    await expect(page.getByTestId("demo-preview-banner")).toBeVisible({
+      timeout: 60_000,
     });
+    await expect(page.getByTestId("summary-page")).toBeVisible({
+      timeout: 60_000,
+    });
+    await expect(page.getByText(/예시 포트폴리오/i).first()).toBeVisible();
+    await expect(page.getByRole("link", { name: "내 보유 등록하기" })).toBeVisible();
     await expect(page.getByTestId("agent-chat-dock")).toBeVisible();
     await expect(page.getByLabel("에이전트에게 질문")).toBeEnabled();
   });

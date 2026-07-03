@@ -52,6 +52,20 @@ describe("AgentHome", () => {
     );
   });
 
+  it("보유가 없으면 예시 포트폴리오 미리보기가 표시된다", async () => {
+    render(<AgentHome />);
+    await waitFor(() => {
+      expect(screen.getByTestId("demo-preview-banner")).toBeInTheDocument();
+    });
+    await waitFor(() => {
+      expect(screen.getByTestId("summary-page")).toBeInTheDocument();
+    });
+    expect(screen.getByRole("link", { name: "내 보유 등록하기" })).toHaveAttribute(
+      "href",
+      "/agent/holdings"
+    );
+  });
+
   it("보유가 등록되면 요약과 상세 링크가 표시된다", async () => {
     localStorage.setItem(
       "agent:holdings:v1",

@@ -11,7 +11,16 @@ function useMemoryFallback(): boolean {
   return (
     process.env.NODE_ENV === "development" ||
     process.env.BRIEFING_DEV_MEMORY === "1" ||
-    process.env.VITEST === "true"
+    process.env.VITEST === "true" ||
+    !getKv()
+  );
+}
+
+function saveBriefingToMemory(briefing: Briefing): void {
+  memoryStore.set(briefing.date, briefing);
+  memoryIndex = [briefing.date, ...memoryIndex.filter((d) => d !== briefing.date)].slice(
+    0,
+    90
   );
 }
 
@@ -24,14 +33,11 @@ export async function saveBriefing(briefing: Briefing): Promise<boolean> {
     );
     index.unshift(briefing.date);
     await kv.set(INDEX_KEY, index.slice(0, 90));
+    saveBriefingToMemory(briefing);
     return true;
   }
   if (useMemoryFallback()) {
-    memoryStore.set(briefing.date, briefing);
-    memoryIndex = [briefing.date, ...memoryIndex.filter((d) => d !== briefing.date)].slice(
-      0,
-      90
-    );
+    saveBriefingToMemory(briefing);
     return true;
   }
   return false;
@@ -40,7 +46,8 @@ export async function saveBriefing(briefing: Briefing): Promise<boolean> {
 export async function getBriefing(date: string): Promise<Briefing | null> {
   const kv = getKv();
   if (kv) {
-    return (await kv.get<Briefing>(briefingKey(date))) ?? null;
+    const fromKv = await kv.get<Briefing>(briefingKey(date));
+    if (fromKv) return fromKv;
   }
   if (useMemoryFallback()) {
     return memoryStore.get(date) ?? null;
@@ -51,7 +58,8 @@ export async function getBriefing(date: string): Promise<Briefing | null> {
 export async function listBriefingDates(): Promise<string[]> {
   const kv = getKv();
   if (kv) {
-    return (await kv.get<string[]>(INDEX_KEY)) ?? [];
+    const fromKv = (await kv.get<string[]>(INDEX_KEY)) ?? [];
+    if (fromKv.length > 0) return fromKv;
   }
   if (useMemoryFallback()) {
     return [...memoryIndex];

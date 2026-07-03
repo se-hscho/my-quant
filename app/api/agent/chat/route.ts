@@ -1,7 +1,32 @@
 import { NextResponse } from "next/server";
 import type { HoldingsSnapshot } from "@/types/agent";
+import { DEMO_PORTFOLIO_SNAPSHOT } from "@/lib/agent/demo-portfolio";
 import { processAgentChat } from "@/services/agent/chat-orchestrator";
-import { getBriefing } from "@/services/briefing/kv";
+import { generateBriefing } from "@/services/briefing/generate";
+import { getBriefing, saveBriefing } from "@/services/briefing/kv";
+
+async function resolveBriefingForChat(snapshot: HoldingsSnapshot | null | undefined) {
+  const today = new Date().toISOString().slice(0, 10);
+  let briefing = await getBriefing(today);
+  if (briefing?.status === "complete") return briefing;
+
+  const useDemo =
+    !snapshot?.holdings?.length &&
+    !snapshot?.cash?.krw &&
+    !snapshot?.cash?.usd &&
+    !snapshot?.cash?.jpy;
+
+  if (useDemo) {
+    try {
+      briefing = await generateBriefing({ snapshot: DEMO_PORTFOLIO_SNAPSHOT });
+      await saveBriefing(briefing);
+      return briefing;
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}
 
 export async function POST(request: Request) {
   let message = "";
@@ -22,8 +47,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "message required" }, { status: 400 });
   }
 
-  const today = new Date().toISOString().slice(0, 10);
-  const briefing = await getBriefing(today);
+  const briefing = await resolveBriefingForChat(snapshot);
 
   const { reply, actions, normalizedCommand, usedLlm, llmStatus } =
     await processAgentChat({
