@@ -39,3 +39,26 @@ export function clearHoldings(): void {
   if (typeof localStorage === "undefined") return;
   localStorage.removeItem(HOLDINGS_KEY);
 }
+
+export function createEmptySnapshot(): HoldingsSnapshot {
+  return {
+    holdings: [],
+    cash: emptyCash(),
+    updatedAt: new Date().toISOString(),
+  };
+}
+
+export function notifyHoldingsUpdated(): void {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event("agent-holdings-updated"));
+  }
+}
+
+export function persistHoldingsSnapshot(snapshot: HoldingsSnapshot): boolean {
+  const ok = saveHoldingsSnapshot({
+    ...snapshot,
+    updatedAt: new Date().toISOString(),
+  });
+  if (ok) notifyHoldingsUpdated();
+  return ok;
+}
