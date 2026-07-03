@@ -1,6 +1,9 @@
 import { expect, test } from "@playwright/test";
-
-const REGISTER_REPLY = /등록했습니다|반영했습니다/;
+import {
+  expectAddHolding,
+  postAgentChat,
+  REGISTER_REPLY,
+} from "./helpers/agent-chat";
 
 test.describe("Agent API", () => {
   test("GET /api/agent/chat/status returns health payload", async ({ request }) => {
@@ -20,42 +23,13 @@ test.describe("Agent API", () => {
   });
 
   test("POST /api/agent/chat registers 삼전 10주", async ({ request }) => {
-    const res = await request.post("/api/agent/chat", {
-      data: { message: "삼전 10주", snapshot: null },
-    });
-    expect(res.ok()).toBeTruthy();
-
-    const body = (await res.json()) as {
-      reply: string;
-      actions: Array<{ type: string; ticker?: string; quantity?: number }>;
-    };
-
-    expect(body.actions[0]).toMatchObject({
-      type: "add_holding",
-      ticker: "005930.KS",
-      quantity: 10,
-    });
-    expect(body.reply).toMatch(REGISTER_REPLY);
-    expect(body.reply).not.toMatch(/명령을 이해하지 못했습니다/);
+    const body = await postAgentChat(request, "삼전 10주");
+    expectAddHolding(body, { ticker: "005930.KS", quantity: 10 });
   });
 
   test("POST /api/agent/chat registers SOXX 10주 등록", async ({ request }) => {
-    const res = await request.post("/api/agent/chat", {
-      data: { message: "SOXX 10주 등록", snapshot: null },
-    });
-    expect(res.ok()).toBeTruthy();
-
-    const body = (await res.json()) as {
-      reply: string;
-      actions: Array<{ type: string; ticker?: string; quantity?: number }>;
-    };
-
-    expect(body.actions[0]).toMatchObject({
-      type: "add_holding",
-      ticker: "SOXX",
-      quantity: 10,
-    });
-    expect(body.reply).toMatch(REGISTER_REPLY);
+    const body = await postAgentChat(request, "SOXX 10주 등록");
+    expectAddHolding(body, { ticker: "SOXX", quantity: 10 });
   });
 });
 
