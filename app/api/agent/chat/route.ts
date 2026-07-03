@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type { HoldingsSnapshot } from "@/types/agent";
-import { parseChatCommand } from "@/lib/agent/chat-commands";
+import { processAgentChat } from "@/services/agent/chat-orchestrator";
 
 export async function POST(request: Request) {
   let message = "";
@@ -21,7 +21,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "message required" }, { status: 400 });
   }
 
-  const { reply, actions } = parseChatCommand({ message, snapshot });
+  const { reply, actions, normalizedCommand, usedLlm } = await processAgentChat({
+    message,
+    snapshot,
+  });
 
-  return NextResponse.json({ reply, actions });
+  return NextResponse.json({ reply, actions, normalizedCommand, usedLlm });
 }

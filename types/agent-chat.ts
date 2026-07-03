@@ -18,6 +18,11 @@ export interface ChatCommandResult {
   actions: ChatAction[];
 }
 
+export interface AgentChatApiResponse extends ChatCommandResult {
+  normalizedCommand?: string | null;
+  usedLlm?: boolean;
+}
+
 export interface ParseChatOptions {
   message: string;
   snapshot?: HoldingsSnapshot | null;

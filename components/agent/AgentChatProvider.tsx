@@ -9,7 +9,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import type { ChatAction } from "@/types/agent-chat";
+import type { AgentChatApiResponse } from "@/types/agent-chat";
 import type { StoredChatMessage } from "@/types/agent-personal";
 import { applyChatActions } from "@/lib/agent/apply-chat-actions";
 import {
@@ -40,10 +40,7 @@ export function useAgentChat() {
   return ctx;
 }
 
-interface ChatApiResponse {
-  reply: string;
-  actions?: ChatAction[];
-}
+interface ChatApiResponse extends AgentChatApiResponse {}
 
 async function fetchChatReply(message: string): Promise<ChatApiResponse> {
   const res = await fetch("/api/agent/chat", {
