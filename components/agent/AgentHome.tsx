@@ -1,10 +1,12 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
+import Link from "next/link";
 import { hasRegisteredHoldings } from "@/lib/agent/holdings-storage";
 import { EmptyHoldingsState } from "./EmptyHoldingsState";
 import { useAgentPersonal } from "./AgentPersonalProvider";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 
 function subscribeHoldings(onStoreChange: () => void) {
   window.addEventListener("storage", onStoreChange);
@@ -45,8 +47,13 @@ export function AgentHome() {
   }
 
   return (
-    <p className="text-center text-muted-foreground text-sm">
-      보유가 등록되었습니다. 브리핑은 다음 Task에서 제공됩니다.
-    </p>
+    <div className="space-y-4 text-center">
+      <p className="text-muted-foreground text-sm">
+        보유가 등록되었습니다. 브리핑은 다음 Task에서 제공됩니다.
+      </p>
+      <Button variant="outline" asChild>
+        <Link href="/agent/holdings">보유 자산 편집</Link>
+      </Button>
+    </div>
   );
 }
