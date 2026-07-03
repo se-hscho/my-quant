@@ -7,7 +7,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
-type LlmStatus = "checking" | "active" | "inactive";
+const QUICK_PROMPTS = [
+  "삼전 10주",
+  "반도체 etf 10주 샀어",
+  "보유 목록 보여줘",
+  "현금 오만원 추가",
+  "도움말",
+] as const;
+
+type LlmStatus = "checking" | "active" | "inactive" | "rules_first";
 
 export function AgentChatDock() {
   const { messages, isPending, sendMessage } = useAgentChat();
@@ -22,16 +30,24 @@ export function AgentChatDock() {
     let cancelled = false;
     void fetch("/api/agent/chat/status", { cache: "no-store" })
       .then((res) => (res.ok ? res.json() : null))
-      .then((data: { geminiActive?: boolean; geminiConfigured?: boolean } | null) => {
-        if (cancelled) return;
-        setLlmStatus(
-          data?.geminiActive
-            ? "active"
-            : data?.geminiConfigured
-              ? "inactive"
-              : "inactive"
-        );
-      })
+      .then(
+        (
+          data: {
+            geminiActive?: boolean;
+            geminiConfigured?: boolean;
+            llmRateLimit?: { remaining: number };
+          } | null
+        ) => {
+          if (cancelled) return;
+          if (data?.geminiActive) {
+            setLlmStatus("rules_first");
+          } else if (data?.geminiConfigured) {
+            setLlmStatus("inactive");
+          } else {
+            setLlmStatus("inactive");
+          }
+        }
+      )
       .catch(() => {
         if (!cancelled) setLlmStatus("inactive");
       });
@@ -49,12 +65,18 @@ export function AgentChatDock() {
     await sendMessage(text);
   }
 
+  async function handleQuickPrompt(text: string) {
+    if (isPending) return;
+    setExpanded(true);
+    await sendMessage(text);
+  }
+
   return (
     <div
       className="shrink-0 border-t bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80"
       data-testid="agent-chat-dock"
     >
-      <div className="mx-auto flex max-h-[min(42vh,17rem)] max-w-3xl flex-col">
+      <div className="mx-auto flex max-h-[min(48vh,20rem)] max-w-3xl flex-col">
         <div className="flex shrink-0 items-center justify-between gap-2 px-4 pt-2">
           <div className="flex items-center gap-2">
             <span className="text-xs font-medium text-muted-foreground">
@@ -62,16 +84,19 @@ export function AgentChatDock() {
             </span>
             {llmStatus === "checking" ? (
               <span className="text-[10px] text-muted-foreground">AI 확인 중…</span>
-            ) : llmStatus === "active" ? (
-              <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] text-emerald-700 dark:text-emerald-400">
-                AI 자연어 ON
+            ) : llmStatus === "rules_first" ? (
+              <span
+                className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] text-emerald-700 dark:text-emerald-400"
+                title="자주 쓰는 표현은 AI 없이 처리, 나머지는 AI 보조"
+              >
+                규칙 우선 · AI 보조
               </span>
             ) : (
               <span
-                className="rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] text-amber-800 dark:text-amber-400"
-                title="키는 있으나 API 연결 실패 — /api/agent/chat/status 확인"
+                className="rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground"
+                title="GEMINI 미설정 또는 연결 실패 — 규칙 파서만 사용"
               >
-                AI 연결 실패
+                오프라인 규칙
               </span>
             )}
           </div>
@@ -92,6 +117,22 @@ export function AgentChatDock() {
               />
             </Button>
           ) : null}
+        </div>
+
+        <div className="flex shrink-0 flex-wrap gap-1.5 px-4 pb-1">
+          {QUICK_PROMPTS.map((text) => (
+            <Button
+              key={text}
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-7 text-[11px]"
+              disabled={isPending}
+              onClick={() => void handleQuickPrompt(text)}
+            >
+              {text}
+            </Button>
+          ))}
         </div>
 
         {showTranscript ? (
@@ -131,7 +172,7 @@ export function AgentChatDock() {
           <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="질문을 입력하세요… (예: 반도체 etf 10주 샀어)"
+            placeholder="삼전 10주, 반도체 etf 10주 샀어…"
             aria-label="에이전트에게 질문"
             disabled={isPending}
             className="flex-1"
@@ -146,7 +187,7 @@ export function AgentChatDock() {
           </Button>
         </form>
         <p className="shrink-0 px-4 pb-2 text-[10px] text-muted-foreground">
-          참고용 안내이며 투자 권유가 아닙니다.
+          참고용 안내이며 투자 권유가 아닙니다. AI 무료 한도 절약을 위해 자주 쓰는 표현은 규칙으로 먼저 처리합니다.
         </p>
       </div>
     </div>

@@ -1,5 +1,5 @@
-import { describe, it, expect } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { render, screen, waitFor } from "@testing-library/react";
 import { HoldingsList } from "./HoldingsList";
 import type { HoldingsSnapshot } from "@/types/agent";
 
@@ -26,6 +26,23 @@ const snapshot: HoldingsSnapshot = {
 };
 
 describe("HoldingsList", () => {
+  beforeEach(() => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          totalKrw: 100_000_000,
+          cashKrw: 50_000_000,
+          holdingsKrw: 50_000_000,
+          holdings: [],
+          fx: { usdKrw: 1350, jpyKrw: 9.2 },
+          warnings: [],
+        }),
+      })
+    );
+  });
+
   it("보유 종목과 통화별 현금이 표시된다", () => {
     render(<HoldingsList snapshot={snapshot} />);
     expect(screen.getByText("SOXX")).toBeInTheDocument();
@@ -35,8 +52,11 @@ describe("HoldingsList", () => {
     expect(screen.getByText(/\$12,000/)).toBeInTheDocument();
   });
 
-  it("총자산 영역에 시세 로딩 중이 표시된다", () => {
+  it("총자산 KRW가 로드되면 표시된다", async () => {
     render(<HoldingsList snapshot={snapshot} />);
-    expect(screen.getByText("시세 로딩 중")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByTestId("portfolio-value-card")).toBeInTheDocument();
+    });
+    expect(screen.getByText("₩100,000,000")).toBeInTheDocument();
   });
 });

@@ -17,6 +17,24 @@ import {
 } from "@/lib/agent/personal-sync";
 import { loadHoldingsSnapshot } from "@/lib/agent/holdings-storage";
 import { useAgentPersonal } from "./AgentPersonalProvider";
+import { toast } from "sonner";
+import type { ChatAction } from "@/types/agent-chat";
+
+function toastForActions(actions: ChatAction[]) {
+  if (actions.length === 0) return;
+  const hasAdd = actions.some((a) => a.type === "add_holding");
+  const hasCash = actions.some((a) => a.type === "set_cash");
+  const hasRemove = actions.some((a) => a.type === "remove_holding");
+  if (hasAdd) {
+    toast.success("보유가 등록되었습니다", {
+      description: "대시보드에 반영됩니다. (참고용)",
+    });
+  } else if (hasCash) {
+    toast.success("현금이 반영되었습니다", { description: "참고용 안내입니다." });
+  } else if (hasRemove) {
+    toast.success("보유에서 제거되었습니다", { description: "참고용 안내입니다." });
+  }
+}
 
 export interface ChatMessage {
   id: string;
@@ -95,6 +113,7 @@ export function AgentChatProvider({ children }: { children: ReactNode }) {
         const { reply, actions = [] } = await fetchChatReply(trimmed);
         if (actions.length > 0) {
           applyChatActions(actions);
+          toastForActions(actions);
         }
         const withReply: ChatMessage[] = [
           ...withUser,

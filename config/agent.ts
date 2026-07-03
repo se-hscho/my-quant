@@ -35,3 +35,17 @@ export const KNOWN_TICKER_CLASSIFICATIONS: Record<
   GLD: { sector: "gold", region: "US" },
   TLT: { sector: "bonds", region: "US" },
 };
+
+/** 환전 스프레드 (%) — MVP 고정 */
+export const FX_SPREAD_PCT = 0.3;
+
+/** 섹터 자금 흐름 fixture (브리핑 로컬 요약용, LLM 없음) */
+export const SECTOR_FLOW_FIXTURE: Array<{
+  sector: AgentSectorId;
+  flowScore: number;
+  label: string;
+}> = [
+  { sector: "semiconductor", flowScore: 0.82, label: "반도체" },
+  { sector: "technology", flowScore: 0.65, label: "기술" },
+  { sector: "financials", flowScore: 0.41, label: "금융" },
+];

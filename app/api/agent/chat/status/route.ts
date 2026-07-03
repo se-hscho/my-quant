@@ -8,6 +8,7 @@ import {
   probeGeminiConnection,
   verifyGeminiModelsList,
 } from "@/services/ai/gemini";
+import { getLlmRateLimitStatus } from "@/services/ai/llm-rate-limit";
 
 export async function GET() {
   const configured = isGeminiConfigured();
@@ -33,6 +34,7 @@ export async function GET() {
     modelsList,
     probe,
     geminiActive: probe?.ok === true,
+    llmRateLimit: getLlmRateLimitStatus(),
     hints,
   });
 }

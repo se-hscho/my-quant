@@ -1,10 +1,11 @@
+"use client";
+
 import type { HoldingsSnapshot } from "@/types/agent";
 import {
   ASSET_TYPE_LABELS,
   CURRENCY_LABELS,
   formatCashAmount,
   formatQuantity,
-  TOTAL_ASSETS_PLACEHOLDER,
 } from "@/lib/agent/holdings-display";
 import { AGENT_SECTOR_LABELS, type AgentSectorId } from "@/config/agent";
 import {
@@ -13,14 +14,24 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { PortfolioValueCard } from "./PortfolioValueCard";
+import { usePortfolioValuation } from "@/hooks/usePortfolioValuation";
 
 export interface HoldingsListProps {
   snapshot: HoldingsSnapshot;
 }
 
 export function HoldingsList({ snapshot }: HoldingsListProps) {
+  const { valuation, loading, error, refresh } = usePortfolioValuation(snapshot);
+
   return (
     <div className="space-y-4">
+      <PortfolioValueCard
+        valuation={valuation}
+        loading={loading}
+        error={error}
+        onRefresh={() => void refresh()}
+      />
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-base">통화별 현금</CardTitle>
@@ -69,15 +80,6 @@ export function HoldingsList({ snapshot }: HoldingsListProps) {
               </table>
             </div>
           )}
-        </CardContent>
-      </Card>
-
-      <Card className="border-dashed">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base">총자산 (KRW)</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground">{TOTAL_ASSETS_PLACEHOLDER}</p>
         </CardContent>
       </Card>
     </div>

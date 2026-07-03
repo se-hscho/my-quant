@@ -7,12 +7,17 @@ import {
   isGeminiConfigured,
   isTransientGeminiError,
 } from "@/services/ai/gemini";
+import {
+  canInvokeLlm,
+  getLlmRateLimitStatus,
+  recordLlmCall,
+} from "@/services/ai/llm-rate-limit";
 import { normalizeChatInputWithLlm } from "@/services/agent/chat-llm";
 
 export interface AgentChatResponse extends ChatCommandResult {
   normalizedCommand?: string | null;
   usedLlm?: boolean;
-  llmStatus?: "active" | "unconfigured" | "failed" | "skipped";
+  llmStatus?: "active" | "unconfigured" | "failed" | "skipped" | "rate_limited";
 }
 
 function isUnrecognizedCommand(result: ChatCommandResult): boolean {
@@ -52,23 +57,27 @@ function buildReplyForActions(actions: ChatAction[]): string {
 }
 
 function buildLlmFailureHint(llmError?: string): string {
-  const detail = llmError ? `\n(원인: ${llmError.slice(0, 320)})` : "";
+  const detail = llmError ? `\n(원인: ${llmError.slice(0, 200)})` : "";
   const envModel = process.env.GEMINI_MODEL?.trim();
   const modelLines: string[] = [];
 
   if (envModel && isBlockedGeminiModel(envModel)) {
     modelLines.push(
-      `· Vercel의 GEMINI_MODEL=${envModel} 은(는) 더 이상 지원되지 않습니다. 변수를 삭제하거나 ${GEMINI_DEFAULT_MODEL} 로 변경 후 재배포하세요.`
+      `· GEMINI_MODEL=${envModel} 은 지원 종료. ${GEMINI_DEFAULT_MODEL} 로 변경하세요.`
     );
   }
 
-  if (/API key not valid|forbidden|GEMINI_API_KEY not configured/i.test(llmError ?? "")) {
-    modelLines.push(
-      "· GEMINI_API_KEY는 Google AI Studio(https://aistudio.google.com/apikey)에서 발급한 키여야 합니다."
-    );
+  if (/API key not valid|forbidden/i.test(llmError ?? "")) {
+    modelLines.push("· GEMINI_API_KEY는 Google AI Studio 키여야 합니다.");
   }
 
-  return `${detail}\n\n💡 AI 해석에 실패했습니다.\n${modelLines.join("\n")}\n· Preview에서 /api/agent/chat/status 를 열어 modelsList·probe·hints 를 확인하세요.`;
+  return `${detail}\n\n💡 AI 해석에 실패했습니다. \`삼전 10주\`, \`SOXX 10주 등록\` 처럼 입력해 보세요.`;
+}
+
+function rateLimitHint(): string {
+  const { retryAfterMs } = getLlmRateLimitStatus();
+  const sec = Math.ceil(retryAfterMs / 1000);
+  return `\n\n💡 AI 무료 한도 보호: 잠시 후(${sec}초) 다시 시도하거나 \`삼전 10주\`처럼 바로 인식되는 표현을 써 주세요.`;
 }
 
 function withLlmHint(
@@ -77,10 +86,16 @@ function withLlmHint(
   llmError?: string
 ): string {
   if (llmStatus === "unconfigured") {
-    return `${reply}\n\n💡 자연어 등록은 Preview에 GEMINI_API_KEY 설정 후 재배포가 필요합니다. 지금은 \`SOXX 10주 등록\` 형식을 사용해 주세요.`;
+    return `${reply}\n\n💡 자연어 AI는 GEMINI_API_KEY 설정 후 사용 가능합니다. 지금은 \`SOXX 10주 등록\`, \`삼전 10주\` 형식을 써 주세요.`;
+  }
+  if (llmStatus === "rate_limited") {
+    return `${reply}${rateLimitHint()}`;
   }
   if (llmStatus === "failed") {
-    return `${reply}${buildLlmFailureHint(llmError)}`;
+    const note = isTransientGeminiError(llmError ?? "")
+      ? "\n\n💡 AI 서버가 혼잡합니다. 잠시 후 재시도하거나 아래 형식을 사용하세요."
+      : buildLlmFailureHint(llmError);
+    return `${reply}${note}`;
   }
   return reply;
 }
@@ -106,6 +121,7 @@ function successFromLlm(
 async function tryLlmMutation(
   message: string
 ): Promise<{ response: AgentChatResponse; error?: string }> {
+  recordLlmCall();
   const llm = await normalizeChatInputWithLlm(message);
   if (!llm) {
     return {
@@ -129,9 +145,8 @@ async function tryLlmMutation(
     };
   }
 
-  const error = llm.error ?? "no actions in llm response";
   return {
-    error,
+    error: llm.error ?? "no actions in llm response",
     response: {
       reply: "명령을 이해하지 못했습니다. (참고용)",
       actions: [],
@@ -154,45 +169,49 @@ export async function processAgentChat(
     return { ...parseChatCommand(options), llmStatus: "skipped" };
   }
 
-  if (isGeminiConfigured()) {
-    const { response: llmResult, error: llmError } = await tryLlmMutation(message);
-    if (llmResult.llmStatus === "active") {
-      return llmResult;
-    }
-
-    const fallback = parseChatCommand(options);
-    if (!isUnrecognizedCommand(fallback)) {
-      const note = isTransientGeminiError(llmError ?? "")
-        ? "\n\n💡 AI 서버가 일시적으로 혼잡해 바로 등록했습니다."
-        : "\n\n💡 AI 해석은 실패했지만 기본 명령 형식으로 처리했습니다.";
-      return {
-        ...fallback,
-        llmStatus: "failed",
-        reply: `${fallback.reply}${note}`,
-      };
-    }
-
-    const failureReply = isTransientGeminiError(llmError ?? "")
-      ? `${fallback.reply}\n\n💡 AI 서버가 일시적으로 혼잡합니다(503). 잠시 후 다시 시도해 주세요.`
-      : withLlmHint(fallback.reply, "failed", llmError);
-
-    return {
-      ...fallback,
-      normalizedCommand: llmResult.normalizedCommand,
-      usedLlm: true,
-      llmStatus: "failed",
-      reply: failureReply,
-    };
-  }
-
   const direct = parseChatCommand(options);
   if (!isUnrecognizedCommand(direct)) {
     return { ...direct, llmStatus: "skipped" };
   }
 
+  if (!isGeminiConfigured()) {
+    return {
+      ...direct,
+      llmStatus: "unconfigured",
+      reply: withLlmHint(direct.reply, "unconfigured"),
+    };
+  }
+
+  if (!canInvokeLlm()) {
+    return {
+      ...direct,
+      llmStatus: "rate_limited",
+      reply: withLlmHint(direct.reply, "rate_limited"),
+    };
+  }
+
+  const { response: llmResult, error: llmError } = await tryLlmMutation(message);
+  if (llmResult.llmStatus === "active") {
+    return llmResult;
+  }
+
+  const fallback = parseChatCommand(options);
+  if (!isUnrecognizedCommand(fallback)) {
+    const note = isTransientGeminiError(llmError ?? "")
+      ? "\n\n💡 AI가 혼잡해 규칙으로 바로 처리했습니다."
+      : "\n\n💡 AI 해석 실패 — 규칙으로 처리했습니다.";
+    return {
+      ...fallback,
+      llmStatus: "failed",
+      reply: `${fallback.reply}${note}`,
+    };
+  }
+
   return {
-    ...direct,
-    llmStatus: "unconfigured",
-    reply: withLlmHint(direct.reply, "unconfigured"),
+    ...fallback,
+    normalizedCommand: llmResult.normalizedCommand,
+    usedLlm: true,
+    llmStatus: "failed",
+    reply: withLlmHint(fallback.reply, "failed", llmError),
   };
 }
