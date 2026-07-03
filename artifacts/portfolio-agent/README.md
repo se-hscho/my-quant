@@ -1,6 +1,6 @@
 # 포트폴리오 에이전트 — 와이어프레임 (Vercel)
 
-`my-quant` 레포 **`cursor/portfolio-agent-spec-f106`** 브랜치에서 문서·와이어프레임을 관리합니다.
+`my-quant` **`main`** 브랜치의 `artifacts/portfolio-agent/` 에 있습니다. (개발 브랜치 `cursor/portfolio-agent-spec-f106`와 동일 내용)
 
 | 파일 | 설명 |
 |---|---|
