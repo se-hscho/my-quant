@@ -21,8 +21,10 @@ const COMMAND_SYSTEM_PROMPT = `당신은 포트폴리오 관리 에이전트의 
 - 반도체 ETF/필라델피아 반도체/반도체 etf → SOXX (etf, USD)
 - 애플 → AAPL, 엔비디아 → NVDA
 
-## normalizedCommand
-actions가 있으면 사람이 읽을 명령 문자열도 함께 넣습니다. 예: "SOXX 10주 등록"
+## 중요
+- 보유 등록·현금 반영·삭제 요청이면 **반드시 actions 배열에 실행 가능한 항목을 넣으세요.**
+- normalizedCommand만 내고 actions를 비우지 마세요.
+- 티커·수량·통화를 추론할 수 있으면 actions에 바로 넣습니다.
 
 ## 출력 JSON (이 스키마만)
 {

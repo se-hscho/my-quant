@@ -18,6 +18,14 @@ import { normalizeChatInputWithLlm } from "@/services/agent/chat-llm";
 const mockConfigured = vi.mocked(isGeminiConfigured);
 const mockNormalize = vi.mocked(normalizeChatInputWithLlm);
 
+const soxxAction = {
+  type: "add_holding" as const,
+  ticker: "SOXX",
+  quantity: 10,
+  assetType: "etf" as const,
+  currency: "USD" as const,
+};
+
 describe("processAgentChat", () => {
   const originalKey = process.env.GEMINI_API_KEY;
 
@@ -34,58 +42,44 @@ describe("processAgentChat", () => {
     mockNormalize.mockReset();
   });
 
-  it("이미 인식되는 명령은 LLM 없이 처리한다", async () => {
-    mockConfigured.mockReturnValue(true);
-
-    const result = await processAgentChat({ message: "SOXX 10주 등록" });
-    expect(result.actions[0]).toMatchObject({ ticker: "SOXX", quantity: 10 });
-    expect(mockNormalize).not.toHaveBeenCalled();
-    expect(result.usedLlm).toBeUndefined();
-  });
-
-  it("한국어 별칭(필라델피아 반도체)은 LLM 없이 처리한다", async () => {
-    mockConfigured.mockReturnValue(true);
-
-    const result = await processAgentChat({
-      message: "필라델피아 반도체 etf 10주 샀어",
-    });
-    expect(mockNormalize).not.toHaveBeenCalled();
-    expect(result.actions[0]).toMatchObject({ ticker: "SOXX", quantity: 10 });
-    expect(result.llmStatus).toBe("skipped");
-  });
-
-  it("인식 실패 시 LLM actions를 직접 사용한다", async () => {
+  it("Gemini 설정 시 등록 명령은 LLM actions로 처리한다", async () => {
     mockConfigured.mockReturnValue(true);
     mockNormalize.mockResolvedValue({
       normalizedCommand: "SOXX 10주 등록",
-      actions: [
-        {
-          type: "add_holding",
-          ticker: "SOXX",
-          quantity: 10,
-          assetType: "etf",
-          currency: "USD",
-        },
-      ],
+      actions: [soxxAction],
+      confidence: "high",
+    });
+
+    const result = await processAgentChat({ message: "SOXX 10주 등록" });
+    expect(mockNormalize).toHaveBeenCalledWith("SOXX 10주 등록");
+    expect(result.actions[0]).toMatchObject({ ticker: "SOXX", quantity: 10 });
+    expect(result.llmStatus).toBe("active");
+    expect(result.usedLlm).toBe(true);
+  });
+
+  it("자연어 등록도 LLM actions를 직접 사용한다", async () => {
+    mockConfigured.mockReturnValue(true);
+    mockNormalize.mockResolvedValue({
+      normalizedCommand: "SOXX 10주 등록",
+      actions: [soxxAction],
       confidence: "high",
     });
 
     const result = await processAgentChat({
-      message: "요즘 핫한 반도체 테마 10주 사고 싶어",
+      message: "반도체 etf 10주 샀어",
     });
 
-    expect(mockNormalize).toHaveBeenCalledWith("요즘 핫한 반도체 테마 10주 사고 싶어");
+    expect(mockNormalize).toHaveBeenCalledWith("반도체 etf 10주 샀어");
     expect(result.actions[0]).toMatchObject({ ticker: "SOXX", quantity: 10 });
     expect(result.llmStatus).toBe("active");
-    expect(result.reply).toMatch(/입력 해석/);
   });
 
-  it("반도체 etf 별칭도 LLM 없이 처리한다", async () => {
+  it("도움말은 LLM 없이 규칙 파서만 사용한다", async () => {
     mockConfigured.mockReturnValue(true);
 
-    const result = await processAgentChat({ message: "반도체 etf 10주 샀어" });
+    const result = await processAgentChat({ message: "도움말" });
     expect(mockNormalize).not.toHaveBeenCalled();
-    expect(result.actions[0]).toMatchObject({ ticker: "SOXX", quantity: 10 });
+    expect(result.reply).toMatch(/등록/);
     expect(result.llmStatus).toBe("skipped");
   });
 
@@ -100,6 +94,19 @@ describe("processAgentChat", () => {
     const result = await processAgentChat({ message: "이상한 자연어 문장만 있음" });
     expect(result.llmStatus).toBe("failed");
     expect(result.reply).toMatch(/API key invalid/);
+  });
+
+  it("LLM 실패 시 규칙 파서로 폴백한다", async () => {
+    mockConfigured.mockReturnValue(true);
+    mockNormalize.mockResolvedValue({
+      normalizedCommand: null,
+      actions: [],
+      error: "timeout",
+    });
+
+    const result = await processAgentChat({ message: "SOXX 10주 등록" });
+    expect(result.actions[0]).toMatchObject({ ticker: "SOXX", quantity: 10 });
+    expect(result.reply).toMatch(/기본 명령 형식으로 처리/);
   });
 
   it("GEMINI 미설정 시 규칙 파서만 사용하고 안내를 붙인다", async () => {
