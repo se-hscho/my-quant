@@ -13,7 +13,7 @@ describe("AgentChatDock", () => {
         if (url === "/api/agent/chat/status") {
           return {
             ok: true,
-            json: async () => ({ geminiConfigured: true }),
+            json: async () => ({ geminiConfigured: true, geminiActive: true }),
           };
         }
         const body = JSON.parse((init as RequestInit).body as string);

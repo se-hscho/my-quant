@@ -3,6 +3,7 @@ import {
   extractJsonText,
   generateGeminiJson,
   getGeminiApiKey,
+  isBlockedGeminiModel,
   isGeminiConfigured,
 } from "./gemini";
 
@@ -36,6 +37,11 @@ describe("gemini", () => {
     delete process.env.GEMINI_API_KEY;
     const result = await generateGeminiJson<{ ok: boolean }>("sys", "user");
     expect(result.ok).toBe(false);
+  });
+
+  it("gemini-1.5 모델은 차단된다", () => {
+    expect(isBlockedGeminiModel("gemini-1.5-flash")).toBe(true);
+    expect(isBlockedGeminiModel("gemini-2.5-flash")).toBe(false);
   });
 });
 

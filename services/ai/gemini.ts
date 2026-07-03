@@ -1,17 +1,23 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-/** Google AI Studio 기준 안정 모델 (2026). 1.5-flash 계열은 404. */
+/** Google AI Studio 권장 기본 모델 */
 export const GEMINI_DEFAULT_MODEL = "gemini-2.5-flash";
 
-const DEFAULT_MODELS = [
+const STATIC_MODELS = [
   GEMINI_DEFAULT_MODEL,
   "gemini-2.5-flash-lite",
   "gemini-2.0-flash",
   "gemini-3.5-flash",
   "gemini-3.1-flash-lite",
+  "gemini-2.0-flash-lite",
 ] as const;
 
+/** API에서 제거된 모델 — GEMINI_MODEL에 있어도 시도하지 않음 */
+const BLOCKED_MODEL_PREFIXES = ["gemini-1.5", "gemini-1.0"];
+
 let client: GoogleGenerativeAI | null = null;
+let cachedApiModels: { ids: string[]; fetchedAt: number } | null = null;
+const API_MODELS_TTL_MS = 10 * 60 * 1000;
 
 export type GeminiJsonResult<T> =
   | { ok: true; data: T; model: string }
@@ -29,9 +35,85 @@ export function isGeminiConfigured(): boolean {
   return getGeminiApiKey() !== null;
 }
 
-export function getGeminiModelCandidates(): string[] {
+export function isBlockedGeminiModel(model: string): boolean {
+  const id = model.replace(/^models\//, "");
+  return BLOCKED_MODEL_PREFIXES.some((p) => id.startsWith(p));
+}
+
+function rankModel(id: string): number {
+  if (id.includes("2.5-flash") && !id.includes("lite")) return 0;
+  if (id.includes("2.5-flash-lite")) return 1;
+  if (id.includes("2.0-flash") && !id.includes("lite")) return 2;
+  if (id.includes("3.5-flash")) return 3;
+  if (id.includes("3.1-flash-lite")) return 4;
+  if (id.includes("flash")) return 5;
+  return 10;
+}
+
+export async function fetchAvailableGeminiModelIds(): Promise<string[]> {
+  const apiKey = getGeminiApiKey();
+  if (!apiKey) return [];
+
+  const now = Date.now();
+  if (cachedApiModels && now - cachedApiModels.fetchedAt < API_MODELS_TTL_MS) {
+    return cachedApiModels.ids;
+  }
+
+  try {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(apiKey)}`,
+      { cache: "no-store" }
+    );
+    if (!res.ok) return [];
+
+    const body = (await res.json()) as {
+      models?: Array<{
+        name?: string;
+        supportedGenerationMethods?: string[];
+      }>;
+    };
+
+    const ids = (body.models ?? [])
+      .filter((m) => m.supportedGenerationMethods?.includes("generateContent"))
+      .map((m) => (m.name ?? "").replace(/^models\//, ""))
+      .filter((id) => id.includes("gemini") && !isBlockedGeminiModel(id))
+      .toSorted((a, b) => rankModel(a) - rankModel(b));
+
+    cachedApiModels = { ids, fetchedAt: now };
+    return ids;
+  } catch {
+    return [];
+  }
+}
+
+export async function getGeminiModelCandidates(): Promise<string[]> {
   const preferred = process.env.GEMINI_MODEL?.trim();
-  const list = preferred ? [preferred, ...DEFAULT_MODELS] : [...DEFAULT_MODELS];
+  const fromApi = await fetchAvailableGeminiModelIds();
+
+  const ordered: string[] = [];
+
+  if (preferred && !isBlockedGeminiModel(preferred)) {
+    ordered.push(preferred);
+  }
+
+  for (const id of STATIC_MODELS) {
+    ordered.push(id);
+  }
+
+  for (const id of fromApi) {
+    ordered.push(id);
+  }
+
+  return [...new Set(ordered.filter((id) => id && !isBlockedGeminiModel(id)))];
+}
+
+/** @deprecated 비동기 getGeminiModelCandidates 사용 */
+export function getGeminiModelCandidatesSync(): string[] {
+  const preferred = process.env.GEMINI_MODEL?.trim();
+  const list =
+    preferred && !isBlockedGeminiModel(preferred)
+      ? [preferred, ...STATIC_MODELS]
+      : [...STATIC_MODELS];
   return [...new Set(list)];
 }
 
@@ -61,17 +143,22 @@ async function generateWithModel<T>(
   modelName: string,
   systemInstruction: string,
   userPrompt: string,
-  jsonMode: boolean
+  jsonMode: boolean,
+  inlineSystem: boolean
 ): Promise<T> {
+  const prompt = inlineSystem
+    ? `${systemInstruction}\n\n---\n${userPrompt}\n\nJSON만 출력하세요.`
+    : userPrompt;
+
   const model = genAI.getGenerativeModel({
     model: modelName,
-    systemInstruction,
+    ...(inlineSystem ? {} : { systemInstruction }),
     generationConfig: jsonMode
       ? { responseMimeType: "application/json", temperature: 0.1 }
       : { temperature: 0.1 },
   });
 
-  const result = await model.generateContent(userPrompt);
+  const result = await model.generateContent(prompt);
   const rawText = result.response.text()?.trim();
   if (!rawText) {
     throw new Error("empty response");
@@ -91,26 +178,54 @@ export async function generateGeminiJson<T>(
   }
 
   const errors: string[] = [];
+  const models = await getGeminiModelCandidates();
 
-  for (const modelName of getGeminiModelCandidates()) {
-    for (const jsonMode of [true, false] as const) {
-      try {
-        const data = await generateWithModel<T>(
-          genAI,
-          modelName,
-          systemInstruction,
-          userPrompt,
-          jsonMode
-        );
-        return { ok: true, data, model: modelName };
-      } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
-        const tag = jsonMode ? "json" : "text";
-        errors.push(`${modelName}(${tag}): ${message}`);
-        console.error(`[gemini] ${modelName}(${tag}) failed:`, message);
+  if (models.length === 0) {
+    return { ok: false, error: "no model candidates" };
+  }
+
+  for (const modelName of models) {
+    for (const inlineSystem of [false, true] as const) {
+      for (const jsonMode of [true, false] as const) {
+        try {
+          const data = await generateWithModel<T>(
+            genAI,
+            modelName,
+            systemInstruction,
+            userPrompt,
+            jsonMode,
+            inlineSystem
+          );
+          return { ok: true, data, model: modelName };
+        } catch (err) {
+          const message = err instanceof Error ? err.message : String(err);
+          const tag = `${inlineSystem ? "inline" : "sys"}/${jsonMode ? "json" : "text"}`;
+          errors.push(`${modelName}[${tag}]: ${message.slice(0, 160)}`);
+        }
       }
     }
   }
 
-  return { ok: false, error: errors.join(" | ") || "all models failed" };
+  return { ok: false, error: errors.slice(0, 4).join(" | ") || "all models failed" };
+}
+
+export async function probeGeminiConnection(): Promise<{
+  ok: boolean;
+  model?: string;
+  error?: string;
+  availableModels?: string[];
+}> {
+  const availableModels = await fetchAvailableGeminiModelIds();
+  const result = await generateGeminiJson<{ ping: string }>(
+    'Respond JSON only: {"ping":"ok"}',
+    "ping"
+  );
+  if (result.ok) {
+    return { ok: true, model: result.model, availableModels: availableModels.slice(0, 8) };
+  }
+  return {
+    ok: false,
+    error: result.error,
+    availableModels: availableModels.slice(0, 8),
+  };
 }

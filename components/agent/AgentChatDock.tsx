@@ -22,9 +22,15 @@ export function AgentChatDock() {
     let cancelled = false;
     void fetch("/api/agent/chat/status", { cache: "no-store" })
       .then((res) => (res.ok ? res.json() : null))
-      .then((data: { geminiConfigured?: boolean } | null) => {
+      .then((data: { geminiActive?: boolean; geminiConfigured?: boolean } | null) => {
         if (cancelled) return;
-        setLlmStatus(data?.geminiConfigured ? "active" : "inactive");
+        setLlmStatus(
+          data?.geminiActive
+            ? "active"
+            : data?.geminiConfigured
+              ? "inactive"
+              : "inactive"
+        );
       })
       .catch(() => {
         if (!cancelled) setLlmStatus("inactive");
@@ -61,8 +67,11 @@ export function AgentChatDock() {
                 AI 자연어 ON
               </span>
             ) : (
-              <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
-                AI 자연어 OFF
+              <span
+                className="rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] text-amber-800 dark:text-amber-400"
+                title="키는 있으나 API 연결 실패 — /api/agent/chat/status 확인"
+              >
+                AI 연결 실패
               </span>
             )}
           </div>

@@ -1,7 +1,11 @@
 import type { ChatAction, ChatCommandResult, ParseChatOptions } from "@/types/agent-chat";
 import { parseChatCommand } from "@/lib/agent/chat-commands";
 import { ASSET_TYPE_LABELS } from "@/lib/agent/holdings-display";
-import { isGeminiConfigured } from "@/services/ai/gemini";
+import {
+  GEMINI_DEFAULT_MODEL,
+  isBlockedGeminiModel,
+  isGeminiConfigured,
+} from "@/services/ai/gemini";
 import { normalizeChatInputWithLlm } from "@/services/agent/chat-llm";
 
 export interface AgentChatResponse extends ChatCommandResult {
@@ -46,6 +50,24 @@ function buildReplyForActions(actions: ChatAction[]): string {
   return `${parts.join(" ")} (참고용)`;
 }
 
+function buildLlmFailureHint(llmError?: string): string {
+  const detail = llmError ? `\n(원인: ${llmError.slice(0, 320)})` : "";
+  const envModel = process.env.GEMINI_MODEL?.trim();
+  const modelLines: string[] = [];
+
+  if (envModel && isBlockedGeminiModel(envModel)) {
+    modelLines.push(
+      `· Vercel의 GEMINI_MODEL=${envModel} 은(는) 더 이상 지원되지 않습니다. 변수를 삭제하거나 ${GEMINI_DEFAULT_MODEL} 로 변경 후 재배포하세요.`
+    );
+  } else if (!envModel) {
+    modelLines.push(
+      `· GEMINI_MODEL은 비워 두거나 ${GEMINI_DEFAULT_MODEL} 로 설정하세요.`
+    );
+  }
+
+  return `${detail}\n\n💡 AI 해석에 실패했습니다.\n· GEMINI_API_KEY가 Google AI Studio(https://aistudio.google.com/apikey) 키인지 확인하세요.\n${modelLines.join("\n")}\n· Preview에서 /api/agent/chat/status 의 probe 결과를 확인하세요.`;
+}
+
 function withLlmHint(
   reply: string,
   llmStatus: AgentChatResponse["llmStatus"],
@@ -55,10 +77,7 @@ function withLlmHint(
     return `${reply}\n\n💡 자연어 인식은 Preview에 GEMINI_API_KEY 설정 후 재배포가 필요합니다. 지금은 \`SOXX 10주 등록\` 형식을 사용해 주세요.`;
   }
   if (llmStatus === "failed") {
-    const detail = llmError
-      ? `\n(원인: ${llmError.slice(0, 320)})`
-      : "";
-    return `${reply}\n\n💡 AI 해석에 실패했습니다. GEMINI_MODEL을 gemini-2.5-flash 로 설정했는지 확인해 주세요.${detail}`;
+    return `${reply}${buildLlmFailureHint(llmError)}`;
   }
   return reply;
 }

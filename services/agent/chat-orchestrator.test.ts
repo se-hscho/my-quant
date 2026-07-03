@@ -3,6 +3,9 @@ import { processAgentChat } from "./chat-orchestrator";
 
 vi.mock("@/services/ai/gemini", () => ({
   isGeminiConfigured: vi.fn(),
+  isBlockedGeminiModel: (model: string) =>
+    model.startsWith("gemini-1.5") || model.startsWith("gemini-1.0"),
+  GEMINI_DEFAULT_MODEL: "gemini-2.5-flash",
 }));
 
 vi.mock("@/services/agent/chat-llm", () => ({
