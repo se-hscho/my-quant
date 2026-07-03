@@ -1,0 +1,30 @@
+name: Deploy Smoke
+
+on:
+  workflow_dispatch:
+    inputs:
+      deploy_url:
+        description: "배포 URL (예: https://my-quant-xxx.vercel.app)"
+        required: true
+        type: string
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Install Playwright Chromium
+        run: bunx playwright install chromium --with-deps
+
+      - name: Run deploy smoke tests
+        env:
+          PLAYWRIGHT_BASE_URL: ${{ inputs.deploy_url }}
+          CI: "true"
+        run: bun run test:e2e:deploy

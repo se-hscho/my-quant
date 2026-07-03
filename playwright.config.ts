@@ -1,26 +1,44 @@
 import { defineConfig, devices } from "@playwright/test";
 
+const baseURL =
+  process.env.PLAYWRIGHT_BASE_URL?.replace(/\/$/, "") ||
+  process.env.DEPLOY_URL?.replace(/\/$/, "") ||
+  "http://localhost:3000";
+
+const isRemoteTarget = !/^https?:\/\/localhost(?::\d+)?$/.test(baseURL);
+
 export default defineConfig({
   testDir: "./e2e",
   testMatch: /.*\.spec\.ts$/,
-  fullyParallel: true,
-  retries: process.env.CI ? 2 : 0,
-  reporter: [["html", { open: "never" }]],
+  fullyParallel: !isRemoteTarget,
+  retries: process.env.CI || isRemoteTarget ? 2 : 0,
+  timeout: isRemoteTarget ? 120_000 : 60_000,
+  reporter: [["html", { open: "never" }], ["list"]],
   use: {
-    baseURL: "http://localhost:3000",
+    baseURL,
     trace: "on-first-retry",
+    actionTimeout: isRemoteTarget ? 30_000 : 15_000,
   },
   projects: [
-    { name: "chromium", use: { ...devices["Desktop Chrome"] } },
     {
-      name: "chrome",
-      use: { ...devices["Desktop Chrome"], channel: "chrome" },
+      name: "chromium",
+      use: { ...devices["Desktop Chrome"] },
     },
+    ...(isRemoteTarget
+      ? []
+      : [
+          {
+            name: "chrome",
+            use: { ...devices["Desktop Chrome"], channel: "chrome" },
+          },
+        ]),
   ],
-  webServer: {
-    command: "bun run dev",
-    url: "http://localhost:3000",
-    reuseExistingServer: !process.env.CI,
-    timeout: 120_000,
-  },
+  webServer: isRemoteTarget
+    ? undefined
+    : {
+        command: "bun run dev",
+        url: baseURL,
+        reuseExistingServer: !process.env.CI,
+        timeout: 120_000,
+      },
 });
