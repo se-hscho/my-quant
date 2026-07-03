@@ -62,7 +62,7 @@ export function buildLocalBriefingSummary(
     sectorTop3.length > 0
       ? `비중 상위 섹터: ${sectorTop3.map((s) => s.label).join(", ")}.`
       : "섹터 태그가 없는 종목이 있어 섹터 분석은 제한됩니다.",
-    `시장 흐름 참고( fixture ): ${hotSector.label} 섹터 수급 점수 ${hotSector.flowScore.toFixed(2)} — 상세 브리핑은 추후 제공.`,
+    `시장 섹터 흐름은 참고 데이터로 제공됩니다. ${hotSector.label} 섹터 수급 점수 ${hotSector.flowScore.toFixed(2)} — 상세 브리핑은 추후 제공.`,
     "환전·리밸런싱은 환율 변동과 수수료를 감안해 검토하세요. (참고용)",
   ];
 

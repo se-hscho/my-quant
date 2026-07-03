@@ -16,5 +16,6 @@ describe("buildLocalBriefingSummary", () => {
     const summary = buildLocalBriefingSummary(snap, 10_000_000);
     expect(summary.lines.length).toBeGreaterThanOrEqual(3);
     expect(summary.disclaimer).toMatch(/투자 권유가 아닙니다/);
+    expect(summary.lines.join(" ")).not.toMatch(/fixture/i);
   });
 });

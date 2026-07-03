@@ -79,7 +79,7 @@ export function AgentHome() {
 
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-base">오늘 요약 (로컬)</CardTitle>
+          <CardTitle className="text-base">오늘 포트폴리오 요약</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2 text-sm">
           <ul className="list-disc space-y-1 pl-4">

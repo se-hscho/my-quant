@@ -48,6 +48,6 @@ describe("AgentHome", () => {
       "href",
       "/agent/holdings"
     );
-    expect(screen.getByText(/오늘 요약/)).toBeInTheDocument();
+    expect(screen.getByText(/오늘 요약|오늘 포트폴리오 요약/)).toBeInTheDocument();
   });
 });

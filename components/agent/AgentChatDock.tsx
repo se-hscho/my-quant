@@ -187,7 +187,8 @@ export function AgentChatDock() {
           </Button>
         </form>
         <p className="shrink-0 px-4 pb-2 text-[10px] text-muted-foreground">
-          참고용 안내이며 투자 권유가 아닙니다. AI 무료 한도 절약을 위해 자주 쓰는 표현은 규칙으로 먼저 처리합니다.
+          참고용 안내이며 투자 권유가 아닙니다. 지금은 보유 등록·조회 위주이며, 브리핑 Q&A는 추후 제공됩니다.
+          AI 무료 한도 절약을 위해 자주 쓰는 표현은 규칙으로 먼저 처리합니다.
         </p>
       </div>
     </div>

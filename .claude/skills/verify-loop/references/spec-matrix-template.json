@@ -1,0 +1,15 @@
+{
+  "feature": "<feature>",
+  "updatedAt": "",
+  "scenarios": [
+    {
+      "id": "S1",
+      "title": "에이전트 요약 페이지 진입",
+      "specRef": "spec.md §시나리오 1",
+      "status": "missing",
+      "implementedIn": [],
+      "tests": [],
+      "notes": ""
+    }
+  ]
+}
