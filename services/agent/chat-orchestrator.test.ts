@@ -43,6 +43,17 @@ describe("processAgentChat", () => {
     expect(result.usedLlm).toBeUndefined();
   });
 
+  it("한국어 별칭(필라델피아 반도체)은 LLM 없이 처리한다", async () => {
+    mockConfigured.mockReturnValue(true);
+
+    const result = await processAgentChat({
+      message: "필라델피아 반도체 etf 10주 샀어",
+    });
+    expect(mockNormalize).not.toHaveBeenCalled();
+    expect(result.actions[0]).toMatchObject({ ticker: "SOXX", quantity: 10 });
+    expect(result.llmStatus).toBe("skipped");
+  });
+
   it("인식 실패 시 LLM actions를 직접 사용한다", async () => {
     mockConfigured.mockReturnValue(true);
     mockNormalize.mockResolvedValue({
@@ -60,13 +71,22 @@ describe("processAgentChat", () => {
     });
 
     const result = await processAgentChat({
-      message: "필라델피아 반도체 etf 10주 샀어",
+      message: "요즘 핫한 반도체 테마 10주 사고 싶어",
     });
 
-    expect(mockNormalize).toHaveBeenCalledWith("필라델피아 반도체 etf 10주 샀어");
+    expect(mockNormalize).toHaveBeenCalledWith("요즘 핫한 반도체 테마 10주 사고 싶어");
     expect(result.actions[0]).toMatchObject({ ticker: "SOXX", quantity: 10 });
     expect(result.llmStatus).toBe("active");
     expect(result.reply).toMatch(/입력 해석/);
+  });
+
+  it("반도체 etf 별칭도 LLM 없이 처리한다", async () => {
+    mockConfigured.mockReturnValue(true);
+
+    const result = await processAgentChat({ message: "반도체 etf 10주 샀어" });
+    expect(mockNormalize).not.toHaveBeenCalled();
+    expect(result.actions[0]).toMatchObject({ ticker: "SOXX", quantity: 10 });
+    expect(result.llmStatus).toBe("skipped");
   });
 
   it("LLM API 오류 시 원인을 답변에 포함한다", async () => {
@@ -77,7 +97,7 @@ describe("processAgentChat", () => {
       error: "gemini-2.0-flash: API key invalid",
     });
 
-    const result = await processAgentChat({ message: "반도체 10주 샀어" });
+    const result = await processAgentChat({ message: "이상한 자연어 문장만 있음" });
     expect(result.llmStatus).toBe("failed");
     expect(result.reply).toMatch(/API key invalid/);
   });

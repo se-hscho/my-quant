@@ -59,13 +59,15 @@ function buildLlmFailureHint(llmError?: string): string {
     modelLines.push(
       `· Vercel의 GEMINI_MODEL=${envModel} 은(는) 더 이상 지원되지 않습니다. 변수를 삭제하거나 ${GEMINI_DEFAULT_MODEL} 로 변경 후 재배포하세요.`
     );
-  } else if (!envModel) {
+  }
+
+  if (/API key not valid|forbidden|GEMINI_API_KEY not configured/i.test(llmError ?? "")) {
     modelLines.push(
-      `· GEMINI_MODEL은 비워 두거나 ${GEMINI_DEFAULT_MODEL} 로 설정하세요.`
+      "· GEMINI_API_KEY는 Google AI Studio(https://aistudio.google.com/apikey)에서 발급한 키여야 합니다."
     );
   }
 
-  return `${detail}\n\n💡 AI 해석에 실패했습니다.\n· GEMINI_API_KEY가 Google AI Studio(https://aistudio.google.com/apikey) 키인지 확인하세요.\n${modelLines.join("\n")}\n· Preview에서 /api/agent/chat/status 의 probe 결과를 확인하세요.`;
+  return `${detail}\n\n💡 AI 해석에 실패했습니다.\n${modelLines.join("\n")}\n· Preview에서 /api/agent/chat/status 를 열어 modelsList·probe·hints 를 확인하세요.\n· 자연어 대신 \`SOXX 10주 등록\` 형식도 사용할 수 있습니다.`;
 }
 
 function withLlmHint(

@@ -5,10 +5,13 @@ import type {
   ChatCommandResult,
   ParseChatOptions,
 } from "@/types/agent-chat";
+import { KNOWN_TICKER_CLASSIFICATIONS } from "@/config/agent";
 import { ASSET_TYPE_LABELS, formatCashAmount } from "./holdings-display";
 import { parseKoreanAmount } from "./korean-amount";
+import { normalizeNaturalLanguageCommand } from "./ticker-aliases";
 
 export { parseKoreanAmount } from "./korean-amount";
+export { normalizeNaturalLanguageCommand } from "./ticker-aliases";
 
 const REGISTER =
   /(?:등록|추가|넣어|설정|업데이트|변경)/;
@@ -32,6 +35,23 @@ const CASH_KR_TRAILING =
   /([\d,일이삼사오육칠팔구십백천만억]+(?:\.\d+)?(?:만|억|원)?)\s*(?:원\s*)?현금\s*(?:추가|등록|넣|설정)/i;
 
 const REMOVE_PATTERN = /([A-Z0-9][A-Z0-9.\-]{0,11})\s*(?:삭제|제거)/i;
+
+const RESERVED_TICKER_TOKENS = new Set([
+  "ETF",
+  "USD",
+  "KRW",
+  "JPY",
+  "STOCK",
+  "BOND",
+  "GOLD",
+]);
+
+function isValidTickerSymbol(raw: string): boolean {
+  const ticker = raw.trim().toUpperCase();
+  if (!ticker || RESERVED_TICKER_TOKENS.has(ticker)) return false;
+  if (/^\d+$/.test(ticker)) return false;
+  return /[A-Z]/.test(ticker) || /\d{6}\.[A-Z]{2}/.test(ticker);
+}
 
 function defaultCashField(message: string): CashField {
   const inferred = parseCashField(message);
@@ -101,6 +121,21 @@ function helpReply(): string {
   ].join("\n");
 }
 
+function defaultAssetType(ticker: string, text: string): AssetType {
+  const fromText = parseAssetType(text);
+  if (fromText !== "stock" || /\betf\b|채권|bond|금|gold/.test(text.toLowerCase())) {
+    return fromText;
+  }
+  const known = KNOWN_TICKER_CLASSIFICATIONS[ticker];
+  if (!known) return fromText;
+  if (known.sector === "bonds") return "bond_etf";
+  if (known.sector === "gold") return "gold_etf";
+  if (ticker.endsWith(".KS") || ticker.endsWith(".KQ") || ticker.endsWith(".T")) {
+    return "stock";
+  }
+  return "etf";
+}
+
 function tryParseHolding(message: string): ChatAction | null {
   if (!REGISTER.test(message) && !/등록|추가/.test(message)) return null;
 
@@ -110,13 +145,13 @@ function tryParseHolding(message: string): ChatAction | null {
 
   const ticker = normalizeTicker(match[1]);
   const quantity = parseFloat(match[2]);
-  if (!ticker || quantity <= 0) return null;
+  if (!isValidTickerSymbol(ticker) || quantity <= 0) return null;
 
   return {
     type: "add_holding",
     ticker,
     quantity,
-    assetType: parseAssetType(message),
+    assetType: defaultAssetType(ticker, message),
     currency: parseCurrency(message, ticker),
   };
 }
@@ -166,7 +201,7 @@ function tryQaReply(message: string): string | null {
 }
 
 export function parseChatCommand(options: ParseChatOptions): ChatCommandResult {
-  const message = options.message.trim();
+  const message = normalizeNaturalLanguageCommand(options.message.trim());
   if (!message) {
     return { reply: "질문을 입력해 주세요.", actions: [] };
   }

@@ -90,4 +90,15 @@ describe("parseChatCommand", () => {
     expect(r.actions).toHaveLength(0);
     expect(r.reply).toMatch(/등록/);
   });
+
+  it("반도체 etf 10주 샀어 → SOXX add_holding (LLM 없이)", () => {
+    const r = parseChatCommand({ message: "반도체 etf 10주 샀어" });
+    expect(r.actions[0]).toMatchObject({
+      type: "add_holding",
+      ticker: "SOXX",
+      quantity: 10,
+      assetType: "etf",
+      currency: "USD",
+    });
+  });
 });
