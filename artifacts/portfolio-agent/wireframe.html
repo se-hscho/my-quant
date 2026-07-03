@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wireframe: 포트폴리오 관리 에이전트</title>
+<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+  :root { --w-bg:#f5f5f5; --w-border:#ccc; --w-text:#555; --w-muted:#aaa; --w-fill:#eee; }
+  * { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace; color: var(--w-text); }
+  body { background: var(--w-bg); }
+  nav { position:sticky; top:0; z-index:40; background:var(--w-bg); border-bottom:1px solid var(--w-border); }
+  nav button { cursor:pointer; font-size:12px; }
+  nav button:hover { background:var(--w-fill); border-radius:4px; }
+  nav button.active { font-weight:bold; border-bottom:2px solid var(--w-text); }
+  .screen { display:none; }
+  .screen.active { display:block; }
+  .vp-toggle button { font-size:12px; padding:2px 8px; border:1px solid var(--w-border); cursor:pointer; background:white; }
+  .vp-toggle button:first-child { border-radius:4px 0 0 4px; }
+  .vp-toggle button:last-child { border-radius:0 4px 4px 0; border-left:none; }
+  .vp-toggle button.active { background:var(--w-text); color:white; }
+  body.viewport-mobile .screen-content { max-width:375px !important; margin:24px auto !important; border:2px solid var(--w-border); border-radius:24px; min-height:667px; background:white; box-shadow:0 4px 24px rgba(0,0,0,0.08); padding:32px 16px !important; }
+  .screen-notes { background:#fffde7; border-left:3px solid #ffd54f; padding:12px 16px; margin-top:24px; font-size:13px; border-radius:0 4px 4px 0; }
+  .screen-notes summary { cursor:pointer; font-weight:bold; font-size:12px; color:#b0a050; text-transform:uppercase; letter-spacing:.05em; }
+  .screen-notes p { margin:6px 0 2px; color:#777; }
+  .screen-notes ul { margin:4px 0 0 16px; padding:0; color:#777; }
+  .screen-notes li { margin:2px 0; }
+
+  .w-card { background:white; border:1px solid var(--w-border); border-radius:8px; padding:16px; }
+  .w-btn { border:1px solid var(--w-border); background:white; padding:6px 14px; border-radius:4px; font-size:13px; cursor:pointer; display:inline-flex; align-items:center; gap:4px; }
+  .w-btn-primary { border:1px solid var(--w-text); background:var(--w-text); color:white !important; padding:6px 14px; border-radius:4px; font-size:13px; cursor:pointer; display:inline-flex; align-items:center; gap:4px; }
+  .w-btn-primary * { color:white !important; }
+  .w-badge { display:inline-block; border:1px solid var(--w-border); background:var(--w-fill); padding:2px 8px; border-radius:99px; font-size:11px; }
+  .w-tag { display:inline-flex; align-items:center; border:1px solid var(--w-border); padding:1px 6px; border-radius:4px; font-size:11px; }
+  .w-tooltip { display:inline-flex; align-items:center; justify-content:center; width:15px; height:15px; border:1px solid var(--w-border); border-radius:50%; font-size:9px; cursor:pointer; color:var(--w-muted); flex-shrink:0; }
+  .w-input { border:1px solid var(--w-border); background:white; padding:5px 10px; border-radius:4px; font-size:12px; width:100%; }
+  .w-chart { background:var(--w-fill); border:1px dashed var(--w-border); border-radius:8px; display:flex; align-items:center; justify-content:center; color:var(--w-muted); font-size:11px; text-align:center; padding:8px; }
+  .w-bar { background:var(--w-muted); border-radius:2px; height:8px; }
+  .w-bar-fill { background:var(--w-text); height:100%; border-radius:2px; }
+  .w-appbar { background:white; border-bottom:1px solid var(--w-border); padding:12px 24px; display:flex; align-items:center; justify-content:space-between; margin:-24px -24px 24px; }
+  .w-divider { border:none; border-top:1px solid var(--w-border); margin:14px 0; }
+  .w-table { width:100%; border-collapse:collapse; font-size:11px; }
+  .w-table th, .w-table td { border:1px solid var(--w-border); padding:6px 8px; text-align:left; }
+  .w-table th { background:var(--w-fill); }
+  .w-caption { font-size:11px; color:var(--w-muted); margin-top:6px; line-height:1.5; }
+  .w-section { margin-bottom:20px; }
+  .w-section-title { font-size:13px; font-weight:bold; margin-bottom:8px; display:flex; align-items:center; gap:6px; }
+  .w-flow { display:flex; flex-wrap:wrap; align-items:center; gap:6px; font-size:11px; }
+  .w-flow-step { border:1px solid var(--w-border); padding:6px 10px; border-radius:6px; background:white; }
+  .w-flow-arrow { color:var(--w-muted); }
+  .w-up { color:var(--w-text); }
+  .w-down { color:var(--w-muted); }
+  .w-chat-user { background:var(--w-fill); border-radius:8px 8px 0 8px; padding:8px 12px; font-size:12px; margin-left:20%; }
+  .w-chat-bot { background:white; border:1px solid var(--w-border); border-radius:8px 8px 8px 0; padding:8px 12px; font-size:12px; margin-right:10%; }
+  .w-disclaimer { font-size:10px; color:var(--w-muted); border-top:1px solid var(--w-border); padding-top:12px; margin-top:24px; }
+  .w-sticky-cta { position:sticky; bottom:0; background:white; border-top:1px solid var(--w-border); padding:12px 0; margin-top:16px; }
+</style>
+</head>
+<body class="p-0 m-0 viewport-mobile">
+
+<nav class="flex items-center gap-1 px-3 py-2 flex-wrap">
+  <span class="text-xs mr-1" style="color:var(--w-muted)">wireframe</span>
+  <button id="nav-0" onclick="show(0)" class="px-2 py-1">① 요약</button>
+  <button id="nav-1" onclick="show(1)" class="px-2 py-1">② 상세</button>
+  <button id="nav-2" onclick="show(2)" class="px-2 py-1">③ 보유편집</button>
+  <button id="nav-3" onclick="show(3)" class="px-2 py-1">④ 보유없음</button>
+  <button id="nav-4" onclick="show(4)" class="px-2 py-1">⑤ 알림설정</button>
+  <button id="nav-5" onclick="show(5)" class="px-2 py-1">⑥ 히스토리</button>
+  <button id="nav-6" onclick="show(6)" class="px-2 py-1">⑦ 채팅</button>
+  <button id="nav-7" onclick="show(7)" class="px-2 py-1">⑧ 알림미리보기</button>
+  <button id="nav-8" onclick="show(8)" class="px-2 py-1">⑨ 실패</button>
+  <div class="vp-toggle flex ml-auto">
+    <button id="vp-desktop" onclick="setViewport('desktop')">Desktop</button>
+    <button id="vp-mobile" onclick="setViewport('mobile')" class="active">Mobile</button>
+  </div>
+</nav>
+
+<!-- ① 요약 페이지 -->
+<div id="screen-0" class="screen" data-scenario="scenario-1">
+  <div class="screen-content @container max-w-3xl mx-auto p-6">
+    <div class="w-appbar">
+      <div>
+        <div class="font-bold" style="font-size:15px;">포트폴리오 에이전트</div>
+        <div class="text-xs" style="color:var(--w-muted)">2026-07-03 (목) 아침 브리핑</div>
+      </div>
+      <div class="flex gap-2">
+        <button class="w-btn text-xs"><i data-lucide="settings" style="width:12px;height:12px"></i></button>
+        <button class="w-btn text-xs"><i data-lucide="history" style="width:12px;height:12px"></i></button>
+      </div>
+    </div>
+
+    <div class="w-card mb-4" style="border-width:2px;">
+      <div class="text-xs mb-2" style="color:var(--w-muted)">📌 오늘 결론</div>
+      <p class="text-sm leading-relaxed mb-1">• 에너지 섹터 유입 → XLE 신규 편입 검토 (Follow)</p>
+      <p class="text-sm leading-relaxed mb-1">• KRW 2,000만 → USD 환전 7일 내 (FOMC 전)</p>
+      <p class="text-sm leading-relaxed">• 어제 대비: 헬스케어 축소 제안 유지, 환전 시점만 앞당김</p>
+    </div>
+
+    <div class="grid @md:grid-cols-2 gap-3 mb-4">
+      <div class="w-card">
+        <div class="text-xs mb-1" style="color:var(--w-muted)">총자산 (KRW)</div>
+        <div class="text-lg font-bold">₩128,400,000</div>
+        <div class="text-xs w-up">전일 +0.8%</div>
+      </div>
+      <div class="w-card">
+        <div class="text-xs mb-1" style="color:var(--w-muted)">통화별 현금 <span class="w-tooltip">?</span></div>
+        <div class="text-xs">KRW ₩38M · USD $12K · JPY ¥0</div>
+      </div>
+    </div>
+
+    <div class="w-section">
+      <div class="w-section-title">섹터 흐름 TOP3 <span class="w-tooltip">?</span></div>
+      <div class="w-chart h-24 mb-1">[가로 막대] 에너지 +12% · 반도체 +8% · 금융 +5%</div>
+      <p class="w-caption">에너지·금융으로 rotation 중. 보유는 반도체 편중.</p>
+    </div>
+
+    <div class="w-section">
+      <div class="w-section-title">시나리오 한눈 비교</div>
+      <div class="w-chart h-20 mb-1">[그룹 막대] 안0 4.2% · 안1 6.1% · 안2 7.0% · 안3 5.0%</div>
+      <p class="w-caption">참고용 예상수익률(1mo). 변동성: 안2 최고.</p>
+    </div>
+
+    <div class="flex flex-wrap gap-2 mb-4 text-xs">
+      <span class="w-badge">📅 FOMC 오늘 03:00</span>
+      <span class="w-badge">💱 환전 7일 내</span>
+    </div>
+
+    <div class="w-sticky-cta">
+      <button class="w-btn-primary w-full justify-center" onclick="show(1)">
+        상세 레포트 보기 <i data-lucide="chevron-down" style="width:14px;height:14px"></i>
+      </button>
+    </div>
+
+    <div class="w-disclaimer">예상 수익률·제안은 참고용이며 투자 권유가 아닙니다.</div>
+
+    <div class="screen-notes">
+      <details open>
+        <summary>Notes</summary>
+        <ul>
+          <li>트리거: 보유 등록 + 당일 브리핑 생성 후 /agent 접속</li>
+          <li>인터랙션: 30초 스캔 — 결론·차트·시점만</li>
+          <li>전환: "상세 레포트" → 화면② / 설정·히스토리 아이콘</li>
+        </ul>
+      </details>
+    </div>
+  </div>
+</div>
+
+<!-- ② 상세 레포트 -->
+<div id="screen-1" class="screen" data-scenario="scenario-2,scenario-5,scenario-6,scenario-7,scenario-8,scenario-9,scenario-10,scenario-11,scenario-12,scenario-13,scenario-14,scenario-16,scenario-19">
+  <div class="screen-content @container max-w-4xl mx-auto p-6">
+    <div class="w-appbar">
+      <button class="w-btn text-xs" onclick="show(0)"><i data-lucide="arrow-left" style="width:12px;height:12px"></i> 요약</button>
+      <span class="text-sm font-bold">상세 레포트</span>
+      <button class="w-btn text-xs" onclick="show(6)"><i data-lucide="message-circle" style="width:12px;height:12px"></i> 채팅</button>
+    </div>
+
+    <!-- 포트 스냅샷 -->
+    <div class="w-section">
+      <div class="w-section-title">① 포트 스냅샷</div>
+      <div class="grid @md:grid-cols-2 gap-3">
+        <div class="w-chart h-28">[도넛] 자산군·지역·현금</div>
+        <div>
+          <table class="w-table mb-2">
+            <tr><th>기간</th><th>수익률</th></tr>
+            <tr><td>1d</td><td>+0.3%</td></tr>
+            <tr><td>7d</td><td>+2.1%</td></tr>
+            <tr><td>1mo</td><td>+4.8%</td></tr>
+          </table>
+          <p class="w-caption">7일 수익은 미국 반도체 ETF 기여가 큼.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 환율 -->
+    <div class="w-section">
+      <div class="w-section-title">② 환율·환전 <span class="w-tooltip">?</span></div>
+      <div class="w-chart h-20 mb-2">[라인차트] USD/KRW 7d -0.8%</div>
+      <div class="w-card text-xs mb-2">
+        <strong>💱 환전 제안 (안1)</strong><br>
+        KRW 2,000만 → USD $14,000 · 시점: 7일 내 · FOMC 전 선환전
+      </div>
+      <p class="w-caption">달러 약세 구간 Follow. 선점 안은 FOMC 후 재평가.</p>
+    </div>
+
+    <!-- 섹터 -->
+    <div class="w-section">
+      <div class="w-section-title">③ 전 섹터 자금 흐름</div>
+      <div class="w-chart h-32 mb-2">[히트맵] 8개 섹터 — 보유/미보유 표시</div>
+      <p class="w-caption">미보유 에너지 유입 1위 → XLE, 261220.KS 추천 (⑥ 참조)</p>
+    </div>
+
+    <!-- 스마트 머니 -->
+    <div class="w-section">
+      <div class="w-section-title">④ 스마트 머니 <span class="w-tooltip">?</span></div>
+      <div class="w-chart h-20 mb-2">[막대] 외국인·기관 순매수 (반도체·2차전지)</div>
+      <div class="w-card text-xs">
+        <strong>기관 vs 개인</strong><br>
+        기관은 대형주 매수 지속(체결 느림). 개인은 소액으로 에너지 ETF 선행 편입 가능.
+      </div>
+    </div>
+
+    <!-- 맥락·애널 -->
+    <div class="w-section">
+      <div class="w-section-title">⑤ 맥락·애널리스트</div>
+      <div class="flex flex-col gap-2 mb-2">
+        <div class="w-card text-xs"><span class="w-tag">정책</span> FOMC 금리 동결 예상</div>
+        <div class="w-card text-xs"><span class="w-tag">공시</span> NVDA 실적 7/05 예정</div>
+      </div>
+      <table class="w-table">
+        <tr><th>증권사</th><th>날짜</th><th>의견</th><th>목표가</th></tr>
+        <tr><td>미래에셋</td><td>7/1</td><td>Buy</td><td>95,000</td></tr>
+        <tr><td>한국투자</td><td>6/28</td><td>Hold</td><td>88,000</td></tr>
+      </table>
+      <p class="w-caption">Buy 다수 + 외국인 순매수 → Follow와 정합. Hold 의견은 선점 시 목표가 여유 확인.</p>
+    </div>
+
+    <!-- 이벤트 -->
+    <div class="w-section">
+      <div class="w-section-title">⑥ 이벤트 타임라인</div>
+      <div class="w-chart h-16 mb-2">[타임라인] 전·당일·후 — FOMC</div>
+      <ul class="text-xs space-y-1" style="color:var(--w-muted)">
+        <li>• 전: 채권 비중 확대 검토 (근거: 비둘기 기대)</li>
+        <li>• 당일: 결과 반영 후 안1·2 갱신</li>
+      </ul>
+    </div>
+
+    <!-- 신규 추천 -->
+    <div class="w-section">
+      <div class="w-section-title">⑦ 신규 추천 (미보유 섹터)</div>
+      <table class="w-table">
+        <tr><th>섹터</th><th>티커</th><th>근거</th></tr>
+        <tr><td>에너지</td><td>XLE</td><td>7d +12% 유입</td></tr>
+        <tr><td>에너지</td><td>261220.KS</td><td>국내 유입</td></tr>
+      </table>
+    </div>
+
+    <!-- 시나리오 -->
+    <div class="w-section">
+      <div class="w-section-title">⑧ 시나리오 Before/After <span class="w-tooltip">?</span></div>
+      <table class="w-table mb-3">
+        <tr><th>안</th><th>수익*</th><th>변동성*</th><th>FX</th></tr>
+        <tr><td>0 유지</td><td>4.2%</td><td>12%</td><td>—</td></tr>
+        <tr><td>1 Follow</td><td>6.1%</td><td>14%</td><td>-0.2%p</td></tr>
+        <tr><td>2 선점</td><td>7.0%</td><td>16%</td><td>-0.5%p</td></tr>
+        <tr><td>3 최소변경</td><td>5.0%</td><td>12.5%</td><td>0%</td></tr>
+      </table>
+      <p class="w-caption">*추세 기반 참고용. KRW 기준. 자산수익+환율 분리 표시.</p>
+
+      <div class="w-section-title mt-4">Playbook (안1 Follow)</div>
+      <div class="w-flow mb-2">
+        <div class="w-flow-step">⓪ 환전<br>KRW→USD</div>
+        <span class="w-flow-arrow">→</span>
+        <div class="w-flow-step">① SOXX<br>3→6%</div>
+        <span class="w-flow-arrow">→</span>
+        <div class="w-flow-step">② XLE 신규<br>0→4%</div>
+        <span class="w-flow-arrow">→</span>
+        <div class="w-flow-step">③ XLV<br>15→12%</div>
+      </div>
+      <p class="w-caption">3%p ≈ 1억 기준 약 300만원 규모. 검토용 제안.</p>
+    </div>
+
+    <!-- 방향 변경 -->
+    <div class="w-section">
+      <div class="w-section-title">⑨ 전일 대비 변경</div>
+      <table class="w-table">
+        <tr><th>항목</th><th>어제</th><th>오늘</th></tr>
+        <tr><td>환전 시점</td><td>FOMC 후</td><td class="w-up">7일 내 ▲</td></tr>
+        <tr><td>XLE 편입</td><td>검토</td><td class="w-up">Follow 안 포함 ▲</td></tr>
+      </table>
+    </div>
+
+    <div class="w-disclaimer">본 레포트는 투자 권유가 아닙니다. 예상 수익률은 참고용입니다.</div>
+
+    <div class="screen-notes">
+      <details>
+        <summary>Notes</summary>
+        <ul>
+          <li>트리거: 요약에서 "상세" 또는 스크롤</li>
+          <li>인터랙션: 섹션별 차트+해석+?툴팁 / 시나리오·playbook 확인</li>
+          <li>전환: 채팅(⑦) / 요약(①)</li>
+        </ul>
+      </details>
+    </div>
+  </div>
+</div>
+
+<!-- ③ 보유 편집 -->
+<div id="screen-2" class="screen" data-scenario="scenario-3,scenario-4">
+  <div class="screen-content @container max-w-2xl mx-auto p-6">
+    <div class="w-appbar">
+      <button class="w-btn text-xs" onclick="show(0)"><i data-lucide="arrow-left" style="width:12px;height:12px"></i></button>
+      <span class="text-sm font-bold">보유 자산 편집</span>
+      <button class="w-btn-primary text-xs">저장</button>
+    </div>
+
+    <div class="w-section">
+      <div class="w-section-title">통화별 현금</div>
+      <div class="grid gap-2 mb-4">
+        <label class="text-xs">KRW <input class="w-input" value="50,000,000" /></label>
+        <label class="text-xs">USD <input class="w-input" value="12,000" /></label>
+        <label class="text-xs">JPY <input class="w-input" value="0" /></label>
+      </div>
+    </div>
+
+    <div class="w-section">
+      <div class="w-section-title">보유 종목</div>
+      <table class="w-table mb-3">
+        <tr><th>티커</th><th>수량</th><th>유형</th><th>통화</th><th></th></tr>
+        <tr><td>SOXX</td><td>10</td><td>ETF</td><td>USD</td><td>✕</td></tr>
+        <tr><td>005930.KS</td><td>50</td><td>주식</td><td>KRW</td><td>✕</td></tr>
+        <tr><td>AGG</td><td>20</td><td>채권ETF</td><td>USD</td><td>✕</td></tr>
+      </table>
+      <button class="w-btn text-xs w-full justify-center mb-4"><i data-lucide="plus" style="width:12px;height:12px"></i> 종목 추가</button>
+    </div>
+
+    <div class="w-card text-xs" style="border-style:dashed;">
+      <strong>섹터 태그 필요</strong> (자동 분류 실패 시)<br>
+      티커: CUSTOM · 섹터: [반도체 ▼] · 지역: [미국 ▼]
+    </div>
+
+    <div class="screen-notes">
+      <details>
+        <summary>Notes</summary>
+        <ul>
+          <li>트리거: 설정 또는 보유 없음 안내에서 진입</li>
+          <li>인터랙션: 종목·현금 입력 / 섹터 태그 지정</li>
+          <li>전환: 저장 → 브리핑 생성 → 요약(①)</li>
+        </ul>
+      </details>
+    </div>
+  </div>
+</div>
+
+<!-- ④ 보유 없음 -->
+<div id="screen-3" class="screen" data-scenario="scenario-22">
+  <div class="screen-content @container max-w-md mx-auto p-6 text-center">
+    <div class="w-chart h-32 mx-auto mb-6 max-w-xs flex flex-col gap-2">
+      <i data-lucide="wallet" style="width:32px;height:32px;color:var(--w-muted)"></i>
+      보유 자산을 등록해주세요
+    </div>
+    <p class="text-sm mb-6" style="color:var(--w-muted)">티커·수량·통화별 현금을 입력하면<br>매일 맞춤 브리핑을 받을 수 있습니다.</p>
+    <button class="w-btn-primary" onclick="show(2)">보유 자산 등록하기</button>
+
+    <div class="screen-notes">
+      <details>
+        <summary>Notes</summary>
+        <ul>
+          <li>트리거: 보유 0건 상태에서 /agent 접속</li>
+          <li>전환: 등록하기 → ③</li>
+        </ul>
+      </details>
+    </div>
+  </div>
+</div>
+
+<!-- ⑤ 알림 설정 -->
+<div id="screen-4" class="screen" data-scenario="scenario-18">
+  <div class="screen-content @container max-w-md mx-auto p-6">
+    <div class="w-appbar">
+      <button class="w-btn text-xs" onclick="show(0)"><i data-lucide="arrow-left" style="width:12px;height:12px"></i></button>
+      <span class="text-sm font-bold">알림 설정</span>
+    </div>
+
+    <div class="w-card mb-3">
+      <div class="flex justify-between items-center mb-2">
+        <span class="text-sm">이메일</span>
+        <span class="w-badge">ON</span>
+      </div>
+      <input class="w-input" placeholder="you@email.com" />
+    </div>
+
+    <div class="w-card mb-3">
+      <div class="flex justify-between items-center mb-2">
+        <span class="text-sm">Slack</span>
+        <span class="w-badge">ON</span>
+      </div>
+      <input class="w-input" placeholder="Webhook URL" />
+    </div>
+
+    <div class="w-card mb-4">
+      <label class="text-sm block mb-2">아침 발송 시각 (KST)</label>
+      <input class="w-input" value="07:00" type="time" />
+      <p class="w-caption mt-2">이벤트 발생 시 즉시 알림은 별도 발송됩니다.</p>
+    </div>
+
+    <button class="w-btn-primary w-full justify-center">저장</button>
+
+    <div class="screen-notes">
+      <details>
+        <summary>Notes</summary>
+        <ul>
+          <li>트리거: 요약 화면 설정 아이콘</li>
+          <li>인터랙션: 채널 on/off, 시각·주소 저장</li>
+        </ul>
+      </details>
+    </div>
+  </div>
+</div>
+
+<!-- ⑥ 히스토리 -->
+<div id="screen-5" class="screen" data-scenario="scenario-20">
+  <div class="screen-content @container max-w-2xl mx-auto p-6">
+    <div class="w-appbar">
+      <button class="w-btn text-xs" onclick="show(0)"><i data-lucide="arrow-left" style="width:12px;height:12px"></i></button>
+      <span class="text-sm font-bold">브리핑 히스토리</span>
+    </div>
+
+    <div class="flex flex-col gap-2">
+      <div class="w-card flex justify-between items-center cursor-pointer" onclick="show(0)">
+        <div>
+          <div class="text-sm font-bold">2026-07-03</div>
+          <div class="text-xs" style="color:var(--w-muted)">에너지 Follow · 환전 7일 내</div>
+        </div>
+        <i data-lucide="chevron-right" style="width:16px;height:16px;color:var(--w-muted)"></i>
+      </div>
+      <div class="w-card flex justify-between items-center">
+        <div>
+          <div class="text-sm font-bold">2026-07-02</div>
+          <div class="text-xs" style="color:var(--w-muted)">반도체 유지 · FOMC 후 환전</div>
+        </div>
+        <i data-lucide="chevron-right" style="width:16px;height:16px;color:var(--w-muted)"></i>
+      </div>
+    </div>
+
+    <div class="screen-notes">
+      <details>
+        <summary>Notes</summary>
+        <ul>
+          <li>트리거: 히스토리 아이콘</li>
+          <li>전환: 날짜 선택 → 해당일 요약·상세</li>
+        </ul>
+      </details>
+    </div>
+  </div>
+</div>
+
+<!-- ⑦ 채팅 -->
+<div id="screen-6" class="screen" data-scenario="scenario-21">
+  <div class="screen-content @container max-w-2xl mx-auto p-6">
+    <div class="w-appbar">
+      <button class="w-btn text-xs" onclick="show(1)"><i data-lucide="arrow-left" style="width:12px;height:12px"></i></button>
+      <span class="text-sm font-bold">에이전트 대화</span>
+    </div>
+
+    <div class="flex flex-col gap-3 mb-4 min-h-64">
+      <div class="w-chat-user">안 2 선점만 자세히 설명해줘</div>
+      <div class="w-chat-bot">
+        <strong>안 2 선점</strong>은 에너지·채권으로 먼저 기울이는 안입니다.<br><br>
+        • XLE 4%p 신규 (에너지 유입 선행)<br>
+        • 환전은 FOMC 직후 재평가<br><br>
+        Follow(안1)보다 변동성은 높지만, 추세 기반 참고 수익률은 +7.0%입니다.
+        <span class="w-tooltip ml-1">?</span>
+      </div>
+    </div>
+
+    <div class="flex gap-2">
+      <input class="w-input flex-1" placeholder="질문을 입력하세요..." />
+      <button class="w-btn-primary"><i data-lucide="send" style="width:14px;height:14px"></i></button>
+    </div>
+
+    <div class="screen-notes">
+      <details>
+        <summary>Notes</summary>
+        <ul>
+          <li>트리거: 상세에서 채팅 버튼</li>
+          <li>인터랙션: 당일 브리핑 맥락 기반 Q&A</li>
+        </ul>
+      </details>
+    </div>
+  </div>
+</div>
+
+<!-- ⑧ 알림 미리보기 -->
+<div id="screen-7" class="screen" data-scenario="scenario-15,scenario-17">
+  <div class="screen-content @container max-w-4xl mx-auto p-6">
+    <h2 class="text-sm font-bold mb-4" style="color:var(--w-muted)">알림 채널 미리보기</h2>
+
+    <div class="grid @md:grid-cols-2 gap-4">
+      <div class="w-card">
+        <div class="text-xs mb-3" style="color:var(--w-muted)">📧 이메일 — 아침 07:00 (scenario-17)</div>
+        <div class="text-sm font-bold mb-2">포트폴리오 에이전트 · 7/3 아침 브리핑</div>
+        <p class="text-xs mb-2">• 에너지 Follow → XLE 검토<br>• 환전 7일 내<br>• FOMC 오늘</p>
+        <div class="w-chart h-16 mb-2">[차트 이미지] 시나리오 비교</div>
+        <a class="text-xs underline" style="color:var(--w-muted)">상세 보기 → /agent/report/today</a>
+      </div>
+
+      <div class="w-card">
+        <div class="text-xs mb-3" style="color:var(--w-muted)">💬 Slack — 이벤트 즉시 (scenario-15)</div>
+        <div class="text-sm font-bold mb-2">⚡ FOMC 결과 반영</div>
+        <p class="text-xs mb-2">방향: 채권 ETF(AGG) +2%p 검토<br>근거: 비둘기적 성명 + 채권 ETF 1d +1.2%</p>
+        <a class="text-xs underline" style="color:var(--w-muted)">상세 보기 링크</a>
+      </div>
+    </div>
+
+    <div class="screen-notes">
+      <details>
+        <summary>Notes</summary>
+        <ul>
+          <li>정기: 요약+차트1~2+링크 / 이벤트: 방향+근거+링크 즉시</li>
+        </ul>
+      </details>
+    </div>
+  </div>
+</div>
+
+<!-- ⑨ 브리핑 실패 -->
+<div id="screen-8" class="screen" data-scenario="scenario-23">
+  <div class="screen-content @container max-w-md mx-auto p-6 text-center">
+    <div class="w-chart h-24 mx-auto mb-4 max-w-xs flex flex-col gap-2">
+      <i data-lucide="alert-circle" style="width:28px;height:28px;color:var(--w-muted)"></i>
+      브리핑을 생성하지 못했습니다
+    </div>
+    <p class="text-xs mb-6" style="color:var(--w-muted)">시세 데이터를 가져오지 못했습니다.<br>잠시 후 다시 시도해주세요.</p>
+    <button class="w-btn-primary">다시 시도</button>
+
+    <div class="screen-notes">
+      <details>
+        <summary>Notes</summary>
+        <ul>
+          <li>불완전한 시나리오 안 미표시</li>
+        </ul>
+      </details>
+    </div>
+  </div>
+</div>
+
+<script>
+var currentScreen = 0;
+var screenIds = [];
+
+function show(id) {
+  document.querySelectorAll('.screen').forEach(function(s) { s.classList.remove('active'); });
+  document.getElementById('screen-' + id).classList.add('active');
+  document.querySelectorAll('nav button[id^="nav-"]').forEach(function(b) { b.classList.remove('active'); });
+  var navBtn = document.getElementById('nav-' + id);
+  if (navBtn) navBtn.classList.add('active');
+  currentScreen = screenIds.indexOf(id);
+  lucide.createIcons();
+}
+
+function setViewport(mode) {
+  document.body.classList.remove('viewport-mobile', 'viewport-desktop');
+  document.body.classList.add('viewport-' + mode);
+  document.querySelectorAll('.vp-toggle button').forEach(function(b) { b.classList.remove('active'); });
+  document.getElementById('vp-' + mode).classList.add('active');
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('nav button[id^="nav-"]').forEach(function(b) {
+    screenIds.push(parseInt(b.id.replace('nav-', '')));
+  });
+  var first = document.querySelector('nav button[id^="nav-"]');
+  if (first) first.click();
+  lucide.createIcons();
+});
+</script>
+</body>
+</html>
