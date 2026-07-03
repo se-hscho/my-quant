@@ -13,7 +13,27 @@ const STATIC_MODELS = [
 const BLOCKED_MODEL_PREFIXES = ["gemini-1.5", "gemini-1.0"];
 
 const API_MODELS_TTL_MS = 10 * 60 * 1000;
-const MAX_MODEL_ATTEMPTS = 3;
+const MAX_MODEL_ATTEMPTS = 6;
+const RETRY_DELAY_MS = 500;
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+export function isTransientGeminiError(error: string): boolean {
+  return /HTTP 503|HTTP 429|high demand|overloaded|temporarily unavailable|UNAVAILABLE/i.test(
+    error
+  );
+}
+
+function isChatCapableModel(id: string): boolean {
+  return (
+    !id.includes("-image") &&
+    !id.includes("-tts") &&
+    !id.includes("native-audio") &&
+    !id.includes("embedding")
+  );
+}
 
 let client: GoogleGenerativeAI | null = null;
 let cachedApiModels: { ids: string[]; fetchedAt: number } | null = null;
@@ -66,6 +86,12 @@ function formatApiError(status: number, body: string): string {
   if (status === 404) {
     return "model not found — GEMINI_MODEL을 gemini-2.5-flash 로 설정하세요";
   }
+  if (status === 503) {
+    return "model temporarily unavailable (503) — retry or use fallback model";
+  }
+  if (status === 429) {
+    return "rate limited (429) — retry shortly";
+  }
   return `HTTP ${status}: ${body.slice(0, 180)}`;
 }
 
@@ -100,7 +126,12 @@ export async function verifyGeminiModelsList(): Promise<GeminiModelsListResult> 
     const ids = (parsed.models ?? [])
       .filter((m) => m.supportedGenerationMethods?.includes("generateContent"))
       .map((m) => (m.name ?? "").replace(/^models\//, ""))
-      .filter((id) => id.includes("gemini") && !isBlockedGeminiModel(id))
+      .filter(
+        (id) =>
+          id.includes("gemini") &&
+          !isBlockedGeminiModel(id) &&
+          isChatCapableModel(id)
+      )
       .toSorted((a, b) => rankModel(a) - rankModel(b));
 
     return {
@@ -264,24 +295,45 @@ export async function generateGeminiJson<T>(
   const errors: string[] = [];
 
   for (const modelName of models.slice(0, MAX_MODEL_ATTEMPTS)) {
-    for (const [label, fn] of [
-      ["rest/json", () => generateWithRestApi<T>(apiKey, modelName, systemInstruction, userPrompt, true)],
-      ["sdk/json", () => {
-        if (!genAI) throw new Error("sdk unavailable");
-        return generateWithSdk<T>(genAI, modelName, systemInstruction, userPrompt, true);
-      }],
-    ] as const) {
+    for (let attempt = 0; attempt < 2; attempt++) {
       try {
-        const data = await fn();
+        const data = await generateWithRestApi<T>(
+          apiKey,
+          modelName,
+          systemInstruction,
+          userPrompt,
+          true
+        );
         return { ok: true, data, model: modelName };
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
-        errors.push(`${modelName}[${label}]: ${message.slice(0, 160)}`);
+        errors.push(`${modelName}[rest/json]: ${message.slice(0, 160)}`);
+
+        if (isTransientGeminiError(message) && attempt === 0) {
+          await sleep(RETRY_DELAY_MS);
+          continue;
+        }
+        break;
       }
+    }
+
+    if (!genAI) continue;
+    try {
+      const data = await generateWithSdk<T>(
+        genAI,
+        modelName,
+        systemInstruction,
+        userPrompt,
+        true
+      );
+      return { ok: true, data, model: modelName };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      errors.push(`${modelName}[sdk/json]: ${message.slice(0, 120)}`);
     }
   }
 
-  return { ok: false, error: errors.slice(0, 3).join(" | ") || "all models failed" };
+  return { ok: false, error: errors.slice(0, 4).join(" | ") || "all models failed" };
 }
 
 export async function probeGeminiConnection(): Promise<{

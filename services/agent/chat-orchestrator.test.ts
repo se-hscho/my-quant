@@ -5,6 +5,8 @@ vi.mock("@/services/ai/gemini", () => ({
   isGeminiConfigured: vi.fn(),
   isBlockedGeminiModel: (model: string) =>
     model.startsWith("gemini-1.5") || model.startsWith("gemini-1.0"),
+  isTransientGeminiError: (error: string) =>
+    /HTTP 503|HTTP 429|high demand|overloaded/i.test(error),
   GEMINI_DEFAULT_MODEL: "gemini-2.5-flash",
 }));
 
@@ -94,6 +96,23 @@ describe("processAgentChat", () => {
     const result = await processAgentChat({ message: "이상한 자연어 문장만 있음" });
     expect(result.llmStatus).toBe("failed");
     expect(result.reply).toMatch(/API key invalid/);
+  });
+
+  it("LLM 503 오류 시 규칙 파서 폴백으로 삼전을 등록한다", async () => {
+    mockConfigured.mockReturnValue(true);
+    mockNormalize.mockResolvedValue({
+      normalizedCommand: null,
+      actions: [],
+      error: "gemini-2.5-flash[rest/json]: HTTP 503: high demand",
+    });
+
+    const result = await processAgentChat({ message: "삼전 10주" });
+    expect(result.actions[0]).toMatchObject({
+      ticker: "005930.KS",
+      quantity: 10,
+    });
+    expect(result.reply).toMatch(/일시적으로 혼잡해 바로 등록/);
+    expect(result.reply).not.toMatch(/명령을 이해하지 못했습니다/);
   });
 
   it("LLM 실패 시 규칙 파서로 폴백한다", async () => {

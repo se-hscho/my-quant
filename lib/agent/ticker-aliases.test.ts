@@ -14,7 +14,9 @@ describe("normalizeNaturalLanguageCommand", () => {
     ).toBe("SOXX 10주 등록");
   });
 
-  it("이미 티커가 있으면 별칭을 덮어쓰지 않는다", () => {
-    expect(normalizeNaturalLanguageCommand("QQQ 5주 샀어")).toBe("QQQ 5주 등록");
+  it("삼전 별칭을 티커로 바꾼다", () => {
+    expect(normalizeNaturalLanguageCommand("삼전 10주")).toBe(
+      "005930.KS 10주 등록"
+    );
   });
 });

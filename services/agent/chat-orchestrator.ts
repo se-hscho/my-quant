@@ -5,6 +5,7 @@ import {
   GEMINI_DEFAULT_MODEL,
   isBlockedGeminiModel,
   isGeminiConfigured,
+  isTransientGeminiError,
 } from "@/services/ai/gemini";
 import { normalizeChatInputWithLlm } from "@/services/agent/chat-llm";
 
@@ -161,19 +162,26 @@ export async function processAgentChat(
 
     const fallback = parseChatCommand(options);
     if (!isUnrecognizedCommand(fallback)) {
+      const note = isTransientGeminiError(llmError ?? "")
+        ? "\n\n💡 AI 서버가 일시적으로 혼잡해 바로 등록했습니다."
+        : "\n\n💡 AI 해석은 실패했지만 기본 명령 형식으로 처리했습니다.";
       return {
         ...fallback,
         llmStatus: "failed",
-        reply: `${fallback.reply}\n\n💡 AI 해석은 실패했지만 기본 명령 형식으로 처리했습니다.`,
+        reply: `${fallback.reply}${note}`,
       };
     }
+
+    const failureReply = isTransientGeminiError(llmError ?? "")
+      ? `${fallback.reply}\n\n💡 AI 서버가 일시적으로 혼잡합니다(503). 잠시 후 다시 시도해 주세요.`
+      : withLlmHint(fallback.reply, "failed", llmError);
 
     return {
       ...fallback,
       normalizedCommand: llmResult.normalizedCommand,
       usedLlm: true,
       llmStatus: "failed",
-      reply: withLlmHint(fallback.reply, "failed", llmError),
+      reply: failureReply,
     };
   }
 

@@ -91,14 +91,14 @@ describe("parseChatCommand", () => {
     expect(r.reply).toMatch(/등록/);
   });
 
-  it("반도체 etf 10주 샀어 → SOXX add_holding (LLM 없이)", () => {
-    const r = parseChatCommand({ message: "반도체 etf 10주 샀어" });
+  it("삼전 10주 → 005930.KS add_holding (LLM 없이)", () => {
+    const r = parseChatCommand({ message: "삼전 10주" });
     expect(r.actions[0]).toMatchObject({
       type: "add_holding",
-      ticker: "SOXX",
+      ticker: "005930.KS",
       quantity: 10,
-      assetType: "etf",
-      currency: "USD",
+      assetType: "stock",
+      currency: "KRW",
     });
   });
 });
