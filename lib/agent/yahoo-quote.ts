@@ -13,9 +13,17 @@ interface YahooChartResponse {
   };
 }
 
+/** Yahoo Finance 심볼 정규화 — 6자리 숫자만 있으면 KRX `.KS` 접미사 */
+export function toYahooSymbol(ticker: string): string {
+  const t = ticker.trim().toUpperCase();
+  if (/^\d{6}$/.test(t)) return `${t}.KS`;
+  return t;
+}
+
 export async function fetchYahooLatestClose(ticker: string): Promise<number | null> {
+  const symbol = toYahooSymbol(ticker);
   const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(
-    ticker
+    symbol
   )}?interval=1d&range=5d`;
 
   const res = await fetch(url, {

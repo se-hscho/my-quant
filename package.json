@@ -10,9 +10,9 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
-    "test:e2e:stability": "playwright test e2e/agent-stability.spec.ts",
+    "test:e2e:stability": "playwright test e2e/agent-stability.spec.ts e2e/agent-briefing-deploy.spec.ts",
     "test:e2e:usability": "playwright test e2e/agent-usability.spec.ts",
-    "test:e2e:deploy": "playwright test e2e/agent.spec.ts e2e/agent-natural-language.spec.ts e2e/agent-stability.spec.ts e2e/agent-usability.spec.ts e2e/smoke.spec.ts",
+    "test:e2e:deploy": "playwright test e2e/agent.spec.ts e2e/agent-natural-language.spec.ts e2e/agent-stability.spec.ts e2e/agent-briefing-deploy.spec.ts e2e/agent-usability.spec.ts e2e/smoke.spec.ts",
     "verify:feature": "bun run scripts/verify-feature.ts"
   },
   "dependencies": {

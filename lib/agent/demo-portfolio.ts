@@ -5,7 +5,7 @@ export const DEMO_PORTFOLIO_SNAPSHOT: HoldingsSnapshot = {
   holdings: [
     {
       id: "demo-samsung",
-      ticker: "005930",
+      ticker: "005930.KS",
       quantity: 20,
       assetType: "stock",
       currency: "KRW",
@@ -23,7 +23,7 @@ export const DEMO_PORTFOLIO_SNAPSHOT: HoldingsSnapshot = {
     },
     {
       id: "demo-kodex",
-      ticker: "069500",
+      ticker: "069500.KS",
       quantity: 25,
       assetType: "etf",
       currency: "KRW",
