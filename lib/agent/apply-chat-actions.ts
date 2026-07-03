@@ -5,6 +5,7 @@ import {
   loadHoldingsSnapshot,
   persistHoldingsSnapshot,
 } from "./holdings-storage";
+import { syncHoldingsToPersonal } from "./personal-sync";
 
 export function applyChatActions(actions: ChatAction[]): HoldingsSnapshot {
   let snapshot = loadHoldingsSnapshot() ?? createEmptySnapshot();
@@ -46,5 +47,6 @@ export function applyChatActions(actions: ChatAction[]): HoldingsSnapshot {
   }
 
   persistHoldingsSnapshot(snapshot);
+  syncHoldingsToPersonal(snapshot);
   return snapshot;
 }

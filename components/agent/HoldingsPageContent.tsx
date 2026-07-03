@@ -1,32 +1,43 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   createEmptySnapshot,
   loadHoldingsSnapshot,
-  persistHoldingsSnapshot,
 } from "@/lib/agent/holdings-storage";
+import { persistHoldingsWithSync } from "@/lib/agent/personal-sync";
 import type { HoldingsSnapshot } from "@/types/agent";
 import { HoldingsEditor } from "./HoldingsEditor";
 import { HoldingsList } from "./HoldingsList";
 import { Button } from "@/components/ui/button";
 import { ArrowLeftIcon } from "lucide-react";
-
-function initialDraft(): HoldingsSnapshot {
-  return loadHoldingsSnapshot() ?? createEmptySnapshot();
-}
+import { useAgentPersonal } from "./AgentPersonalProvider";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export function HoldingsPageContent() {
   const router = useRouter();
-  const [draft, setDraft] = useState<HoldingsSnapshot>(initialDraft);
-  const [saved, setSaved] = useState<HoldingsSnapshot>(initialDraft);
+  const { ready } = useAgentPersonal();
+  const [draft, setDraft] = useState<HoldingsSnapshot>(createEmptySnapshot);
+  const [saved, setSaved] = useState<HoldingsSnapshot>(createEmptySnapshot);
 
-  function handleSave() {
-    if (!persistHoldingsSnapshot(draft)) return;
-    setSaved({ ...draft, updatedAt: new Date().toISOString() });
+  useEffect(() => {
+    if (!ready) return;
+    const snap = loadHoldingsSnapshot() ?? createEmptySnapshot();
+    setDraft(snap);
+    setSaved(snap);
+  }, [ready]);
+
+  async function handleSave() {
+    const stamped = { ...draft, updatedAt: new Date().toISOString() };
+    await persistHoldingsWithSync(stamped);
+    setSaved(stamped);
     router.push("/agent");
+  }
+
+  if (!ready) {
+    return <Skeleton className="h-64 w-full" />;
   }
 
   return (

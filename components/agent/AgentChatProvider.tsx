@@ -4,13 +4,19 @@ import {
   createContext,
   use,
   useCallback,
+  useEffect,
   useMemo,
   useState,
   type ReactNode,
 } from "react";
 import type { ChatAction } from "@/types/agent-chat";
+import type { StoredChatMessage } from "@/types/agent-personal";
 import { applyChatActions } from "@/lib/agent/apply-chat-actions";
+import {
+  persistChatWithSync,
+} from "@/lib/agent/personal-sync";
 import { loadHoldingsSnapshot } from "@/lib/agent/holdings-storage";
+import { useAgentPersonal } from "./AgentPersonalProvider";
 
 export interface ChatMessage {
   id: string;
@@ -39,9 +45,7 @@ interface ChatApiResponse {
   actions?: ChatAction[];
 }
 
-async function fetchChatReply(
-  message: string
-): Promise<ChatApiResponse> {
+async function fetchChatReply(message: string): Promise<ChatApiResponse> {
   const res = await fetch("/api/agent/chat", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -57,44 +61,68 @@ async function fetchChatReply(
 }
 
 export function AgentChatProvider({ children }: { children: ReactNode }) {
+  const { ready, data } = useAgentPersonal();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isPending, setIsPending] = useState(false);
 
-  const sendMessage = useCallback(async (text: string) => {
-    const trimmed = text.trim();
-    if (!trimmed || isPending) return;
-
-    const userMsg: ChatMessage = {
-      id: crypto.randomUUID(),
-      role: "user",
-      content: trimmed,
-    };
-    setMessages((prev) => [...prev, userMsg]);
-    setIsPending(true);
-
-    try {
-      const { reply, actions = [] } = await fetchChatReply(trimmed);
-      if (actions.length > 0) {
-        applyChatActions(actions);
-      }
-      setMessages((prev) => [
-        ...prev,
-        { id: crypto.randomUUID(), role: "assistant", content: reply },
-      ]);
-    } catch {
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: crypto.randomUUID(),
-          role: "assistant",
-          content:
-            "답변을 생성하지 못했습니다. 잠시 후 다시 시도해 주세요. (투자 권유가 아닌 참고용 안내입니다.)",
-        },
-      ]);
-    } finally {
-      setIsPending(false);
+  useEffect(() => {
+    if (ready && data?.chatMessages?.length) {
+      setMessages(data.chatMessages);
     }
-  }, [isPending]);
+  }, [ready, data]);
+
+  const persistMessages = useCallback(async (next: ChatMessage[]) => {
+    const stored: StoredChatMessage[] = next.map((m) => ({
+      id: m.id,
+      role: m.role,
+      content: m.content,
+    }));
+    await persistChatWithSync(stored);
+  }, []);
+
+  const sendMessage = useCallback(
+    async (text: string) => {
+      const trimmed = text.trim();
+      if (!trimmed || isPending) return;
+
+      const userMsg: ChatMessage = {
+        id: crypto.randomUUID(),
+        role: "user",
+        content: trimmed,
+      };
+      const withUser = [...messages, userMsg];
+      setMessages(withUser);
+      setIsPending(true);
+
+      try {
+        const { reply, actions = [] } = await fetchChatReply(trimmed);
+        if (actions.length > 0) {
+          applyChatActions(actions);
+        }
+        const withReply: ChatMessage[] = [
+          ...withUser,
+          { id: crypto.randomUUID(), role: "assistant", content: reply },
+        ];
+        setMessages(withReply);
+        await persistMessages(withReply);
+      } catch {
+        const withError: ChatMessage[] = [
+          ...withUser,
+          {
+            id: crypto.randomUUID(),
+            role: "assistant",
+            content:
+              "답변을 생성하지 못했습니다. 잠시 후 다시 시도해 주세요. (투자 권유가 아닌 참고용 안내입니다.)",
+          },
+        ];
+        setMessages(withError);
+        await persistMessages(withError);
+      } finally {
+        setIsPending(false);
+      }
+    },
+    [isPending, messages, persistMessages]
+  );
 
   const value = useMemo(
     () => ({ messages, isPending, sendMessage }),

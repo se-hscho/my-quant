@@ -3,6 +3,8 @@
 import { useSyncExternalStore } from "react";
 import { hasRegisteredHoldings } from "@/lib/agent/holdings-storage";
 import { EmptyHoldingsState } from "./EmptyHoldingsState";
+import { useAgentPersonal } from "./AgentPersonalProvider";
+import { Skeleton } from "@/components/ui/skeleton";
 
 function subscribeHoldings(onStoreChange: () => void) {
   window.addEventListener("storage", onStoreChange);
@@ -22,11 +24,21 @@ function getServerHoldingsRegistered() {
 }
 
 export function AgentHome() {
+  const { ready } = useAgentPersonal();
   const registered = useSyncExternalStore(
     subscribeHoldings,
     getHoldingsRegistered,
     getServerHoldingsRegistered
   );
+
+  if (!ready) {
+    return (
+      <div className="space-y-3" aria-busy="true" aria-label="개인 데이터 불러오는 중">
+        <Skeleton className="h-8 w-48" />
+        <Skeleton className="h-32 w-full" />
+      </div>
+    );
+  }
 
   if (!registered) {
     return <EmptyHoldingsState />;
