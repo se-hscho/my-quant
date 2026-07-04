@@ -52,7 +52,7 @@ export function AgentChatDock() {
       .then((data: ChatStatusPayload | null) => {
         if (cancelled) return;
         setLlmStatus(resolveLlmStatus(data));
-        setStatusHint(data?.hints?.[0] ?? null);
+        setStatusHint(data?.hints?.filter(Boolean).join(" ") ?? null);
       })
       .catch(() => {
         if (!cancelled) {

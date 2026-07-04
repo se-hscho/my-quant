@@ -175,7 +175,11 @@ export async function getGeminiModelCandidates(): Promise<string[]> {
     ordered.push(id);
   }
 
-  if (preferred && !isBlockedGeminiModel(preferred)) {
+  if (
+    preferred &&
+    !isBlockedGeminiModel(preferred) &&
+    (fromApi.length === 0 || fromApi.includes(preferred))
+  ) {
     ordered.unshift(preferred);
   }
 
@@ -187,6 +191,35 @@ export async function getGeminiModelCandidates(): Promise<string[]> {
     0,
     MAX_MODEL_ATTEMPTS + 2
   );
+}
+
+async function probeSimpleGenerate(
+  apiKey: string,
+  modelName: string
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(modelName)}:generateContent?key=${encodeURIComponent(apiKey)}`;
+
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      cache: "no-store",
+      body: JSON.stringify({
+        contents: [{ role: "user", parts: [{ text: "Reply with the word OK" }] }],
+        generationConfig: { temperature: 0, maxOutputTokens: 16 },
+      }),
+    });
+    const body = await res.text();
+    if (!res.ok) {
+      return { ok: false, error: formatApiError(res.status, body) };
+    }
+    return { ok: true };
+  } catch (err) {
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : String(err),
+    };
+  }
 }
 
 function getClient(): GoogleGenerativeAI | null {
@@ -389,6 +422,7 @@ export async function probeGeminiConnection(): Promise<{
   modelsList?: GeminiModelsListResult;
   availableModels?: string[];
 }> {
+  const apiKey = getGeminiApiKey();
   const modelsList = await verifyGeminiModelsList();
   if (!modelsList.ok) {
     return {
@@ -400,6 +434,19 @@ export async function probeGeminiConnection(): Promise<{
   }
 
   const availableModels = modelsList.sampleModels ?? [];
+  const models = await getGeminiModelCandidates();
+  const errors: string[] = [];
+
+  if (apiKey) {
+    for (const modelName of models.slice(0, MAX_MODEL_ATTEMPTS)) {
+      const simple = await probeSimpleGenerate(apiKey, modelName);
+      if (simple.ok) {
+        return { ok: true, model: modelName, modelsList, availableModels };
+      }
+      errors.push(`${modelName}: ${simple.error}`);
+    }
+  }
+
   const result = await generateGeminiJson<{ ping: string }>(
     'Respond JSON only: {"ping":"ok"}',
     "ping"
@@ -411,7 +458,7 @@ export async function probeGeminiConnection(): Promise<{
 
   return {
     ok: false,
-    error: result.error,
+    error: result.error || errors.slice(0, 3).join(" | ") || "all models failed",
     modelsList,
     availableModels,
   };
@@ -421,6 +468,7 @@ export function buildGeminiStatusHints(input: {
   configured: boolean;
   modelsList: GeminiModelsListResult | null;
   probeOk: boolean;
+  probeError?: string | null;
   envModel: string | null;
 }): string[] {
   const hints: string[] = [];
@@ -434,20 +482,41 @@ export function buildGeminiStatusHints(input: {
 
   if (input.envModel && isBlockedGeminiModel(input.envModel)) {
     hints.push(
-      `GEMINI_MODEL=${input.envModel} 은 지원 종료되었습니다. 삭제하거나 ${GEMINI_DEFAULT_MODEL} 로 변경하세요.`
+      `GEMINI_MODEL=${input.envModel} 은 지원 종료되었습니다. Vercel env에서 삭제하거나 ${GEMINI_DEFAULT_MODEL} 로 변경 후 Redeploy하세요.`
+    );
+  } else if (
+    input.envModel &&
+    input.modelsList?.modelIds &&
+    !input.modelsList.modelIds.includes(input.envModel.replace(/^models\//, ""))
+  ) {
+    hints.push(
+      `GEMINI_MODEL=${input.envModel} 이(가) API 목록에 없습니다. env에서 삭제하면 ${GEMINI_DEFAULT_MODEL} 등으로 자동 시도합니다.`
     );
   }
 
   if (input.modelsList && !input.modelsList.ok) {
     hints.push(input.modelsList.error ?? "API 키 검증 실패");
     hints.push(
-      "https://aistudio.google.com/apikey 에서 새 키를 발급해 Production·Preview 환경 변수에 넣으세요."
+      "https://aistudio.google.com/apikey 에서 AI Studio 키를 발급해 Production·Preview 환경 변수에 넣으세요."
     );
     return hints;
   }
 
   if (input.modelsList?.ok && !input.probeOk) {
-    hints.push("키는 유효하지만 generateContent 호출이 실패했습니다. probe.error를 확인하세요.");
+    if (input.probeError) {
+      hints.push(input.probeError.slice(0, 240));
+    }
+    if (/429|rate limit/i.test(input.probeError ?? "")) {
+      hints.push("Gemini 할당량 초과 — 잠시 후 다시 시도하거나 AI Studio 할당량을 확인하세요.");
+    } else if (/403|forbidden/i.test(input.probeError ?? "")) {
+      hints.push("Google Cloud Console 키가 아닌 AI Studio(https://aistudio.google.com/apikey) 키를 사용하세요.");
+    } else if (/404|not found/i.test(input.probeError ?? "")) {
+      hints.push(`GEMINI_MODEL env를 삭제하고 Redeploy하세요. 기본값: ${GEMINI_DEFAULT_MODEL}`);
+    } else if (!hints.some((h) => h.includes("GEMINI_MODEL"))) {
+      hints.push(
+        "Vercel env의 GEMINI_MODEL을 삭제하고 Redeploy한 뒤, AI Studio에서 새 키를 발급해 보세요."
+      );
+    }
   }
 
   if (input.modelsList?.ok && input.probeOk) {

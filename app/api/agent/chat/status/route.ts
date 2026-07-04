@@ -21,6 +21,7 @@ export async function GET() {
     configured,
     modelsList,
     probeOk: probe?.ok === true,
+    probeError: probe?.error ?? null,
     envModel,
   });
 
