@@ -6,7 +6,7 @@
 
 ## Executive Summary
 
-이전 Loop 2의 **SHIP 판정은 조기 종료**였다. `product-reviewer` 에이전트를 실제로 돌리지 않고 spec-matrix 자동 pass만으로 문서를 작성했으며, **미보유 사용자는 등록 안내만 보고 브리핑·시나리오·상세 레포트를 전혀 볼 수 없었다**. Loop 3에서 예시 포트폴리오(삼성전자·SOXX·KODEX 200) 실시세 브리핑 미리보기와 KV 미설정 시 메모리 폴백을 추가해 기획 의도(“에이전트가 대신 모니터링”)의 **가치 발견** 경로를 복구했다. 알림 실발송·실데이터 어댑터는 여전히 partial이다.
+이전 Loop 2의 **SHIP 판정은 조기 종료**였다. `product-reviewer` 에이전트를 실제로 돌리지 않고 spec-matrix 자동 pass만으로 문서를 작성했으며, **미보유 사용자는 등록 안내만 보고 브리핑·시나리오·상세 레포트를 전혀 볼 수 없었다**. Loop 4에서 spec §22·§23 갱신, fixture 어댑터 테스트, 오류 code/detail UI, `/agent/report/today` 별칭, UX polish 완료. **미보유→데모 브리핑→상세→등록** 경로와 mock 데이터 wiring 검증됨. 알림 실발송(S15/S17)만 partial.
 
 ## Scenario Scorecard
 

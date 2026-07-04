@@ -1,9 +1,15 @@
+import type { HoldingsSnapshot } from "@/types/agent";
 import type { Briefing } from "@/services/briefing/types";
 import {
   BriefingFetchError,
   parseBriefingApiError,
   type BriefingErrorInfo,
 } from "@/types/agent-briefing";
+import {
+  DEMO_PORTFOLIO_SNAPSHOT,
+  resolveBriefingDate,
+} from "@/lib/agent/demo-portfolio";
+import { hasRegisteredHoldings, loadHoldingsSnapshot } from "@/lib/agent/holdings-storage";
 
 async function readJsonSafe(res: Response): Promise<unknown> {
   try {
@@ -13,8 +19,61 @@ async function readJsonSafe(res: Response): Promise<unknown> {
   }
 }
 
+export interface ReportBriefingResult {
+  briefing: Briefing;
+  isDemo: boolean;
+}
+
+function resolveReportContext(isDemoQuery: boolean): {
+  isDemo: boolean;
+  snapshot: HoldingsSnapshot;
+} {
+  const registered = hasRegisteredHoldings();
+  const isDemo = isDemoQuery || !registered;
+  if (isDemo) {
+    return { isDemo: true, snapshot: DEMO_PORTFOLIO_SNAPSHOT };
+  }
+  const snap = loadHoldingsSnapshot();
+  if (!snap) {
+    throw new BriefingFetchError({
+      code: "INVALID_REQUEST",
+      message: "보유 스냅샷을 찾을 수 없습니다",
+      detail: "localStorage agent:holdings:v1 없음",
+    });
+  }
+  return { isDemo: false, snapshot: snap };
+}
+
+async function postGenerateBriefing(
+  snapshot: HoldingsSnapshot,
+  isDemo: boolean,
+  date?: string
+): Promise<Briefing> {
+  const postRes = await fetch("/api/agent/briefing", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ snapshot, demo: isDemo, date }),
+  });
+  const postBody = await readJsonSafe(postRes);
+
+  if (postRes.ok) {
+    const briefing = postBody as Briefing;
+    if (briefing?.status === "complete") return briefing;
+    throw new BriefingFetchError({
+      code: "BRIEFING_INCOMPLETE",
+      message: "불완전한 브리핑 응답",
+      detail: `date=${date ?? "today"}`,
+      httpStatus: postRes.status,
+    });
+  }
+
+  throw new BriefingFetchError(
+    parseBriefingApiError(postBody, postRes.status, "GENERATION_FAILED")
+  );
+}
+
 export async function fetchOrGenerateBriefing(
-  snapshot: Parameters<typeof JSON.stringify>[0],
+  snapshot: HoldingsSnapshot,
   isDemo: boolean
 ): Promise<Briefing> {
   const steps: string[] = [];
@@ -40,31 +99,17 @@ export async function fetchOrGenerateBriefing(
       steps.push(`GET HTTP ${getRes.status}: [${err.code}] ${err.message}`);
     }
 
-    const postRes = await fetch("/api/agent/briefing", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ snapshot, demo: isDemo }),
-    });
-    const postBody = await readJsonSafe(postRes);
-
-    if (postRes.ok) {
-      const briefing = postBody as Briefing;
-      if (briefing?.status === "complete") return briefing;
-      steps.push("POST: status !== complete");
-      throw new BriefingFetchError({
-        code: "BRIEFING_INCOMPLETE",
-        message: "불완전한 브리핑 응답",
-        detail: steps.join(" → "),
-        httpStatus: postRes.status,
-      });
+    try {
+      return await postGenerateBriefing(snapshot, isDemo);
+    } catch (postErr) {
+      if (postErr instanceof BriefingFetchError) {
+        throw new BriefingFetchError({
+          ...postErr.info,
+          detail: [postErr.info.detail, steps.join(" → ")].filter(Boolean).join(" | "),
+        });
+      }
+      throw postErr;
     }
-
-    const postErr = parseBriefingApiError(postBody, postRes.status, "GENERATION_FAILED");
-    steps.push(`POST HTTP ${postRes.status}: [${postErr.code}] ${postErr.message}`);
-    throw new BriefingFetchError({
-      ...postErr,
-      detail: [postErr.detail, steps.join(" → ")].filter(Boolean).join(" | "),
-    });
   } catch (e) {
     if (e instanceof BriefingFetchError) throw e;
     const msg = e instanceof Error ? e.message : String(e);
@@ -100,4 +145,49 @@ export async function fetchBriefingByDate(
     });
   }
   return briefing;
+}
+
+/** 상세 레포트: GET 실패 시 POST로 재생성 (Vercel cold instance 대응) */
+export async function loadReportBriefing(
+  rawDate: string,
+  isDemoQuery: boolean
+): Promise<ReportBriefingResult> {
+  const date = resolveBriefingDate(rawDate);
+  const { isDemo, snapshot } = resolveReportContext(isDemoQuery);
+  const steps: string[] = [];
+
+  try {
+    const briefing = await fetchBriefingByDate(date, isDemo);
+    return { briefing, isDemo };
+  } catch (e) {
+    if (e instanceof BriefingFetchError) {
+      steps.push(`GET: [${e.info.code}] ${e.info.detail ?? e.info.message}`);
+      if (
+        e.info.code !== "BRIEFING_NOT_FOUND" &&
+        e.info.code !== "BRIEFING_INCOMPLETE" &&
+        e.info.code !== "BRIEFING_GET_EMPTY"
+      ) {
+        throw new BriefingFetchError({
+          ...e.info,
+          detail: steps.join(" → "),
+        });
+      }
+    } else {
+      steps.push(`GET: ${e instanceof Error ? e.message : String(e)}`);
+    }
+  }
+
+  try {
+    const briefing = await postGenerateBriefing(snapshot, isDemo, date);
+    steps.push("POST: regenerated");
+    return { briefing, isDemo };
+  } catch (e) {
+    if (e instanceof BriefingFetchError) {
+      throw new BriefingFetchError({
+        ...e.info,
+        detail: [e.info.detail, steps.join(" → ")].filter(Boolean).join(" | "),
+      });
+    }
+    throw e;
+  }
 }

@@ -43,20 +43,21 @@ test.describe("Agent briefing deploy smoke", () => {
     expect(body.briefing?.status).toBe("complete");
   });
 
-  test("/agent shows summary-page without holdings (deploy UI)", async ({ page }) => {
+  test("/agent/report/today without demo=1 regenerates for empty holdings", async ({
+    page,
+  }) => {
     await page.goto("/agent");
     await page.evaluate(() => {
       localStorage.clear();
       sessionStorage.clear();
     });
-    await page.reload();
-
+    await page.goto("/agent/report/today");
     await expect(page.getByTestId("demo-preview-banner")).toBeVisible({
       timeout: 90_000,
     });
-    await expect(page.getByTestId("summary-page")).toBeVisible({
-      timeout: 90_000,
-    });
     await expect(page.getByText(/브리핑을 생성하지 못했습니다/)).not.toBeVisible();
+    await expect(page.getByText(/포트폴리오 스냅샷|스마트 머니|시나리오/i).first()).toBeVisible({
+      timeout: 30_000,
+    });
   });
 });

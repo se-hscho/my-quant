@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { hasRegisteredHoldings } from "@/lib/agent/holdings-storage";
 import type { Briefing } from "@/services/briefing/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -40,7 +41,9 @@ export function BriefingHistoryList() {
                     {d}
                   </Button>
                   <Button variant="link" size="sm" asChild>
-                    <Link href={`/agent/report/${d}`}>상세</Link>
+                    <Link href={`/agent/report/${d}${hasRegisteredHoldings() ? "" : "?demo=1"}`}>
+                      상세
+                    </Link>
                   </Button>
                 </li>
               ))}

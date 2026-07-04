@@ -3,11 +3,10 @@
 import { use, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import type { Briefing } from "@/services/briefing/types";
 import type { BriefingErrorInfo } from "@/types/agent-briefing";
 import { BriefingFetchError } from "@/types/agent-briefing";
 import { resolveBriefingDate } from "@/lib/agent/demo-portfolio";
-import { fetchBriefingByDate } from "@/lib/agent/briefing-fetch";
+import { loadReportBriefing } from "@/lib/agent/briefing-fetch";
 import { ReportPageContent } from "./ReportPageContent";
 import { DemoPreviewBanner } from "./DemoPreviewBanner";
 import { BriefingErrorState } from "./BriefingErrorState";
@@ -22,8 +21,11 @@ export function ReportPageClient({
   const { date: rawDate } = use(params);
   const date = resolveBriefingDate(rawDate);
   const searchParams = useSearchParams();
-  const isDemo = searchParams.get("demo") === "1";
-  const [briefing, setBriefing] = useState<Briefing | null>(null);
+  const isDemoQuery = searchParams.get("demo") === "1";
+  const [briefing, setBriefing] = useState<Awaited<
+    ReturnType<typeof loadReportBriefing>
+  >["briefing"] | null>(null);
+  const [isDemo, setIsDemo] = useState(isDemoQuery);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<BriefingErrorInfo | null>(null);
 
@@ -31,8 +33,9 @@ export function ReportPageClient({
     setLoading(true);
     setError(null);
     try {
-      const b = await fetchBriefingByDate(date, isDemo);
-      setBriefing(b);
+      const result = await loadReportBriefing(rawDate, isDemoQuery);
+      setBriefing(result.briefing);
+      setIsDemo(result.isDemo);
     } catch (e) {
       setBriefing(null);
       if (e instanceof BriefingFetchError) {
@@ -46,7 +49,7 @@ export function ReportPageClient({
     } finally {
       setLoading(false);
     }
-  }, [date, isDemo]);
+  }, [rawDate, isDemoQuery]);
 
   useEffect(() => {
     void load();
@@ -76,6 +79,7 @@ export function ReportPageClient({
     <div className="space-y-4">
       {isDemo ? <DemoPreviewBanner /> : null}
       <ReportPageContent briefing={briefing} />
+      <p className="text-center text-xs text-muted-foreground">레포트 날짜: {date}</p>
     </div>
   );
 }

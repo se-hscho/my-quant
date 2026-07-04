@@ -44,10 +44,12 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   let snapshot: HoldingsSnapshot;
   let demo = false;
+  let date: string | undefined;
   try {
     const body = (await request.json()) as {
       snapshot?: HoldingsSnapshot;
       demo?: boolean;
+      date?: string;
     };
     if (!body.snapshot?.holdings || !body.snapshot?.cash) {
       return briefingErrorResponse(
@@ -61,6 +63,7 @@ export async function POST(request: Request) {
     }
     snapshot = body.snapshot;
     demo = body.demo === true;
+    date = body.date;
   } catch (e) {
     return briefingErrorResponse(
       {
@@ -75,6 +78,7 @@ export async function POST(request: Request) {
   try {
     const briefing = await generateBriefing({
       snapshot,
+      date,
       allowDemoFallback: demo,
     });
     if (demo) {
