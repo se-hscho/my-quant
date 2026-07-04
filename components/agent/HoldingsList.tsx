@@ -5,8 +5,11 @@ import {
   ASSET_TYPE_LABELS,
   CURRENCY_LABELS,
   formatCashAmount,
+  formatPrice,
   formatQuantity,
+  formatReturnPct,
 } from "@/lib/agent/holdings-display";
+import { formatKrw } from "@/lib/agent/valuation";
 import { AGENT_SECTOR_LABELS, type AgentSectorId } from "@/config/agent";
 import {
   Card,
@@ -16,6 +19,7 @@ import {
 } from "@/components/ui/card";
 import { PortfolioValueCard } from "./PortfolioValueCard";
 import { usePortfolioValuation } from "@/hooks/usePortfolioValuation";
+import { cn } from "@/lib/utils";
 
 export interface HoldingsListProps {
   snapshot: HoldingsSnapshot;
@@ -23,6 +27,10 @@ export interface HoldingsListProps {
 
 export function HoldingsList({ snapshot }: HoldingsListProps) {
   const { valuation, loading, error, refresh } = usePortfolioValuation(snapshot);
+
+  const valuationById = new Map(
+    valuation?.holdings.map((h) => [h.id, h]) ?? []
+  );
 
   return (
     <div className="space-y-4">
@@ -57,25 +65,64 @@ export function HoldingsList({ snapshot }: HoldingsListProps) {
                   <tr className="border-b text-left text-muted-foreground">
                     <th className="py-2 pr-2 font-medium">티커</th>
                     <th className="py-2 pr-2 font-medium">수량</th>
+                    <th className="py-2 pr-2 font-medium">매수가</th>
+                    <th className="py-2 pr-2 font-medium">현재가</th>
+                    <th className="py-2 pr-2 font-medium">평가(KRW)</th>
+                    <th className="py-2 pr-2 font-medium">수익률</th>
                     <th className="py-2 pr-2 font-medium">유형</th>
                     <th className="py-2 pr-2 font-medium">섹터</th>
                     <th className="py-2 font-medium">통화</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {snapshot.holdings.map((h) => (
-                    <tr key={h.id} className="border-b last:border-0">
-                      <td className="py-2 pr-2">{h.ticker}</td>
-                      <td className="py-2 pr-2">{formatQuantity(h.quantity)}</td>
-                      <td className="py-2 pr-2">{ASSET_TYPE_LABELS[h.assetType]}</td>
-                      <td className="py-2 pr-2">
-                        {h.sector
-                          ? AGENT_SECTOR_LABELS[h.sector as AgentSectorId] ?? h.sector
-                          : "—"}
-                      </td>
-                      <td className="py-2">{CURRENCY_LABELS[h.currency]}</td>
-                    </tr>
-                  ))}
+                  {snapshot.holdings.map((h) => {
+                    const row = valuationById.get(h.id);
+                    const returnPct = row?.returnPct;
+                    return (
+                      <tr key={h.id} className="border-b last:border-0">
+                        <td className="py-2 pr-2">{h.ticker}</td>
+                        <td className="py-2 pr-2">{formatQuantity(h.quantity)}</td>
+                        <td className="py-2 pr-2">
+                          {h.avgCost != null && h.avgCost > 0
+                            ? formatPrice(h.currency, h.avgCost)
+                            : "—"}
+                        </td>
+                        <td className="py-2 pr-2">
+                          {loading
+                            ? "…"
+                            : row
+                              ? formatPrice(h.currency, row.price)
+                              : "—"}
+                        </td>
+                        <td className="py-2 pr-2 tabular-nums">
+                          {loading ? "…" : row ? formatKrw(row.valueKrw) : "—"}
+                        </td>
+                        <td
+                          className={cn(
+                            "py-2 pr-2 tabular-nums font-medium",
+                            returnPct == null
+                              ? "text-muted-foreground"
+                              : returnPct >= 0
+                                ? "text-emerald-600 dark:text-emerald-400"
+                                : "text-red-600 dark:text-red-400"
+                          )}
+                        >
+                          {loading
+                            ? "…"
+                            : returnPct != null
+                              ? formatReturnPct(returnPct)
+                              : "매수가 필요"}
+                        </td>
+                        <td className="py-2 pr-2">{ASSET_TYPE_LABELS[h.assetType]}</td>
+                        <td className="py-2 pr-2">
+                          {h.sector
+                            ? AGENT_SECTOR_LABELS[h.sector as AgentSectorId] ?? h.sector
+                            : "—"}
+                        </td>
+                        <td className="py-2">{CURRENCY_LABELS[h.currency]}</td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

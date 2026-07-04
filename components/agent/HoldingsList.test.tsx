@@ -9,6 +9,7 @@ const snapshot: HoldingsSnapshot = {
       id: "1",
       ticker: "SOXX",
       quantity: 10,
+      avgCost: 200,
       assetType: "etf",
       currency: "USD",
       sector: "semiconductor",
@@ -17,6 +18,7 @@ const snapshot: HoldingsSnapshot = {
       id: "2",
       ticker: "005930.KS",
       quantity: 50,
+      avgCost: 70_000,
       assetType: "stock",
       currency: "KRW",
     },
@@ -35,7 +37,22 @@ describe("HoldingsList", () => {
           totalKrw: 100_000_000,
           cashKrw: 50_000_000,
           holdingsKrw: 50_000_000,
-          holdings: [],
+          holdings: [
+            {
+              id: "1",
+              ticker: "SOXX",
+              quantity: 10,
+              currency: "USD",
+              price: 250,
+              valueNative: 2500,
+              valueKrw: 3_375_000,
+              avgCost: 200,
+              returnPct: 25,
+              pnlKrw: 675_000,
+            },
+          ],
+          holdingsReturnPct: 25,
+          holdingsPnlKrw: 675_000,
           fx: { usdKrw: 1350, jpyKrw: 9.2 },
           warnings: [],
         }),
@@ -58,5 +75,6 @@ describe("HoldingsList", () => {
       expect(screen.getByTestId("portfolio-value-card")).toBeInTheDocument();
     });
     expect(screen.getByText("₩100,000,000")).toBeInTheDocument();
+    expect(screen.getByText("+25.00%")).toBeInTheDocument();
   });
 });

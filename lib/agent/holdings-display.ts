@@ -30,6 +30,21 @@ export function parseNumericInput(value: string): number {
   return Number.isFinite(n) && n >= 0 ? n : 0;
 }
 
+export function formatPrice(currency: Currency, amount: number): string {
+  if (currency === "KRW") {
+    return `₩${Math.round(amount).toLocaleString("ko-KR")}`;
+  }
+  if (currency === "USD") {
+    return `$${amount.toLocaleString("en-US", { maximumFractionDigits: 2 })}`;
+  }
+  return `¥${Math.round(amount).toLocaleString("ja-JP")}`;
+}
+
+export function formatReturnPct(pct: number): string {
+  const sign = pct > 0 ? "+" : "";
+  return `${sign}${pct.toFixed(2)}%`;
+}
+
 export function formatQuantity(quantity: number): string {
   return quantity.toLocaleString("ko-KR", { maximumFractionDigits: 4 });
 }

@@ -11,6 +11,7 @@ describe("HoldingsEditor", () => {
     );
     expect(screen.getByLabelText("티커")).toBeInTheDocument();
     expect(screen.getByLabelText("수량")).toBeInTheDocument();
+    expect(screen.getByLabelText("매수가 (1주, 결제 통화)")).toBeInTheDocument();
     expect(screen.getByLabelText("자산 유형")).toBeInTheDocument();
     expect(screen.getByLabelText("결제 통화")).toBeInTheDocument();
   });
@@ -33,6 +34,7 @@ describe("HoldingsEditor", () => {
 
     await user.type(screen.getByLabelText("티커"), "SOXX");
     await user.type(screen.getByLabelText("수량"), "10");
+    await user.type(screen.getByLabelText("매수가 (1주, 결제 통화)"), "245");
     await user.click(screen.getByRole("button", { name: /종목 추가/i }));
 
     expect(onDraftChange).toHaveBeenCalled();
@@ -40,6 +42,7 @@ describe("HoldingsEditor", () => {
     expect(last.holdings).toHaveLength(1);
     expect(last.holdings[0].ticker).toBe("SOXX");
     expect(last.holdings[0].quantity).toBe(10);
+    expect(last.holdings[0].avgCost).toBe(245);
     expect(last.holdings[0].sector).toBe("semiconductor");
   });
 
@@ -52,6 +55,7 @@ describe("HoldingsEditor", () => {
 
     await user.type(screen.getByLabelText("티커"), "MYSTERY");
     await user.type(screen.getByLabelText("수량"), "5");
+    await user.type(screen.getByLabelText("매수가 (1주, 결제 통화)"), "100");
     await user.click(screen.getByRole("button", { name: /종목 추가/i }));
 
     expect(screen.getByRole("dialog")).toBeInTheDocument();

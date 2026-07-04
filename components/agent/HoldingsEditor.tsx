@@ -2,7 +2,15 @@
 
 import { useState } from "react";
 import type { AssetType, Currency, Holding, HoldingsSnapshot } from "@/types/agent";
-import { ASSET_TYPE_LABELS, CURRENCY_LABELS, parseNumericInput } from "@/lib/agent/holdings-display";
+import {
+  ASSET_TYPE_LABELS,
+  CURRENCY_LABELS,
+  formatCashAmount,
+  formatPrice,
+  formatQuantity,
+  formatReturnPct,
+  parseNumericInput,
+} from "@/lib/agent/holdings-display";
 import {
   applySectorTag,
   classifyTicker,
@@ -28,6 +36,7 @@ const CURRENCIES = Object.keys(CURRENCY_LABELS) as Currency[];
 interface PendingHolding {
   ticker: string;
   quantity: number;
+  avgCost: number;
   assetType: AssetType;
   currency: Currency;
 }
@@ -35,6 +44,7 @@ interface PendingHolding {
 export function HoldingsEditor({ draft, onDraftChange }: HoldingsEditorProps) {
   const [ticker, setTicker] = useState("");
   const [quantity, setQuantity] = useState("");
+  const [avgCost, setAvgCost] = useState("");
   const [assetType, setAssetType] = useState<AssetType>("stock");
   const [currency, setCurrency] = useState<Currency>("KRW");
   const [sectorDialogOpen, setSectorDialogOpen] = useState(false);
@@ -55,6 +65,7 @@ export function HoldingsEditor({ draft, onDraftChange }: HoldingsEditorProps) {
       id: crypto.randomUUID(),
       ticker: base.ticker,
       quantity: base.quantity,
+      avgCost: base.avgCost,
       assetType: base.assetType,
       currency: base.currency,
     };
@@ -67,17 +78,20 @@ export function HoldingsEditor({ draft, onDraftChange }: HoldingsEditorProps) {
     });
     setTicker("");
     setQuantity("");
+    setAvgCost("");
     setPendingHolding(null);
   }
 
   function addHolding() {
     const trimmed = ticker.trim().toUpperCase();
     const qty = parseNumericInput(quantity);
-    if (!trimmed || qty <= 0) return;
+    const cost = parseNumericInput(avgCost);
+    if (!trimmed || qty <= 0 || cost <= 0) return;
 
     const pending: PendingHolding = {
       ticker: trimmed,
       quantity: qty,
+      avgCost: cost,
       assetType,
       currency,
     };
@@ -162,6 +176,16 @@ export function HoldingsEditor({ draft, onDraftChange }: HoldingsEditorProps) {
             />
           </Field>
           <Field>
+            <Label htmlFor="holding-avg-cost">매수가 (1주, 결제 통화)</Label>
+            <Input
+              id="holding-avg-cost"
+              inputMode="decimal"
+              placeholder="245"
+              value={avgCost}
+              onChange={(e) => setAvgCost(e.target.value)}
+            />
+          </Field>
+          <Field>
             <Label htmlFor="holding-asset-type">자산 유형</Label>
             <select
               id="holding-asset-type"
@@ -206,8 +230,9 @@ export function HoldingsEditor({ draft, onDraftChange }: HoldingsEditorProps) {
               className="flex items-center justify-between rounded-md border px-3 py-2"
             >
               <span>
-                {h.ticker} · {h.quantity} · {ASSET_TYPE_LABELS[h.assetType]} ·{" "}
-                {CURRENCY_LABELS[h.currency]}
+                {h.ticker} · {h.quantity} ·{" "}
+                {h.avgCost != null ? `${formatPrice(h.currency, h.avgCost)} 매수 · ` : ""}
+                {ASSET_TYPE_LABELS[h.assetType]} · {CURRENCY_LABELS[h.currency]}
                 {h.sector ? ` · ${h.sector}` : ""}
               </span>
               <Button

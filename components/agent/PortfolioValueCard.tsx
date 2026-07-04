@@ -2,6 +2,7 @@
 
 import type { ValuationResult } from "@/lib/agent/valuation";
 import { formatKrw } from "@/lib/agent/valuation";
+import { formatReturnPct } from "@/lib/agent/holdings-display";
 import { formatCashAmount, TOTAL_ASSETS_PLACEHOLDER } from "@/lib/agent/holdings-display";
 import type { Currency } from "@/types/agent";
 import { Button } from "@/components/ui/button";
@@ -60,6 +61,21 @@ export function PortfolioValueCard({
               현금 환산 {formatKrw(valuation.cashKrw)} · 종목{" "}
               {formatKrw(valuation.holdingsKrw)}
             </p>
+            {valuation.holdingsReturnPct != null &&
+            valuation.holdingsPnlKrw != null ? (
+              <p
+                className={cn(
+                  "text-sm font-medium tabular-nums",
+                  valuation.holdingsReturnPct >= 0
+                    ? "text-emerald-600 dark:text-emerald-400"
+                    : "text-red-600 dark:text-red-400"
+                )}
+                data-testid="portfolio-return-summary"
+              >
+                보유 종목 수익률 {formatReturnPct(valuation.holdingsReturnPct)} (
+                {formatKrw(valuation.holdingsPnlKrw)} · 매수가 기준)
+              </p>
+            ) : null}
             <p className="text-xs text-muted-foreground">
               환율 USD/KRW {valuation.fx.usdKrw.toLocaleString("ko-KR")} · JPY/KRW{" "}
               {valuation.fx.jpyKrw.toLocaleString("ko-KR")}

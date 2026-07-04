@@ -19,12 +19,29 @@ describe("valuation", () => {
       id: "1",
       ticker: "SOXX",
       quantity: 10,
+      avgCost: 200,
       assetType: "etf",
       currency: "USD",
     });
     const r = computeValuation(snap, { SOXX: 100 }, fx);
     expect(r.holdingsKrw).toBeGreaterThan(1_000_000);
     expect(r.warnings).toHaveLength(0);
+  });
+
+  it("매수가 대비 수익률을 계산한다", () => {
+    const snap = createEmptySnapshot();
+    snap.holdings.push({
+      id: "1",
+      ticker: "005930.KS",
+      quantity: 10,
+      avgCost: 70_000,
+      assetType: "stock",
+      currency: "KRW",
+    });
+    const r = computeValuation(snap, { "005930.KS": 80_000 }, fx);
+    expect(r.holdings[0].returnPct).toBeCloseTo(14.29, 1);
+    expect(r.holdingsReturnPct).toBeCloseTo(14.29, 1);
+    expect(r.holdingsPnlKrw).toBe(100_000);
   });
 
   it("convertToKrw applies spread", () => {
