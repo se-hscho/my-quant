@@ -19,17 +19,12 @@ const REMOVE = /(?:삭제|제거|빼|취소)/;
 const LIST = /(?:보유\s*목록|내\s*자산|보유\s*보여|보유\s*알려|목록\s*보여)/;
 const HELP = /^(?:도움말|help|명령|사용법)\s*$/i;
 
-/** 조회·도움말·QA — LLM 없이 규칙 파서만 사용 */
+/** 조회·도움말 — LLM 없이 규칙 파서만 사용 (브리핑 Q&A는 orchestrator에서 briefing 맥락 우선) */
 export function isReadOnlyChatMessage(message: string): boolean {
   const text = message.trim();
   if (!text) return false;
   if (HELP.test(text)) return true;
   if (LIST.test(text)) return true;
-  if (/안\s*2|선점/.test(text)) return true;
-  if (/안\s*1|follow/i.test(text)) return true;
-  if (/환전|usd|달러/i.test(text) && !/(등록|추가|샀|구매|매수|삭제|제거)/.test(text)) {
-    return true;
-  }
   return false;
 }
 

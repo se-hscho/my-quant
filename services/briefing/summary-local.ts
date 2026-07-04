@@ -71,6 +71,6 @@ export function buildLocalBriefingSummary(
     lines,
     sectorTop3,
     disclaimer:
-      "예상 수익률·제안은 참고용이며 투자 권유가 아닙니다. 시장 데이터·섹터 흐름은 일부 fixture입니다.",
+      "예상 수익률·제안은 참고용이며 투자 권유가 아닙니다. 시장 데이터·섹터 흐름은 일부 참고용 샘플입니다.",
   };
 }

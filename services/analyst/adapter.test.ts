@@ -23,6 +23,6 @@ describe("getAnalystReports", () => {
 describe("getAnalystFallbackRationale", () => {
   it("미보유 티커용 fallback 문구", () => {
     expect(getAnalystFallbackRationale("XYZ")).toContain("XYZ");
-    expect(getAnalystFallbackRationale("XYZ")).toMatch(/fixture/i);
+    expect(getAnalystFallbackRationale("XYZ")).toMatch(/참고 데이터/);
   });
 });

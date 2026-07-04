@@ -39,4 +39,16 @@ describe("generateBriefing fixture sections", () => {
     const b = await generateBriefing({ snapshot: DEMO_PORTFOLIO_SNAPSHOT });
     expect(b.summaryLines.some((l) => /CPI|이벤트|오늘/i.test(l))).toBe(true);
   });
+
+  it("사용자 노출 문구에 fixture 개발 용어가 없다", async () => {
+    const b = await generateBriefing({ snapshot: DEMO_PORTFOLIO_SNAPSHOT });
+    const userFacing = [
+      ...b.summaryLines,
+      b.sections.sectorFlows.inflowNote,
+      b.sections.sectorFlows.outflowNote,
+      ...(b.sections.diff?.reason ?? []),
+      ...b.sections.events.timeline.flatMap((e) => e.bullets.map((bul) => bul.rationale)),
+    ].join(" ");
+    expect(userFacing).not.toMatch(/fixture/i);
+  });
 });

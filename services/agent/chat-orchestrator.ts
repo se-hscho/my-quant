@@ -166,6 +166,13 @@ export async function processAgentChat(
     return { reply: "질문을 입력해 주세요.", actions: [], llmStatus: "skipped" };
   }
 
+  if (options.briefing) {
+    const qa = answerBriefingQuestion(message, options.briefing);
+    if (qa) {
+      return { reply: qa, actions: [], llmStatus: "skipped" };
+    }
+  }
+
   if (isReadOnlyChatMessage(message)) {
     return { ...parseChatCommand(options), llmStatus: "skipped" };
   }
@@ -173,13 +180,6 @@ export async function processAgentChat(
   const direct = parseChatCommand(options);
   if (!isUnrecognizedCommand(direct)) {
     return { ...direct, llmStatus: "skipped" };
-  }
-
-  if (options.briefing) {
-    const qa = answerBriefingQuestion(message, options.briefing);
-    if (qa) {
-      return { reply: qa, actions: [], llmStatus: "skipped" };
-    }
   }
 
   if (!isGeminiConfigured()) {

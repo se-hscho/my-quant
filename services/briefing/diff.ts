@@ -36,7 +36,7 @@ export function diffBriefings(prev: Briefing | null, curr: Briefing): Briefing["
   return {
     rows: rows.length > 0 ? rows : [{ field: "제안", before: "유지", after: "유지", direction: "new" }],
     reason: [
-      "전일 대비 수급·맥락 fixture 변동을 반영했습니다.",
+      "전일 대비 수급·맥락 참고 데이터 변동을 반영했습니다.",
       "변경이 없더라도 이벤트 전후에는 안 3(최소변경)을 함께 검토하세요.",
     ],
   };

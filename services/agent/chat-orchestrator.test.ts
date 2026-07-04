@@ -1,4 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import type { Briefing } from "@/services/briefing/types";
+import { BRIEFING_DISCLAIMER } from "@/services/briefing/types";
+import { buildScenarios } from "@/services/briefing/scenarios";
+import { createEmptySnapshot } from "@/lib/agent/holdings-storage";
 import { processAgentChat } from "./chat-orchestrator";
 
 vi.mock("@/services/ai/gemini", () => ({
@@ -39,6 +43,62 @@ const soxxAction = {
   assetType: "etf" as const,
   currency: "USD" as const,
 };
+
+function mockBriefingForChat(): Briefing {
+  const snap = createEmptySnapshot();
+  snap.holdings.push({
+    id: "1",
+    ticker: "SOXX",
+    quantity: 10,
+    assetType: "etf",
+    currency: "USD",
+  });
+  const scenarios = buildScenarios(snap, 10_000_000, 1350);
+  return {
+    date: "2026-07-03",
+    summaryLines: ["line1", "line2", "line3"],
+    totalAssetsKrw: 10_000_000,
+    cash: snap.cash,
+    sectorTop3: [{ sector: "semiconductor", label: "반도체", weightPct: 50, flowScore: 0.8 }],
+    scenarioComparison: scenarios.map((s) => ({
+      id: s.id,
+      label: s.label,
+      expectedReturn: s.expectedReturn,
+      expectedVolatility: s.expectedVolatility,
+    })),
+    fxRebalanceLine: "환전 검토",
+    scenarios,
+    sections: {
+      portfolio: {
+        returns: { d1: 0, d7: 0, m1: 0, q1: 0, ytd: 0 },
+        caption: "c",
+        interpretation: ["a", "b"],
+      },
+      fx: {
+        usdKrw: 1350,
+        jpyKrw: 9.2,
+        trend: [],
+        rebalanceTiming: "이번 주",
+        rebalanceAmountKrw: 0,
+        rebalanceAmountUsd: 0,
+        rationale: ["r1", "r2"],
+      },
+      smartMoney: {
+        foreignNetBuyBn: 1,
+        institutionNetBuyBn: -1,
+        sectorFlows: [],
+        institutionalLens: [],
+      },
+      sectorFlows: { rows: [], inflowNote: "in", outflowNote: "out" },
+      context: { items: [] },
+      events: { timeline: [] },
+      institutional: { paragraphs: [] },
+      recommendations: { rows: [] },
+    },
+    disclaimer: BRIEFING_DISCLAIMER,
+    status: "complete",
+  };
+}
 
 describe("processAgentChat", () => {
   beforeEach(() => {
@@ -88,6 +148,21 @@ describe("processAgentChat", () => {
     const result = await processAgentChat({ message: "도움말" });
     expect(mockNormalize).not.toHaveBeenCalled();
     expect(result.llmStatus).toBe("skipped");
+  });
+
+  it("브리핑 맥락에서 안 1 설명은 playbook 답변을 반환한다", async () => {
+    mockConfigured.mockReturnValue(true);
+
+    const result = await processAgentChat({
+      message: "안 1 설명해줘",
+      briefing: mockBriefingForChat(),
+    });
+
+    expect(mockNormalize).not.toHaveBeenCalled();
+    expect(result.llmStatus).toBe("skipped");
+    expect(result.reply).toMatch(/Playbook:/);
+    expect(result.reply).toMatch(/안 1|Follow/);
+    expect(result.reply).toMatch(/예상 수익/);
   });
 
   it("LLM 한도 초과 시 rate_limited", async () => {

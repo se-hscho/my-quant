@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 const QUICK_PROMPTS = [
   "삼전 10주",
   "반도체 etf 10주 샀어",
+  "안 1 설명해줘",
   "보유 목록 보여줘",
   "현금 오만원 추가",
   "도움말",

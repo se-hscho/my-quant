@@ -32,7 +32,15 @@ export function BriefingHistoryList() {
         </CardHeader>
         <CardContent className="space-y-2">
           {dates.length === 0 ? (
-            <p className="text-sm text-muted-foreground">저장된 브리핑이 없습니다.</p>
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground">
+                아직 저장된 브리핑이 없습니다. 에이전트 홈에서 오늘 브리핑을 생성한 뒤 이곳에서
+                날짜별로 다시 볼 수 있습니다.
+              </p>
+              <Button variant="outline" size="sm" asChild>
+                <Link href="/agent">오늘 브리핑 보러 가기</Link>
+              </Button>
+            </div>
           ) : (
             <ul className="space-y-1">
               {dates.map((d) => (

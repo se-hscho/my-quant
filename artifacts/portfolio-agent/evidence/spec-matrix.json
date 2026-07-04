@@ -240,7 +240,7 @@
         "components/agent/BriefingHistoryList.tsx"
       ],
       "tests": [],
-      "notes": ""
+      "notes": "빈 목록 시 /agent CTA"
     },
     {
       "id": "S21",
@@ -253,9 +253,10 @@
       ],
       "tests": [
         "services/briefing/chat-qa.test.ts",
+        "services/agent/chat-orchestrator.test.ts",
         "e2e/agent-natural-language.spec.ts"
       ],
-      "notes": "브리핑 맥락 Q&A 규칙 기반"
+      "notes": "브리핑 맥락 Q&A — orchestrator에서 briefing 우선, quick prompt 포함"
     },
     {
       "id": "S22",

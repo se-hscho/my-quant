@@ -87,7 +87,7 @@ export async function generateBriefing(
 
   const summaryLines = [
     `총자산 ${Math.round(valuation.totalKrw).toLocaleString("ko-KR")}원 — 반도체 수급 강세 구간에서 Follow(안 1) 검토가 유리합니다.`,
-    `외국인 순매수·기관 매도 fixture — 개인은 소액·즉시 체결로 선점(안 2) 또는 최소변경(안 3)을 선택할 수 있습니다.`,
+    `외국인 순매수·기관 매도 참고 데이터 — 개인은 소액·즉시 체결로 선점(안 2) 또는 최소변경(안 3)을 선택할 수 있습니다.`,
     fxRebalanceLine,
     events.some((e) => e.phase === "today")
       ? `오늘 ${events.find((e) => e.phase === "today")?.title} — 이벤트 전 playbook 0단계(환전) 우선 검토.`
@@ -140,7 +140,7 @@ export async function generateBriefing(
       sectorFlows: {
         rows: smartMoney.sectorFlows,
         inflowNote:
-          "유입 상위: 반도체·기술 — 외국인 순매수 fixture와 정합. 보유 여부와 무관하게 전 섹터 표시.",
+          "유입 상위: 반도체·기술 — 외국인 순매수 참고 데이터와 정합. 보유 여부와 무관하게 전 섹터 표시.",
         outflowNote: "유출: 금융·유틸리티 — 방어적 로테이션 구간으로 해석.",
       },
       context: { items: context },

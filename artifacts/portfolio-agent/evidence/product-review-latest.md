@@ -2,63 +2,61 @@
 
 **Date:** 2026-07-04  
 **Verdict:** SHIP  
-**Loop:** 4
+**Loop:** 6
 
 ## Executive Summary
 
-이전 Loop 2의 **SHIP 판정은 조기 종료**였다. `product-reviewer` 에이전트를 실제로 돌리지 않고 spec-matrix 자동 pass만으로 문서를 작성했으며, **미보유 사용자는 등록 안내만 보고 브리핑·시나리오·상세 레포트를 전혀 볼 수 없었다**. Loop 4에서 spec §22·§23 갱신, fixture 어댑터 테스트, 오류 code/detail UI, `/agent/report/today` 별칭, UX polish 완료. **미보유→데모 브리핑→상세→등록** 경로와 mock 데이터 wiring 검증됨. 알림 실발송(S15/S17)만 partial.
+Loop 5 P1 백로그(채팅 Q&A 라우팅·quick prompt·fixture 카피·히스토리 CTA·등록 사용자 chat briefing 폴백)를 모두 반영했다. **“안 1 설명해줘”**는 이제 `answerBriefingQuestion`이 orchestrator 최상단에서 playbook·예상 수익률·disclaimer를 반환하며, 사용자 노출 경로에서 **`fixture` 개발 용어는 제거**되었다. 자동 검증 185 tests + e2e stability/usability PASS. MVP 범위(deferred: S15/S17 실발송·실 KRX 수급)를 제외하면 spec §22 첫 방문 가치 발견·§21 브리핑 Q&A·§20 히스토리·§23 실패 복구가 기획 의도와 정합한다.
 
-## Scenario Scorecard
+## Scenario Scorecard (변경분)
 
-| Scenario | Spec intent | Observed | Status | Evidence |
-|----------|-------------|----------|--------|----------|
-| 22. 보유 없이 접속 | 등록 안내 + 편집 이동 | 예시 브리핑 전체 + 등록 CTA | **partial** (spec 확장) | `AgentHome.test.tsx`, `e2e/agent-usability.spec.ts` |
-| 1. 요약 진입 | 시나리오 비교·결론 | 미보유 시에도 데모로 동일 UI | pass | `demo-preview-banner`, `summary-page` |
-| 2. 상세 레포트 | 9섹션 | `?demo=1`로 미보유도 접근 | pass | `ReportPageClient.tsx` |
-| 21. 에이전트 대화 | 브리핑 맥락 Q&A | 미보유 시 데모 브리핑으로 Q&A | pass | `chat/route.ts` |
-| 23. 브리핑 실패 | 재시도 UI | KV 없을 때 메모리 폴백으로 완화 | partial | `kv.ts` |
+| Scenario | Loop 5 | Loop 6 | Evidence |
+|----------|--------|--------|----------|
+| S20 히스토리 | partial (dead-end) | **pass** | `BriefingHistoryList.tsx` empty CTA → `/agent` |
+| S21 에이전트 대화 | partial (stub 가로챔) | **pass** | `chat-orchestrator.ts` briefing Q&A 우선, `AgentChatDock` quick prompt, `chat-orchestrator.test.ts` |
+| S11 스마트 머니 | partial (fixture caption) | **pass (MVP 샘플)** | `SmartMoneySection.tsx` “참고용 샘플 데이터” |
+| S19 diff | partial (fixture reason) | **pass** | `diff.ts` 사용자 언어 치환 |
+| Trust / fixture 카피 | P1 | **resolved** | `generate.fixture-sections.test.ts` user-facing `/fixture/i` neg |
 
-pass 21 · partial 3 (S15, S17, S22 확장) · missing 0
-
-## Dimension Notes
-
-### Intent Alignment
-- idea.md “대신 모니터링·아침 브리핑”이 **미보유 첫 방문에서도** 데모로 체감 가능해짐 (Loop 2 대비 개선)
-- spec §22 원문은 “등록 안내만” — 데모는 **기획 의도에는 부합하나 spec 문서와 불일치** → spec §22 수용 기준 갱신 권장
-
-### Usability
-- 첫 방문 → 예시 브리핑 → 상세 → 등록 CTA 흐름이 자연스러움
-- “예시 포트폴리오” 라벨로 실보유와 혼동 방지 시도 (면책·배너)
-
-### Stability & Trust
-- 이전 SHIP은 **거짓 pass**: 미보유 시 S1·S2·S21이 UI에서 불가능했음
-- KV 미설정 Preview에서 503 → 메모리 폴백으로 해결 (인스턴스 간 비영속은 한계)
+**Matrix:** pass 21 · partial 2 (S15 알림 즉시, S17 아침 알림 — plan deferred) · missing 0
 
 ## Findings
 
 ### P0 — Blocker
-없음 (Loop 3 수정 후)
+없음.
 
 ### P1 — Major
-- **[이전 리뷰 프로세스]** Loop 2 `product-review-latest.md`는 LLM product-reviewer 미실행·수동 작성 — **검증 루프 신뢰도 저하** → `/verify-loop` 시 product-reviewer Task 필수화
-- **[spec §22]** 수용 기준 “등록 안내만” vs 구현 “데모 브리핑” — spec.md §22 갱신 또는 acceptance note 추가 필요
+없음 (Loop 5 항목 전부 해결).
 
-### P2 — Minor
-- 데모 상세 레포트 URL에 `?demo=1` 필요 — 북마크 시 404 가능 (콜드 스타트)
-- 알림·fixture 경계 카피는 여전히 polish 대상
+### P2 — Minor (post-MVP polish)
+- 등록 후 **상세 레포트 클릭-through** E2E — 회귀 방지용 1케이스 권장
+- S4 섹터 태그 — 단위/e2e 없음
+- `resolveBriefingForChat` 등록 사용자 경로 — API 통합 테스트 추가 권장
+- `BriefingErrorState` code/detail — 일반 사용자용 “고급 정보” 접기 UI
 
 ### Deferred (planned)
-- S15/S17 실발송, KRX·애널 실데이터
+- S15/S17 실 Resend/Slack·cron 운영 검증
+- KRX 실수급·애널 유료 API
+- CSV·증권사 연동
 
 ## What's Working (keep)
-- 미보유 → `DEMO_PORTFOLIO_SNAPSHOT` + Yahoo 실시세 브리핑 — **기획 가치 발견**에 결정적
-- 규칙 우선 채팅 + 데모 브리핑 Q&A — LLM 한도 절약 유지
+- **데모 가치 발견:** `DemoPreviewBanner` + 전체 요약 + `?demo=1` 상세 — spec §22
+- **브리핑 Q&A fidelity:** briefing 맥락 우선 라우팅 + “안 1 설명해줘” quick prompt
+- **신뢰 카피:** 샘플 데이터 투명 표현, 개발 용어 제거
+- **실패·복구:** `BriefingErrorState` + report GET→POST 재생성
+- **규칙 우선 채팅 등록:** LLM 없이 MVP 핵심 루프
 
-## Next Iteration Backlog (ordered)
-1. [ ] spec.md §22 수용 기준에 “예시 포트폴리오 미리보기” 추가 — acceptance: 미보유 시 `summary-page` + 등록 CTA 동시 표시
-2. [ ] verify-loop: product-reviewer를 evidence에 **실행 로그** 남기기
-3. [ ] S15/S17 staging env 수동 알림 검증
+## Regression vs Loop 5
 
-## Regression vs Previous Review
-- Loop 2 SHIP → **ITERATE** (프로세스·미보유 UX gap 인정)
-- 미보유 시 S1/S2/S21: **missing(사실상)** → pass (데모 경로)
+| 항목 | Loop 5 | Loop 6 |
+|------|--------|--------|
+| Verdict | ITERATE | **SHIP** |
+| §21 Q&A | stub 우선 (false pass) | playbook 답변 + integration test |
+| fixture 카피 | P1 | resolved |
+| §20 히스토리 | dead-end | CTA |
+| 등록 chat briefing | KV miss → null | snapshot generate 폴백 |
+
+## Next (post-SHIP, optional)
+1. S15/S17 실발송 + cron 운영 검증
+2. 등록 사용자 상세 레포트 E2E
+3. S4 섹터 태그 테스트

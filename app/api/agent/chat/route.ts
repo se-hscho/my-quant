@@ -5,30 +5,36 @@ import { processAgentChat } from "@/services/agent/chat-orchestrator";
 import { generateBriefing } from "@/services/briefing/generate";
 import { getBriefing, saveBriefing } from "@/services/briefing/kv";
 
+function hasPortfolioData(snapshot: HoldingsSnapshot | null | undefined): boolean {
+  if (!snapshot) return false;
+  return (
+    snapshot.holdings.length > 0 ||
+    snapshot.cash.krw > 0 ||
+    snapshot.cash.usd > 0 ||
+    snapshot.cash.jpy > 0
+  );
+}
+
 async function resolveBriefingForChat(snapshot: HoldingsSnapshot | null | undefined) {
   const today = new Date().toISOString().slice(0, 10);
   let briefing = await getBriefing(today);
   if (briefing?.status === "complete") return briefing;
 
-  const useDemo =
-    !snapshot?.holdings?.length &&
-    !snapshot?.cash?.krw &&
-    !snapshot?.cash?.usd &&
-    !snapshot?.cash?.jpy;
+  const useDemo = !hasPortfolioData(snapshot);
+  if (!useDemo && !snapshot) return null;
 
-  if (useDemo) {
-    try {
-      briefing = await generateBriefing({
-        snapshot: DEMO_PORTFOLIO_SNAPSHOT,
-        allowDemoFallback: true,
-      });
-      await saveBriefing(briefing);
-      return briefing;
-    } catch {
-      return null;
-    }
+  const targetSnapshot = useDemo ? DEMO_PORTFOLIO_SNAPSHOT : snapshot!;
+
+  try {
+    briefing = await generateBriefing({
+      snapshot: targetSnapshot,
+      allowDemoFallback: useDemo,
+    });
+    await saveBriefing(briefing);
+    return briefing;
+  } catch {
+    return null;
   }
-  return null;
 }
 
 export async function POST(request: Request) {

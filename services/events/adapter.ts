@@ -18,7 +18,7 @@ export function getEventsFixture(): EventTimelineItem[] {
       bullets: [
         {
           direction: "Follow 안 — 반도체 비중 소폭 확대 검토",
-          rationale: "인플레이션 둔화 시나리오에서 성장 섹터 수급 개선 fixture.",
+          rationale: "인플레이션 둔화 시나리오에서 성장 섹터 수급 개선 참고 데이터.",
         },
       ],
     },
