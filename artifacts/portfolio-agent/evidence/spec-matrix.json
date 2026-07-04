@@ -136,13 +136,15 @@
       "implementedIn": [
         "components/agent/sections/SmartMoneySection.tsx",
         "services/smart-money/adapter.ts",
+        "services/smart-money/naver-live.ts",
         "services/smart-money/krx-live.ts"
       ],
       "tests": [
         "services/smart-money/adapter.test.ts",
+        "services/smart-money/naver-live.test.ts",
         "services/smart-money/krx-live.test.ts"
       ],
-      "notes": "krx-live 시도 + fixture 폴백 (KRX_API 세션 필요)"
+      "notes": "Naver KOSPI 공개 API → KRX 시도 → fixture"
     },
     {
       "id": "S12",
@@ -164,13 +166,14 @@
         "components/agent/sections/AnalystSection.tsx",
         "services/analyst/adapter.ts",
         "services/analyst/kr-wisereport.ts",
+        "services/analyst/finviz-public.ts",
         "services/analyst/finnhub.ts",
         "data/analyst-seed.json"
       ],
       "tests": [
         "services/analyst/adapter.test.ts"
       ],
-      "notes": "Wisereport(KR) + Finnhub(US) + seed"
+      "notes": "Wisereport(KR) + Finviz(US) + seed · Finnhub 선택"
     },
     {
       "id": "S14",

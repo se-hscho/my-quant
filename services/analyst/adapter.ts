@@ -1,6 +1,7 @@
 import type { AnalystRow } from "@/services/briefing/types";
 import seed from "@/data/analyst-seed.json";
 import "server-only";
+import { fetchFinvizPublicReports } from "./finviz-public";
 import { fetchFinnhubRecommendations } from "./finnhub";
 import { fetchKrWisereportReports } from "./kr-wisereport";
 
@@ -35,19 +36,25 @@ function mergeReports(layers: AnalystRow[][]): AnalystRow[] {
   );
 }
 
-/** Wisereport(KR) + Finnhub(US) + seed — live 우선 병합 */
+async function optionalFinnhub(tickers: string[]): Promise<AnalystRow[]> {
+  if (!process.env.FINNHUB_API_KEY?.trim()) return [];
+  return fetchFinnhubRecommendations(tickers);
+}
+
+/** Finviz(US) + Wisereport(KR) + seed — API key 없이 공개·크롤. Finnhub는 선택. */
 export async function getAnalystReports(
   tickers: string[]
 ): Promise<AnalystRow[]> {
   if (tickers.length === 0) return [];
 
-  const [krLive, usLive, seedRows] = await Promise.all([
+  const [finvizUs, krLive, seedRows, finnhubOptional] = await Promise.all([
+    fetchFinvizPublicReports(tickers),
     fetchKrWisereportReports(tickers),
-    fetchFinnhubRecommendations(tickers),
     Promise.resolve(filterSeed(tickers)),
+    optionalFinnhub(tickers),
   ]);
 
-  return mergeReports([seedRows, usLive, krLive]);
+  return mergeReports([seedRows, finnhubOptional, finvizUs, krLive]);
 }
 
 export { getAnalystFallbackRationale } from "./fallback-rationale";

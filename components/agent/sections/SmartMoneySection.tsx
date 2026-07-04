@@ -15,9 +15,11 @@ export function SmartMoneySection({
   ];
 
   const caption =
-    data.source === "krx-live"
-      ? `KRX 투자자별 거래대금 — ${data.asOfDate ?? "최근 영업일"} (조원, live)`
-      : "순매수 규모 (조원, 참고용 샘플 데이터)";
+    data.source === "naver-live"
+      ? `Naver KOSPI 순매수 — ${data.asOfDate ?? "최근 영업일"} (조원, 공개)`
+      : data.source === "krx-live"
+        ? `KRX 투자자별 거래대금 — ${data.asOfDate ?? "최근 영업일"} (조원, live)`
+        : "순매수 규모 (조원, 참고용 샘플 데이터)";
 
   return (
     <ChartWithCaption

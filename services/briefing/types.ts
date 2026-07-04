@@ -63,8 +63,8 @@ export interface EventTimelineItem {
 }
 
 export interface SmartMoneyData {
-  /** live KRX 또는 fixture */
-  source?: "krx-live" | "fixture";
+  /** live KRX · Naver 또는 fixture */
+  source?: "naver-live" | "krx-live" | "fixture";
   asOfDate?: string;
   foreignNetBuyBn: number;
   institutionNetBuyBn: number;

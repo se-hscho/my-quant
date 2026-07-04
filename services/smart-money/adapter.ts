@@ -2,8 +2,9 @@ import type { SmartMoneyData } from "@/services/briefing/types";
 import { AGENT_SECTORS, SECTOR_FLOW_FIXTURE } from "@/config/agent";
 import "server-only";
 import { fetchKrxInvestorFlow } from "./krx-live";
+import { fetchNaverKospiInvestorFlow } from "./naver-live";
 
-export type SmartMoneySource = "krx-live" | "fixture";
+export type SmartMoneySource = "naver-live" | "krx-live" | "fixture";
 
 function buildSectorFlows(): SmartMoneyData["sectorFlows"] {
   return AGENT_SECTORS.map((s) => {
@@ -35,37 +36,56 @@ export function getSmartMoneyFixture(): SmartMoneyData {
   };
 }
 
-function withLiveLens(data: SmartMoneyData, dateYmd: string): SmartMoneyData {
-  const asOf = `${dateYmd.slice(0, 4)}-${dateYmd.slice(4, 6)}-${dateYmd.slice(6, 8)}`;
+function withLiveLens(
+  data: SmartMoneyData,
+  source: SmartMoneySource,
+  asOfDate: string,
+  note: string
+): SmartMoneyData {
   return {
     ...data,
-    source: "krx-live",
-    asOfDate: asOf,
-    institutionalLens: [
-      `KRX 투자자별 거래대금 기준 (${asOf}) — 외국인·기관 순매수(조원).`,
-      ...INSTITUTIONAL_LENS.slice(1),
-    ],
+    source,
+    asOfDate,
+    institutionalLens: [note, ...INSTITUTIONAL_LENS.slice(1)],
   };
 }
 
-/** KRX live 시도 → 실패 시 fixture. 섹터 흐름은 fixture 유지(섹터별 live 매핑은 Phase 3). */
+/** Naver(KOSPI) → KRX → fixture. API key 불필요. */
 export async function getSmartMoneyData(): Promise<SmartMoneyData> {
   if (process.env.SMART_MONEY_FIXTURE_ONLY === "1") {
     return getSmartMoneyFixture();
   }
 
-  const live = await fetchKrxInvestorFlow();
-  if (!live) {
-    return getSmartMoneyFixture();
+  const base = getSmartMoneyFixture();
+
+  const naver = await fetchNaverKospiInvestorFlow();
+  if (naver) {
+    return withLiveLens(
+      {
+        ...base,
+        foreignNetBuyBn: naver.foreignNetBuyBn,
+        institutionNetBuyBn: naver.institutionNetBuyBn,
+      },
+      "naver-live",
+      naver.asOfDate,
+      `Naver KOSPI 투자자별 순매수 (${naver.asOfDate}) — 외국인·기관(조원, 공개 API).`
+    );
   }
 
-  const base = getSmartMoneyFixture();
-  return withLiveLens(
-    {
-      ...base,
-      foreignNetBuyBn: live.foreignNetBuyBn,
-      institutionNetBuyBn: live.institutionNetBuyBn,
-    },
-    live.dateYmd
-  );
+  const krx = await fetchKrxInvestorFlow();
+  if (krx) {
+    const asOf = `${krx.dateYmd.slice(0, 4)}-${krx.dateYmd.slice(4, 6)}-${krx.dateYmd.slice(6, 8)}`;
+    return withLiveLens(
+      {
+        ...base,
+        foreignNetBuyBn: krx.foreignNetBuyBn,
+        institutionNetBuyBn: krx.institutionNetBuyBn,
+      },
+      "krx-live",
+      asOf,
+      `KRX 투자자별 거래대금 (${asOf}) — 외국인·기관 순매수(조원).`
+    );
+  }
+
+  return getSmartMoneyFixture();
 }

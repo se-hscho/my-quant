@@ -30,17 +30,11 @@
 ## Loop 10 — Phase 2 real data (2026-07-04)
 
 ### Smart money
-- `@npmc_5/krxjs` `Stock.getTradingValueByDate` live 시도 → 실패 시 fixture (`source: krx-live | fixture`)
-- `server-only` + `serverExternalPackages`로 krxjs 클라이언트 번들 유입 방지
+- **Naver KOSPI** 공개 API (`m.stock.naver.com/api/index/KOSPI/trend`) — API key 불필요, 우선 사용
+- KRX `getTradingValueByDate` 2순위 → 실패 시 fixture
+- `source: naver-live | krx-live | fixture`
 
 ### Analyst
-- KR: Wisereport(`Krxjs.getCompanyOverview`) brokerTargets — 병렬 fetch + 5s timeout
-- US: Finnhub recommendation (`FINNHUB_API_KEY`)
-- 브리핑 `sections.analyst.reports`에 저장 — ReportPageContent는 재-fetch 없음
-- `AnalystSection` fallback은 `fallback-rationale.ts` (client-safe)
-
-### Env
-- `FINNHUB_API_KEY` — US 애널 live
-- `SMART_MONEY_FIXTURE_ONLY=1` — KRX 수급 live skip
-- `ANALYST_LIVE_DISABLED=1` — Wisereport live skip
-- `WISEREPORT_TIMEOUT_MS` — 티커당 timeout (default 5000)
+- KR: Wisereport brokerTargets (크롤, key 없음)
+- US: Finviz HTML Recom/Target (크롤, key 없음) — ETF는 Finviz 미제공 시 seed
+- Finnhub는 `FINNHUB_API_KEY` 있을 때만 선택적 보 supplement

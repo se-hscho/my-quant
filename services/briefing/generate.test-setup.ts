@@ -4,8 +4,16 @@ vi.mock("@/services/smart-money/krx-live", () => ({
   fetchKrxInvestorFlow: vi.fn(async () => null),
 }));
 
+vi.mock("@/services/smart-money/naver-live", () => ({
+  fetchNaverKospiInvestorFlow: vi.fn(async () => null),
+}));
+
 vi.mock("@/services/analyst/kr-wisereport", () => ({
   fetchKrWisereportReports: vi.fn(async () => []),
+}));
+
+vi.mock("@/services/analyst/finviz-public", () => ({
+  fetchFinvizPublicReports: vi.fn(async () => []),
 }));
 
 vi.mock("@/services/analyst/finnhub", () => ({

@@ -5,18 +5,25 @@ vi.mock("./kr-wisereport", () => ({
   fetchKrWisereportReports: vi.fn(async () => []),
 }));
 
+vi.mock("./finviz-public", () => ({
+  fetchFinvizPublicReports: vi.fn(async () => []),
+}));
+
 vi.mock("./finnhub", () => ({
   fetchFinnhubRecommendations: vi.fn(async () => []),
 }));
 
 import { fetchKrWisereportReports } from "./kr-wisereport";
+import { fetchFinvizPublicReports } from "./finviz-public";
 import { fetchFinnhubRecommendations } from "./finnhub";
 import { getAnalystReports } from "./adapter";
 
 describe("getAnalystReports", () => {
   beforeEach(() => {
     vi.mocked(fetchKrWisereportReports).mockReset().mockResolvedValue([]);
+    vi.mocked(fetchFinvizPublicReports).mockReset().mockResolvedValue([]);
     vi.mocked(fetchFinnhubRecommendations).mockReset().mockResolvedValue([]);
+    delete process.env.FINNHUB_API_KEY;
   });
 
   it("시드에 있는 티커만 필터링한다", async () => {
@@ -51,19 +58,23 @@ describe("getAnalystReports", () => {
     expect(reports.some((r) => r.broker === "DB")).toBe(true);
   });
 
-  it("Finnhub live와 seed를 병합한다", async () => {
-    vi.mocked(fetchFinnhubRecommendations).mockResolvedValue([
+  it("Finviz live가 seed보다 우선한다", async () => {
+    vi.mocked(fetchFinvizPublicReports).mockResolvedValue([
       {
-        ticker: "SOXX",
-        broker: "Finnhub 컨센서스",
-        date: "2026-07-01",
+        ticker: "AAPL",
+        broker: "Finviz 컨센서스",
+        date: "2026-07-04",
         rating: "Buy",
-        summary: "consensus",
+        summary: "finviz",
       },
     ]);
-    const reports = await getAnalystReports(["SOXX"]);
-    expect(reports.some((r) => r.broker === "Finnhub 컨센서스")).toBe(true);
-    expect(reports.some((r) => r.broker === "Goldman Sachs")).toBe(true);
+    const reports = await getAnalystReports(["AAPL"]);
+    expect(reports.some((r) => r.broker === "Finviz 컨센서스")).toBe(true);
+  });
+
+  it("FINNHUB_API_KEY 없으면 Finnhub를 호출하지 않는다", async () => {
+    await getAnalystReports(["SOXX"]);
+    expect(fetchFinnhubRecommendations).not.toHaveBeenCalled();
   });
 });
 
