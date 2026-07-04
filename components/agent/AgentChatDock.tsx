@@ -16,7 +16,21 @@ const QUICK_PROMPTS = [
   "도움말",
 ] as const;
 
-type LlmStatus = "checking" | "active" | "inactive" | "rules_first";
+type LlmStatus = "checking" | "active" | "unconfigured" | "failed";
+
+interface ChatStatusPayload {
+  geminiActive?: boolean;
+  geminiConfigured?: boolean;
+  hints?: string[];
+  llmRateLimit?: { remaining: number };
+}
+
+function resolveLlmStatus(data: ChatStatusPayload | null): LlmStatus {
+  if (!data) return "failed";
+  if (data.geminiActive) return "active";
+  if (data.geminiConfigured) return "failed";
+  return "unconfigured";
+}
 
 export function AgentChatDock() {
   const { messages, isPending, isImporting, sendMessage, importHoldingsFromImage } =
@@ -24,6 +38,7 @@ export function AgentChatDock() {
   const [input, setInput] = useState("");
   const [expanded, setExpanded] = useState(false);
   const [llmStatus, setLlmStatus] = useState<LlmStatus>("checking");
+  const [statusHint, setStatusHint] = useState<string | null>(null);
   const chatImageRef = useRef<HTMLInputElement>(null);
 
   const hasMessages = messages.length > 0;
@@ -34,26 +49,16 @@ export function AgentChatDock() {
     let cancelled = false;
     void fetch("/api/agent/chat/status", { cache: "no-store" })
       .then((res) => (res.ok ? res.json() : null))
-      .then(
-        (
-          data: {
-            geminiActive?: boolean;
-            geminiConfigured?: boolean;
-            llmRateLimit?: { remaining: number };
-          } | null
-        ) => {
-          if (cancelled) return;
-          if (data?.geminiActive) {
-            setLlmStatus("rules_first");
-          } else if (data?.geminiConfigured) {
-            setLlmStatus("inactive");
-          } else {
-            setLlmStatus("inactive");
-          }
-        }
-      )
+      .then((data: ChatStatusPayload | null) => {
+        if (cancelled) return;
+        setLlmStatus(resolveLlmStatus(data));
+        setStatusHint(data?.hints?.[0] ?? null);
+      })
       .catch(() => {
-        if (!cancelled) setLlmStatus("inactive");
+        if (!cancelled) {
+          setLlmStatus("failed");
+          setStatusHint("AI 상태를 확인하지 못했습니다. 네트워크 연결을 확인해 주세요.");
+        }
       });
     return () => {
       cancelled = true;
@@ -83,6 +88,22 @@ export function AgentChatDock() {
     await importHoldingsFromImage(file);
   }
 
+  const statusLabel =
+    llmStatus === "checking"
+      ? "AI 확인 중…"
+      : llmStatus === "active"
+        ? "규칙 우선 · AI 보조"
+        : llmStatus === "unconfigured"
+          ? "오프라인 · 키 미설정"
+          : "오프라인 · AI 연결 실패";
+
+  const statusDetail =
+    llmStatus === "active"
+      ? "자주 쓰는 명령은 규칙 처리, 나머지는 AI 보조"
+      : llmStatus === "unconfigured"
+        ? "GEMINI_API_KEY 없음 — 규칙 파서·텍스트 등록만 가능"
+        : "GEMINI 연결 실패 — 규칙 파서·텍스트 등록만 가능";
+
   return (
     <div
       className="shrink-0 border-t bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80"
@@ -96,28 +117,29 @@ export function AgentChatDock() {
                 에이전트 대화
               </span>
               {llmStatus === "checking" ? (
-                <span className="text-[10px] text-muted-foreground">AI 확인 중…</span>
-              ) : llmStatus === "rules_first" ? (
+                <span className="text-[10px] text-muted-foreground">{statusLabel}</span>
+              ) : llmStatus === "active" ? (
                 <span
                   className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] text-emerald-700 dark:text-emerald-400"
-                  title="자주 쓰는 표현은 AI 없이 처리, 나머지는 AI 보조"
+                  title={statusDetail}
                 >
-                  규칙 우선 · AI 보조
+                  {statusLabel}
                 </span>
               ) : (
                 <span
-                  className="rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground"
-                  title="GEMINI 미설정 또는 연결 실패 — 규칙 파서만 사용"
+                  className={cn(
+                    "rounded-full px-2 py-0.5 text-[10px]",
+                    llmStatus === "unconfigured"
+                      ? "bg-muted text-muted-foreground"
+                      : "bg-amber-500/10 text-amber-800 dark:text-amber-300"
+                  )}
+                  title={statusHint ?? statusDetail}
                 >
-                  오프라인 규칙
+                  {statusLabel}
                 </span>
               )}
             </div>
-            <span className="text-[10px] text-muted-foreground sm:hidden">
-              {llmStatus === "rules_first"
-                ? "자주 쓰는 명령은 규칙 처리, 나머지는 AI 보조"
-                : "규칙 파서만 사용 (GEMINI 미설정)"}
-            </span>
+            <span className="text-[10px] text-muted-foreground sm:hidden">{statusDetail}</span>
           </div>
           {hasMessages ? (
             <Button
@@ -137,6 +159,15 @@ export function AgentChatDock() {
             </Button>
           ) : null}
         </div>
+
+        {llmStatus !== "active" && llmStatus !== "checking" && statusHint ? (
+          <p
+            className="px-4 pb-1 text-[10px] text-muted-foreground"
+            data-testid="agent-chat-status-hint"
+          >
+            {statusHint}
+          </p>
+        ) : null}
 
         <div className="flex shrink-0 flex-wrap gap-1.5 px-4 pb-1">
           {QUICK_PROMPTS.map((text) => (
@@ -232,8 +263,8 @@ export function AgentChatDock() {
           </Button>
         </form>
         <p className="shrink-0 px-4 pb-2 text-[10px] text-muted-foreground">
-          📷 다른 앱 보유 화면 캡처를 첨부하면 티커·수량·매수가를 자동 등록합니다 (GEMINI_API_KEY
-          필요). 텍스트로는 &quot;SOXX 10주&quot; 등도 가능합니다. 참고용·투자 권유 아님.
+          📷 보유 캡처 등록·자연어 AI는 GEMINI_API_KEY가 필요합니다. 지금은 &quot;SOXX
+          10주&quot; 같은 규칙 입력은 가능합니다. 참고용·투자 권유 아님.
         </p>
       </div>
     </div>

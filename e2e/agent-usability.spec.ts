@@ -97,7 +97,7 @@ test.describe("Agent usability", () => {
 
   test("chat dock shows rules-first or offline badge", async ({ page }) => {
     await expect(
-      page.getByText(/규칙 우선|오프라인 규칙|AI 확인/)
+      page.getByText(/규칙 우선|오프라인 ·|AI 확인/)
     ).toBeVisible({ timeout: 30_000 });
   });
 

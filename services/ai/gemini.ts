@@ -426,7 +426,9 @@ export function buildGeminiStatusHints(input: {
   const hints: string[] = [];
 
   if (!input.configured) {
-    hints.push("Vercel Preview에 GEMINI_API_KEY를 추가하고 재배포하세요.");
+    hints.push(
+      "Vercel → Settings → Environment Variables에 GEMINI_API_KEY를 Production(및 Preview)에 추가한 뒤 Redeploy하세요."
+    );
     return hints;
   }
 
@@ -438,7 +440,9 @@ export function buildGeminiStatusHints(input: {
 
   if (input.modelsList && !input.modelsList.ok) {
     hints.push(input.modelsList.error ?? "API 키 검증 실패");
-    hints.push("https://aistudio.google.com/apikey 에서 새 키를 발급해 Preview 환경 변수에 넣으세요.");
+    hints.push(
+      "https://aistudio.google.com/apikey 에서 새 키를 발급해 Production·Preview 환경 변수에 넣으세요."
+    );
     return hints;
   }
 

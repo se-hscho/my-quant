@@ -13,7 +13,11 @@ describe("AgentChatDock", () => {
         if (url === "/api/agent/chat/status") {
           return {
             ok: true,
-            json: async () => ({ geminiConfigured: true, geminiActive: true }),
+            json: async () => ({
+              geminiConfigured: true,
+              geminiActive: true,
+              hints: ["Gemini 연결이 정상입니다."],
+            }),
           };
         }
         const body = JSON.parse((init as RequestInit).body as string);
@@ -45,7 +49,7 @@ describe("AgentChatDock", () => {
     );
   });
 
-  it("채팅 입력창과 전송 UI가 하단에 있다", () => {
+  it("채팅 입력창과 전송 UI가 하단에 있다", async () => {
     render(
       <AgentShell>
         <div>content</div>
@@ -55,6 +59,41 @@ describe("AgentChatDock", () => {
     expect(screen.getByLabelText("에이전트에게 질문")).toBeInTheDocument();
     expect(screen.getByLabelText("질문 보내기")).toBeInTheDocument();
     expect(screen.getByLabelText("보유 화면 캡처 첨부")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText("규칙 우선 · AI 보조")).toBeInTheDocument();
+    });
+  });
+
+  it("GEMINI 미설정이면 오프라인 안내와 힌트를 표시한다", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockImplementation(async (url: string) => {
+        if (url === "/api/agent/chat/status") {
+          return {
+            ok: true,
+            json: async () => ({
+              geminiConfigured: false,
+              geminiActive: false,
+              hints: ["Vercel Production에 GEMINI_API_KEY를 추가하세요."],
+            }),
+          };
+        }
+        return { ok: true, json: async () => ({}) };
+      })
+    );
+
+    render(
+      <AgentShell>
+        <div>content</div>
+      </AgentShell>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("오프라인 · 키 미설정")).toBeInTheDocument();
+    });
+    expect(screen.getByTestId("agent-chat-status-hint")).toHaveTextContent(
+      "Vercel Production에 GEMINI_API_KEY를 추가하세요."
+    );
   });
 
   it("질문 전송 후 에이전트 답변이 표시된다", async () => {
