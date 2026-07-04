@@ -1,6 +1,6 @@
 ## Workflow Phases
 
-Ideate → Define → Sketch → Plan → Build → Compound
+Ideate → Define → Sketch → Plan → Build → **Verify** → Compound
 
 ### Spec-Driven Development
 
@@ -11,7 +11,23 @@ Ideate → Define → Sketch → Plan → Build → Compound
 | Sketch | `/sketch-wireframe` | `artifacts/<feature>/wireframe.html` |
 | Plan | `/draft-plan` | `artifacts/<feature>/plan.md` |
 | Build | `/execute-plan` | `artifacts/<feature>/learnings.md` |
+| **Verify** | **`/verify-loop`** | **`artifacts/<feature>/evidence/`** (검증·기획 리뷰·백로그) |
 | Compound | `/compound` | — |
+
+### Verify Loop (반복 개선)
+
+구현 후 **자동 검증 → product-reviewer(기획 의도) → improvement-backlog → 수정 → 재검증**을 반복한다.
+
+| 에이전트 | 시점 | 역할 |
+|---|---|---|
+| plan-reviewer | 구현 전 | plan ↔ spec |
+| code-reviewer | 구현 후 | 코드 품질 |
+| **product-reviewer** | 구현 후 | idea·spec·UX 충실도 |
+
+| 명령 | 용도 |
+|---|---|
+| `bun run verify:feature -- <feature>` | test + build + stability/usability E2E + evidence |
+| `bun run verify:feature -- <feature> --deploy` | Preview URL E2E 포함 |
 
 ## Development Workflow
 
@@ -43,6 +59,9 @@ Ideate → Define → Sketch → Plan → Build → Compound
 | `bun run test` | Vitest |
 | `bun run test:watch` | Vitest watch |
 | `bun run test:e2e` | Playwright |
+| `bun run test:e2e:stability` | Playwright — API·연속 등록·valuation 안정성 |
+| `bun run test:e2e:usability` | Playwright — 빈 상태·대시보드·빠른 입력 UX |
+| `bun run verify:feature -- <feature>` | 전체 검증 + `artifacts/<feature>/evidence/` |
 
 ## Architecture
 

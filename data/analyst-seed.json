@@ -1,0 +1,26 @@
+[
+  {
+    "ticker": "005930.KS",
+    "broker": "미래에셋",
+    "date": "2026-07-01",
+    "rating": "Buy",
+    "targetPrice": 95000,
+    "summary": "HBM 수요 상향 — 메모리 업사이클 지속 전망",
+    "sourceUrl": "https://finance.naver.com"
+  },
+  {
+    "ticker": "005930.KS",
+    "broker": "한국투자",
+    "date": "2026-06-28",
+    "rating": "Hold",
+    "targetPrice": 88000,
+    "summary": "단기 밸류에이션 부담 — 실적 시즌 변동성 주의"
+  },
+  {
+    "ticker": "SOXX",
+    "broker": "Goldman Sachs",
+    "date": "2026-07-02",
+    "rating": "Overweight",
+    "summary": "AI capex 사이클 지속 — 반도체 ETF 유입 기대"
+  }
+]

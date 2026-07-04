@@ -82,6 +82,8 @@ Step 2의 순서대로 Task를 한 번에 하나씩 구현한다. 각 Task에 �
 
 사용자에게 spec.md 대비 feature를 검증해 달라고 요청한다. 피드백이 있으면 직접 수정하고 재검증한다. 판단을 learnings.md에 기록한다.
 
+**권장:** Human Review 전 또는 후에 `/verify-loop <feature>`를 1회 실행해 `product-reviewer` 기획 의도 리뷰와 `improvement-backlog.md`를 갱신한다. Verdict `ITERATE`이면 백로그 P0/P1을 다음 구현 사이클로 가져간다.
+
 #### `/simplify` 트리거
 
 새로 추가한 코드에 **중복(추상화 부채 신호)**이 보이면 `/simplify`를 실행한다.

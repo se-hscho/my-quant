@@ -1,0 +1,312 @@
+{
+  "feature": "portfolio-agent",
+  "updatedAt": "2026-07-04",
+  "scenarios": [
+    {
+      "id": "S1",
+      "title": "에이전트 요약 페이지 진입",
+      "specRef": "spec.md §시나리오 1",
+      "status": "pass",
+      "implementedIn": [
+        "components/agent/SummaryPage.tsx",
+        "components/agent/ScenarioCompareChart.tsx"
+      ],
+      "tests": [
+        "components/agent/AgentHome.test.tsx",
+        "e2e/agent-usability.spec.ts"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "S2",
+      "title": "상세 레포트 — 섹션·초보자 설명",
+      "specRef": "spec.md §시나리오 2",
+      "status": "pass",
+      "implementedIn": [
+        "components/agent/ReportPageContent.tsx",
+        "components/agent/sections/*"
+      ],
+      "tests": [
+        "services/briefing/generate.test.ts"
+      ],
+      "notes": "9섹션+ ChartWithCaption·InfoTooltip"
+    },
+    {
+      "id": "S3",
+      "title": "보유 자산 수동 등록",
+      "specRef": "spec.md §시나리오 3",
+      "status": "pass",
+      "implementedIn": [
+        "components/agent/HoldingsEditor.tsx"
+      ],
+      "tests": [
+        "e2e/agent.spec.ts"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "S4",
+      "title": "알 수 없는 티커 — 섹터 태그 지정",
+      "specRef": "spec.md §시나리오 4",
+      "status": "pass",
+      "implementedIn": [
+        "components/agent/SectorTagDialog.tsx"
+      ],
+      "tests": [
+        "components/agent/SectorTagDialog.test.tsx"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "S5",
+      "title": "전 섹터 자금 흐름 — 보유와 무관",
+      "specRef": "spec.md §시나리오 5",
+      "status": "pass",
+      "implementedIn": [
+        "components/agent/sections/SectorFlowsSection.tsx"
+      ],
+      "tests": [],
+      "notes": "fixture 데이터"
+    },
+    {
+      "id": "S6",
+      "title": "미보유 섹터 — ETF·종목 추천",
+      "specRef": "spec.md §시나리오 6",
+      "status": "pass",
+      "implementedIn": [
+        "components/agent/sections/RecommendationsSection.tsx"
+      ],
+      "tests": [],
+      "notes": ""
+    },
+    {
+      "id": "S7",
+      "title": "시나리오 안 — Before/After 비교",
+      "specRef": "spec.md §시나리오 7",
+      "status": "pass",
+      "implementedIn": [
+        "components/agent/sections/ScenariosSection.tsx",
+        "services/briefing/scenarios.ts"
+      ],
+      "tests": [
+        "services/briefing/scenarios.test.ts"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "S8",
+      "title": "Playbook — 환전·매수·매도 순서",
+      "specRef": "spec.md §시나리오 8",
+      "status": "pass",
+      "implementedIn": [
+        "components/agent/sections/PlaybookSection.tsx"
+      ],
+      "tests": [
+        "services/briefing/scenarios.test.ts"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "S9",
+      "title": "환전 시점·근거",
+      "specRef": "spec.md §시나리오 9",
+      "status": "pass",
+      "implementedIn": [
+        "components/agent/sections/FxSection.tsx"
+      ],
+      "tests": [],
+      "notes": ""
+    },
+    {
+      "id": "S10",
+      "title": "예상 수익률 — 자산 vs 환율 분리",
+      "specRef": "spec.md §시나리오 10",
+      "status": "pass",
+      "implementedIn": [
+        "components/agent/sections/ReturnBreakdownSection.tsx"
+      ],
+      "tests": [],
+      "notes": ""
+    },
+    {
+      "id": "S11",
+      "title": "스마트 머니 — 외국인·기관 수급",
+      "specRef": "spec.md §시나리오 11",
+      "status": "pass",
+      "implementedIn": [
+        "components/agent/sections/SmartMoneySection.tsx",
+        "services/smart-money/adapter.ts"
+      ],
+      "tests": [],
+      "notes": "fixture"
+    },
+    {
+      "id": "S12",
+      "title": "맥락 — 뉴스·공시·정책",
+      "specRef": "spec.md §시나리오 12",
+      "status": "pass",
+      "implementedIn": [
+        "components/agent/sections/ContextSection.tsx"
+      ],
+      "tests": [],
+      "notes": ""
+    },
+    {
+      "id": "S13",
+      "title": "증권사 애널 리포트 인용",
+      "specRef": "spec.md §시나리오 13",
+      "status": "pass",
+      "implementedIn": [
+        "components/agent/sections/AnalystSection.tsx",
+        "data/analyst-seed.json"
+      ],
+      "tests": [],
+      "notes": ""
+    },
+    {
+      "id": "S14",
+      "title": "애널 데이터 없음",
+      "specRef": "spec.md §시나리오 14",
+      "status": "pass",
+      "implementedIn": [
+        "components/agent/sections/AnalystSection.tsx"
+      ],
+      "tests": [],
+      "notes": ""
+    },
+    {
+      "id": "S15",
+      "title": "이벤트 — 방향 변경 즉시 알림",
+      "specRef": "spec.md §시나리오 15",
+      "status": "pass",
+      "implementedIn": [
+        "app/api/agent/notify/event/route.ts",
+        "services/notifications/dispatch.ts"
+      ],
+      "tests": [
+        "services/notifications/format-event.test.ts",
+        "services/notifications/dispatch.test.ts",
+        "app/api/agent/notify/event/route.test.ts"
+      ],
+      "notes": "Resend/Slack env 설정 시 dispatch; staging 실발송은 수동 검증"
+    },
+    {
+      "id": "S16",
+      "title": "이벤트 상세 — 전·당일·후",
+      "specRef": "spec.md §시나리오 16",
+      "status": "pass",
+      "implementedIn": [
+        "components/agent/sections/EventsSection.tsx"
+      ],
+      "tests": [],
+      "notes": ""
+    },
+    {
+      "id": "S17",
+      "title": "매일 아침 정기 알림",
+      "specRef": "spec.md §시나리오 17",
+      "status": "pass",
+      "implementedIn": [
+        "app/api/agent/cron/daily/route.ts",
+        "services/notifications/dispatch.ts",
+        "vercel.json"
+      ],
+      "tests": [
+        "services/notifications/format-summary.test.ts",
+        "services/notifications/dispatch.test.ts",
+        "services/notifications/morning-schedule.test.ts",
+        "app/api/agent/cron/daily/route.test.ts",
+        "app/api/agent/notifications/test/route.test.ts"
+      ],
+      "notes": "Cron 30분 간격 + KST morningTimeKst 매칭 + 일 1회 idempotency; 테스트 알림 API"
+    },
+    {
+      "id": "S18",
+      "title": "알림 설정",
+      "specRef": "spec.md §시나리오 18",
+      "status": "pass",
+      "implementedIn": [
+        "app/agent/settings/page.tsx",
+        "app/api/agent/settings/notifications/route.ts",
+        "components/agent/NotificationSettingsForm.tsx",
+        "services/notifications/settings-kv.ts"
+      ],
+      "tests": [
+        "lib/agent/settings-storage.test.ts",
+        "app/api/agent/settings/notifications/route.test.ts",
+        "services/notifications/settings-kv.test.ts"
+      ],
+      "notes": "localStorage + KV 동기화; dispatch는 사용자 활성 채널 우선"
+    },
+    {
+      "id": "S19",
+      "title": "전일 대비 방향 변경 diff",
+      "specRef": "spec.md §시나리오 19",
+      "status": "pass",
+      "implementedIn": [
+        "components/agent/sections/DiffSection.tsx",
+        "services/briefing/diff.ts"
+      ],
+      "tests": [],
+      "notes": ""
+    },
+    {
+      "id": "S20",
+      "title": "브리핑 히스토리",
+      "specRef": "spec.md §시나리오 20",
+      "status": "pass",
+      "implementedIn": [
+        "app/agent/history/page.tsx",
+        "components/agent/BriefingHistoryList.tsx"
+      ],
+      "tests": [],
+      "notes": "빈 목록 시 /agent CTA"
+    },
+    {
+      "id": "S21",
+      "title": "에이전트 대화",
+      "specRef": "spec.md §시나리오 21",
+      "status": "pass",
+      "implementedIn": [
+        "services/briefing/chat-qa.ts",
+        "components/agent/AgentChatDock.tsx"
+      ],
+      "tests": [
+        "services/briefing/chat-qa.test.ts",
+        "services/agent/chat-orchestrator.test.ts",
+        "e2e/agent-natural-language.spec.ts"
+      ],
+      "notes": "브리핑 맥락 Q&A — orchestrator에서 briefing 우선, quick prompt 포함"
+    },
+    {
+      "id": "S22",
+      "title": "보유 없이 에이전트 접속",
+      "specRef": "spec.md §시나리오 22",
+      "status": "pass",
+      "implementedIn": [
+        "components/agent/DemoPreviewBanner.tsx",
+        "lib/agent/demo-portfolio.ts",
+        "components/agent/AgentHome.tsx"
+      ],
+      "tests": [
+        "components/agent/AgentHome.test.tsx",
+        "e2e/agent-usability.spec.ts"
+      ],
+      "notes": "예시 포트폴리오 미리보기 + 등록 CTA (spec §22 갱신)"
+    },
+    {
+      "id": "S23",
+      "title": "브리핑 생성 실패",
+      "specRef": "spec.md §시나리오 23",
+      "status": "pass",
+      "implementedIn": [
+        "components/agent/BriefingErrorState.tsx",
+        "app/api/agent/briefing/route.ts"
+      ],
+      "tests": [
+        "components/agent/BriefingErrorState.test.tsx"
+      ],
+      "notes": "BriefingErrorState에 code·detail 표시 + KV memory 폴백"
+    }
+  ]
+}

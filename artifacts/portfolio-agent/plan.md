@@ -151,8 +151,8 @@
   - `app/agent/layout.tsx`, `app/agent/page.tsx`
   - `components/agent/EmptyHoldingsState.tsx` + `.test.tsx`
 - **수용 기준**:
-  - [ ] 보유가 비어 있을 때 `/agent`에 접속하면 보유 미등록 안내 문구가 표시된다
-  - [ ] 같은 화면에서 보유 편집(`/agent/holdings`)으로 이동하는 버튼 또는 링크가 보인다
+  - [x] 보유가 비어 있을 때 `/agent`에 접속하면 보유 미등록 안내 문구가 표시된다
+  - [x] 같은 화면에서 보유 편집(`/agent/holdings`)으로 이동하는 버튼 또는 링크가 보인다
 - **검증**: `bun run test -- holdings-storage EmptyHoldingsState`
 
 ---
@@ -170,10 +170,10 @@
   - `components/agent/HoldingsEditor.tsx` + `.test.tsx`
   - `components/agent/HoldingsList.tsx` + `.test.tsx`
 - **수용 기준**:
-  - [ ] 티커·수량·자산 유형·결제 통화를 입력하는 폼이 있다
-  - [ ] KRW·USD·JPY 현금을 각각 입력할 수 있다
-  - [ ] 저장 후 보유 목록에 종목과 통화별 현금이 표시된다
-  - [ ] 총자산 금액(KRW 환산) placeholder 또는 "시세 로딩 중"이 화면에 표시된다 (정확한 금액은 Task 4)
+  - [x] 티커·수량·자산 유형·결제 통화를 입력하는 폼이 있다
+  - [x] KRW·USD·JPY 현금을 각각 입력할 수 있다
+  - [x] 저장 후 보유 목록에 종목과 통화별 현금이 표시된다
+  - [x] 총자산 금액(KRW 환산) placeholder 또는 "시세 로딩 중"이 화면에 표시된다 (정확한 금액은 Task 4)
 - **검증**: `bun run test -- HoldingsEditor HoldingsList`
 
 ---
@@ -190,8 +190,8 @@
   - `lib/agent/sector-classify.ts` + `.test.ts`
   - `components/agent/SectorTagDialog.tsx` + `.test.tsx`
 - **수용 기준**:
-  - [ ] 자동 분류에 실패한 티커 저장 시도 시 섹터 선택 UI가 표시된다
-  - [ ] 섹터 지정 후 저장하면 보유 목록에 해당 섹터 정보가 표시된다
+  - [x] 자동 분류에 실패한 티커 저장 시도 시 섹터 선택 UI가 표시된다
+  - [x] 섹터 지정 후 저장하면 보유 목록에 해당 섹터 정보가 표시된다
 - **검증**: `bun run test -- sector-classify SectorTagDialog`
 
 ---

@@ -1,0 +1,40 @@
+name: Agent Verify Loop
+
+on:
+  pull_request:
+    paths:
+      - "app/agent/**"
+      - "app/api/agent/**"
+      - "components/agent/**"
+      - "services/agent/**"
+      - "services/briefing/**"
+      - "e2e/**"
+      - "artifacts/portfolio-agent/**"
+      - "scripts/verify-feature.ts"
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Install Playwright Chromium
+        run: bunx playwright install chromium --with-deps
+
+      - name: Run verify loop (automated)
+        run: bun run verify:feature -- portfolio-agent
+
+      - name: Upload verification evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: portfolio-agent-evidence
+          path: artifacts/portfolio-agent/evidence/
+          retention-days: 14

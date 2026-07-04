@@ -1,6 +1,10 @@
 import { expect, test } from "@playwright/test";
+import { registerDeployPreflight } from "./helpers/deploy-preflight";
 
-test("home page loads", async ({ page }) => {
-  await page.goto("/");
-  await expect(page).toHaveTitle("Kanban Todo");
+registerDeployPreflight();
+
+test("agent entry loads", async ({ page }) => {
+  await page.goto("/agent");
+  await expect(page.getByTestId("agent-chat-dock")).toBeVisible();
+  await expect(page).toHaveTitle(/퀀트|포트폴리오|Kanban/i);
 });
