@@ -1,6 +1,7 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { DEMO_PORTFOLIO_SNAPSHOT } from "@/lib/agent/demo-portfolio";
 import { clearBriefingMemoryForTests } from "./kv";
+import "./generate.test-setup";
 
 vi.mock("@/lib/agent/yahoo-quote", () => ({
   fetchFxRatesFromYahoo: vi.fn(async () => ({ usdKrw: null, jpyKrw: null })),

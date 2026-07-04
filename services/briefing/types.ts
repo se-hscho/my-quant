@@ -63,6 +63,9 @@ export interface EventTimelineItem {
 }
 
 export interface SmartMoneyData {
+  /** live KRX 또는 fixture */
+  source?: "krx-live" | "fixture";
+  asOfDate?: string;
   foreignNetBuyBn: number;
   institutionNetBuyBn: number;
   sectorFlows: SectorFlowRow[];
@@ -118,6 +121,7 @@ export interface Briefing {
     events: { timeline: EventTimelineItem[] };
     institutional: { paragraphs: string[] };
     recommendations: { rows: RecommendationRow[] };
+    analyst: { reports: AnalystRow[] };
     diff?: { rows: DiffRow[]; reason: string[] };
   };
   disclaimer: string;

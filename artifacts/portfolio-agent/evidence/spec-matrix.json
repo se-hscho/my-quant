@@ -135,10 +135,14 @@
       "status": "pass",
       "implementedIn": [
         "components/agent/sections/SmartMoneySection.tsx",
-        "services/smart-money/adapter.ts"
+        "services/smart-money/adapter.ts",
+        "services/smart-money/krx-live.ts"
       ],
-      "tests": [],
-      "notes": "fixture"
+      "tests": [
+        "services/smart-money/adapter.test.ts",
+        "services/smart-money/krx-live.test.ts"
+      ],
+      "notes": "krx-live 시도 + fixture 폴백 (KRX_API 세션 필요)"
     },
     {
       "id": "S12",
@@ -158,10 +162,15 @@
       "status": "pass",
       "implementedIn": [
         "components/agent/sections/AnalystSection.tsx",
+        "services/analyst/adapter.ts",
+        "services/analyst/kr-wisereport.ts",
+        "services/analyst/finnhub.ts",
         "data/analyst-seed.json"
       ],
-      "tests": [],
-      "notes": ""
+      "tests": [
+        "services/analyst/adapter.test.ts"
+      ],
+      "notes": "Wisereport(KR) + Finnhub(US) + seed"
     },
     {
       "id": "S14",

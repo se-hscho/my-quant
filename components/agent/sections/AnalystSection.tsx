@@ -1,7 +1,7 @@
 "use client";
 
 import type { AnalystRow } from "@/services/briefing/types";
-import { getAnalystFallbackRationale } from "@/services/analyst/adapter";
+import { getAnalystFallbackRationale } from "@/services/analyst/fallback-rationale";
 import { ChartWithCaption } from "../ChartWithCaption";
 
 export function AnalystSection({

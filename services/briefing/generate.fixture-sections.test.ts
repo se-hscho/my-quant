@@ -1,6 +1,7 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { DEMO_PORTFOLIO_SNAPSHOT } from "@/lib/agent/demo-portfolio";
 import { clearBriefingMemoryForTests } from "./kv";
+import "./generate.test-setup";
 
 vi.mock("@/lib/agent/yahoo-quote", () => ({
   fetchFxRatesFromYahoo: vi.fn(async () => ({ usdKrw: 1350, jpyKrw: 9.2 })),
@@ -25,6 +26,7 @@ describe("generateBriefing fixture sections", () => {
     expect(b.sections.events.timeline).toHaveLength(3);
     expect(b.sections.sectorFlows.inflowNote).toMatch(/유입/);
     expect(b.sections.recommendations.rows.length).toBeGreaterThan(0);
+    expect(b.sections.analyst.reports.length).toBeGreaterThan(0);
     expect(b.sections.diff).toBeDefined();
     expect(b.sections.portfolio.returns.d7).toBeDefined();
   });

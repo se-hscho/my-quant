@@ -24,5 +24,23 @@
 
 ## Deferred (의도적 제외)
 
-- KRX 실수급·애널 유료 API — 어댑터 인터페이스만 유지, fixture 기본
+- KRX 투자자별 수급 live — `MDCSTAT02201`은 KRX 세션 필요, Open API 미제공 → live 시도 후 fixture
 - 다중 사용자 인증 — single-user MVP
+
+## Loop 10 — Phase 2 real data (2026-07-04)
+
+### Smart money
+- `@npmc_5/krxjs` `Stock.getTradingValueByDate` live 시도 → 실패 시 fixture (`source: krx-live | fixture`)
+- `server-only` + `serverExternalPackages`로 krxjs 클라이언트 번들 유입 방지
+
+### Analyst
+- KR: Wisereport(`Krxjs.getCompanyOverview`) brokerTargets — 병렬 fetch + 5s timeout
+- US: Finnhub recommendation (`FINNHUB_API_KEY`)
+- 브리핑 `sections.analyst.reports`에 저장 — ReportPageContent는 재-fetch 없음
+- `AnalystSection` fallback은 `fallback-rationale.ts` (client-safe)
+
+### Env
+- `FINNHUB_API_KEY` — US 애널 live
+- `SMART_MONEY_FIXTURE_ONLY=1` — KRX 수급 live skip
+- `ANALYST_LIVE_DISABLED=1` — Wisereport live skip
+- `WISEREPORT_TIMEOUT_MS` — 티커당 timeout (default 5000)

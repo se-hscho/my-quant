@@ -1,7 +1,6 @@
 "use client";
 
 import type { Briefing } from "@/services/briefing/types";
-import { getAnalystReports } from "@/services/analyst/adapter";
 import { ReportLayout } from "./ReportLayout";
 import { PortfolioSnapshotSection } from "./sections/PortfolioSnapshotSection";
 import { FxSection } from "./sections/FxSection";
@@ -21,7 +20,7 @@ export function ReportPageContent({ briefing }: { briefing: Briefing }) {
   const tickers = Object.keys(briefing.scenarios[0]?.weightsBefore ?? {}).filter(
     (t) => t !== "CASH"
   );
-  const reports = getAnalystReports(tickers);
+  const reports = briefing.sections.analyst?.reports ?? [];
   const reported = new Set(reports.map((r) => r.ticker.toUpperCase()));
   const missingTickers = tickers.filter((t) => !reported.has(t.toUpperCase()));
 

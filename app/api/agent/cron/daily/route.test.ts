@@ -22,6 +22,8 @@ vi.mock("@/lib/agent/yahoo-quote", () => ({
   toYahooSymbol: (t: string) => t,
 }));
 
+import "@/services/briefing/generate.test-setup";
+
 vi.mock("@/services/notifications/dispatch", () => ({
   dispatchNotification: vi.fn(async () => ({ email: true, slack: false })),
 }));

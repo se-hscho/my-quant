@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { DEMO_PORTFOLIO_SNAPSHOT } from "@/lib/agent/demo-portfolio";
 import { clearBriefingMemoryForTests } from "./kv";
+import "./generate.test-setup";
 import { generateBriefing } from "./generate";
 
 /**

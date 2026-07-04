@@ -1,10 +1,10 @@
 import type { HoldingsSnapshot } from "@/types/agent";
-import { AGENT_SECTORS, SECTOR_FLOW_FIXTURE } from "@/config/agent";
 import { resolveValuation, type PriceSource } from "@/lib/agent/market-data";
 import { getAnalystReports } from "@/services/analyst/adapter";
 import { getContextFixture } from "@/services/context/adapter";
 import { getEventsFixture } from "@/services/events/adapter";
-import { getSmartMoneyFixture } from "@/services/smart-money/adapter";
+import { getSmartMoneyData } from "@/services/smart-money/adapter";
+import type { SmartMoneyData } from "@/services/briefing/types";
 import { diffBriefings } from "./diff";
 import { getBriefing } from "./kv";
 import { buildScenarios } from "./scenarios";
@@ -26,9 +26,13 @@ function priceSourceDisclaimer(source: PriceSource): string {
   return " 시세·환율 연동에 실패해 참고용 추정치(데모 seed)로 계산했습니다.";
 }
 
-function sectorTop3(snapshot: HoldingsSnapshot, totalKrw: number) {
-  const smart = getSmartMoneyFixture();
-  return SECTOR_FLOW_FIXTURE.toSorted((a, b) => b.flowScore - a.flowScore)
+function sectorTop3(
+  snapshot: HoldingsSnapshot,
+  totalKrw: number,
+  smartMoney: SmartMoneyData
+) {
+  return smartMoney.sectorFlows
+    .toSorted((a, b) => b.flowScore - a.flowScore)
     .slice(0, 3)
     .map((f) => ({
       sector: f.sector,
@@ -70,11 +74,11 @@ export async function generateBriefing(
     valuation.totalKrw,
     valuation.fx.usdKrw
   );
-  const smartMoney = getSmartMoneyFixture();
+  const smartMoney = await getSmartMoneyData();
   const context = getContextFixture();
   const events = getEventsFixture();
   const tickers = input.snapshot.holdings.map((h) => h.ticker);
-  const analyst = getAnalystReports(tickers);
+  const analystReports = await getAnalystReports(tickers);
 
   const prev = await getBriefing(
     new Date(Date.parse(date) - 86400000).toISOString().slice(0, 10)
@@ -100,7 +104,7 @@ export async function generateBriefing(
     summaryLines,
     totalAssetsKrw: valuation.totalKrw,
     cash: input.snapshot.cash,
-    sectorTop3: sectorTop3(input.snapshot, valuation.totalKrw),
+    sectorTop3: sectorTop3(input.snapshot, valuation.totalKrw, smartMoney),
     scenarioComparison: scenarios.map((s) => ({
       id: s.id,
       label: s.label,
@@ -157,6 +161,7 @@ export async function generateBriefing(
             rationale: `${s.label} 섹터 7일 상대강도 +${s.relativeStrength7d.toFixed(1)}%p — 유입 검토·고려 (참고용)`,
           })),
       },
+      analyst: { reports: analystReports },
     },
     disclaimer: `${BRIEFING_DISCLAIMER}${priceSourceDisclaimer(priceSource)}`,
     status: "complete",
@@ -164,9 +169,9 @@ export async function generateBriefing(
 
   briefing.sections.diff = diffBriefings(prev, briefing);
 
-  if (analyst.length > 0) {
+  if (analystReports.length > 0) {
     briefing.summaryLines.push(
-      `애널 ${analyst[0].broker} ${analyst[0].rating} — ${analyst[0].ticker} Follow 안과 정합 검토.`
+      `애널 ${analystReports[0].broker} ${analystReports[0].rating} — ${analystReports[0].ticker} Follow 안과 정합 검토.`
     );
   }
 

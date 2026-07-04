@@ -1,6 +1,7 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { DEMO_PORTFOLIO_SNAPSHOT } from "@/lib/agent/demo-portfolio";
 import { clearBriefingMemoryForTests } from "@/services/briefing/kv";
+import "@/services/briefing/generate.test-setup";
 
 vi.mock("next/server", async (importOriginal) => {
   const actual = await importOriginal<typeof import("next/server")>();

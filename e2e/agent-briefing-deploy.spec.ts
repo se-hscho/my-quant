@@ -10,6 +10,7 @@ test.describe("Agent briefing deploy smoke", () => {
   }) => {
     const postRes = await request.post("/api/agent/briefing", {
       data: { snapshot: DEMO_PORTFOLIO_SNAPSHOT, demo: true },
+      timeout: 90_000,
     });
 
     if (postRes.status() === 503) {

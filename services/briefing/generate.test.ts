@@ -7,6 +7,21 @@ vi.mock("@/lib/agent/yahoo-quote", () => ({
   fetchYahooLatestClose: vi.fn(async () => 100),
 }));
 
+vi.mock("@/services/smart-money/adapter", () => ({
+  getSmartMoneyData: vi.fn(async () => ({
+    source: "fixture",
+    asOfDate: "2026-07-04",
+    foreignNetBuyBn: 1.2,
+    institutionNetBuyBn: -0.4,
+    sectorFlows: [],
+    institutionalLens: ["lens"],
+  })),
+}));
+
+vi.mock("@/services/analyst/adapter", () => ({
+  getAnalystReports: vi.fn(async () => []),
+}));
+
 import { generateBriefing } from "./generate";
 
 describe("generateBriefing", () => {
