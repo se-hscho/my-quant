@@ -28,6 +28,7 @@ import { PlaybookSection } from "./sections/PlaybookSection";
 import { ReturnBreakdownSection } from "./sections/ReturnBreakdownSection";
 import { AnalystSection } from "./sections/AnalystSection";
 import { DiffSection } from "./sections/DiffSection";
+import { LlmNarrativeSection } from "./sections/LlmNarrativeSection";
 
 export function ReportPageContent({ briefing }: { briefing: Briefing }) {
   const tickers = Object.keys(briefing.scenarios[0]?.weightsBefore ?? {}).filter(
@@ -54,6 +55,9 @@ export function ReportPageContent({ briefing }: { briefing: Briefing }) {
         subtitle="당일 핵심 결론·지표·우선 검토 사항"
       >
         <ExecutiveSummarySection summary={executiveSummary} />
+        {briefing.sections.llmNarrative ? (
+          <LlmNarrativeSection narrative={briefing.sections.llmNarrative} />
+        ) : null}
       </ReportChapter>
 
       <ReportChapter

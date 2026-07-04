@@ -27,9 +27,14 @@ function isDown(v: number | null | undefined): boolean {
   return v != null && v < -FLAT_THRESHOLD;
 }
 
-/** 단기·중기 가격 추세로 비중 조절 힌트 분류 */
-export function classifyMomentumTrend(trend: PriceTrendPct): MomentumInsight {
+/** 단기·중기 가격 추세 + 섹터 수급으로 비중 조절 힌트 분류 */
+export function classifyMomentumTrend(
+  trend: PriceTrendPct,
+  sectorFlowScore?: number
+): MomentumInsight {
   const { d1, d7, m1 } = trend;
+  const inflow = sectorFlowScore != null && sectorFlowScore >= 0.6;
+  const outflow = sectorFlowScore != null && sectorFlowScore <= 0.4;
 
   if (m1 != null && m1 >= SURGE_M1 && isUp(d7)) {
     return {
@@ -50,8 +55,10 @@ export function classifyMomentumTrend(trend: PriceTrendPct): MomentumInsight {
   if (isUp(m1) && isDown(d1)) {
     return {
       label: "pullback",
-      labelKo: "조정",
-      hintKo: "상승 후 조정 — 분할 매수·관찰",
+      labelKo: inflow ? "조정(유입)" : "조정",
+      hintKo: inflow
+        ? "섹터 유입·상승 추세 — 분할 매수 검토"
+        : "상승 후 조정 — 관찰·분할 대응",
     };
   }
 
@@ -74,8 +81,10 @@ export function classifyMomentumTrend(trend: PriceTrendPct): MomentumInsight {
   if (isDown(d7) || isDown(m1)) {
     return {
       label: "fall",
-      labelKo: "하락",
-      hintKo: "하락 추세 — 추가 매수보다 관찰·비중 축소 검토",
+      labelKo: outflow ? "하락(유출)" : "하락",
+      hintKo: outflow
+        ? "섹터 유출·하락 — 비중 축소 검토"
+        : "하락 추세 — 추가 매수보다 관찰",
     };
   }
 
@@ -99,8 +108,16 @@ export function suggestWeightAction(input: {
   returnPct?: number;
   weightPct?: number;
   momentum: MomentumInsight;
+  sectorLabel?: string;
+  sectorFlowScore?: number;
 }): string {
-  const parts: string[] = [input.momentum.hintKo];
+  const parts: string[] = [];
+  if (input.sectorLabel && input.sectorFlowScore != null) {
+    parts.push(
+      `${input.sectorLabel} 수급 ${(input.sectorFlowScore * 100).toFixed(0)}/100`
+    );
+  }
+  parts.push(input.momentum.hintKo);
 
   if (input.returnPct != null && input.returnPct >= 25) {
     parts.push("매수가 대비 고수익 — 차익실현 우선 검토");

@@ -30,22 +30,51 @@ async function fetchPricesFromYahoo(
   );
 }
 
-function applyDemoSeedPrices(
-  prices: Record<string, number | null | undefined>,
-  tickers: string[]
-): Record<string, number> {
+function avgCostFallbackPrice(
+  snapshot: HoldingsSnapshot,
+  ticker: string
+): number | undefined {
+  const h = snapshot.holdings.find(
+    (x) => x.ticker.toUpperCase() === ticker.toUpperCase()
+  );
+  if (h?.avgCost != null && h.avgCost > 0) return h.avgCost;
+  return undefined;
+}
+
+function applyPriceFallbacks(
+  snapshot: HoldingsSnapshot,
+  yahooPrices: Record<string, number | null | undefined>,
+  tickers: string[],
+  allowDemo: boolean
+): { prices: Record<string, number>; usedFallback: boolean } {
   const out: Record<string, number> = {};
+  let usedFallback = false;
+
   for (const t of tickers) {
     const key = t.toUpperCase();
-    const live = prices[key];
+    const live = yahooPrices[key];
     if (live != null && Number.isFinite(live)) {
       out[key] = live;
-    } else {
+      continue;
+    }
+
+    const avgCost = avgCostFallbackPrice(snapshot, key);
+    if (avgCost != null) {
+      out[key] = avgCost;
+      usedFallback = true;
+      continue;
+    }
+
+    if (allowDemo) {
       const seed = DEMO_MARKET_SEED.prices[key as keyof typeof DEMO_MARKET_SEED.prices];
-      if (seed != null) out[key] = seed;
+      if (seed != null) {
+        out[key] = seed;
+        usedFallback = true;
+      }
     }
   }
-  return out;
+
+  return { prices: out, usedFallback };
 }
 
 export async function resolveValuation(
@@ -58,45 +87,45 @@ export async function resolveValuation(
 
   const fxRaw = await fetchFxRatesFromYahoo();
   let fx = {
-    usdKrw: fxRaw.usdKrw,
-    jpyKrw: fxRaw.jpyKrw,
+    usdKrw: fxRaw.usdKrw ?? DEMO_MARKET_SEED.fx.usdKrw,
+    jpyKrw: fxRaw.jpyKrw ?? DEMO_MARKET_SEED.fx.jpyKrw,
   };
-  let priceSource: PriceSource = "yahoo";
 
-  if ((!fx.usdKrw || !fx.jpyKrw) && allowDemo) {
-    fx = { ...DEMO_MARKET_SEED.fx };
-    priceSource = "demo-seed";
-  } else if (!fx.usdKrw || !fx.jpyKrw) {
-    return null;
+  let priceSource: PriceSource = "yahoo";
+  if (!fxRaw.usdKrw || !fxRaw.jpyKrw) {
+    priceSource = "yahoo-partial";
   }
 
   const yahooPrices = await fetchPricesFromYahoo(tickers);
-  let prices: Record<string, number>;
+  const { prices, usedFallback } = applyPriceFallbacks(
+    snapshot,
+    yahooPrices,
+    tickers,
+    allowDemo
+  );
 
-  const allYahooOk = tickers.every((t) => {
-    const p = yahooPrices[t.toUpperCase()];
-    return p != null && Number.isFinite(p);
-  });
-
-  if (allYahooOk) {
-    prices = applyDemoSeedPrices(yahooPrices, tickers);
-  } else if (allowDemo) {
-    prices = applyDemoSeedPrices(yahooPrices, tickers);
-    priceSource = allYahooOk ? "yahoo" : priceSource === "demo-seed" ? "demo-seed" : "yahoo-partial";
-    if (tickers.some((t) => prices[t.toUpperCase()] == null)) {
-      return null;
-    }
-  } else {
-    return null;
+  if (usedFallback && priceSource === "yahoo") {
+    priceSource = "yahoo-partial";
+  }
+  if (allowDemo && !fxRaw.usdKrw && !fxRaw.jpyKrw) {
+    priceSource = "demo-seed";
   }
 
-  const valuation = computeValuation(snapshot, prices, {
-    usdKrw: fx.usdKrw!,
-    jpyKrw: fx.jpyKrw!,
-  });
+  const missing = tickers.filter((t) => prices[t.toUpperCase()] == null);
+  if (missing.length > 0 && !allowDemo) {
+    // 현금만 있거나 일부 종목만 누락이면 부분 평가 허용
+    if (tickers.length === missing.length && snapshot.cash.krw + snapshot.cash.usd + snapshot.cash.jpy === 0) {
+      return null;
+    }
+  }
 
-  if (valuation.holdings.length === 0 && snapshot.holdings.length > 0 && !allowDemo) {
-    return null;
+  const valuation = computeValuation(snapshot, prices, fx);
+
+  if (valuation.holdings.length === 0 && snapshot.holdings.length > 0) {
+    if (snapshot.cash.krw + snapshot.cash.usd + snapshot.cash.jpy > 0) {
+      return { valuation, priceSource };
+    }
+    return allowDemo ? { valuation, priceSource } : null;
   }
 
   return { valuation, priceSource };

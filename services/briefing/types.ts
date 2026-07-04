@@ -138,6 +138,20 @@ export interface Briefing {
     recommendations: { rows: RecommendationRow[] };
     analyst: { reports: AnalystRow[] };
     diff?: { rows: DiffRow[]; reason: string[] };
+    llmNarrative?: {
+      source: "gemini";
+      model: string;
+      executiveLines: string[];
+      assetClassAnalysis: string;
+      subSectorAnalysis: string;
+      holdings: Array<{
+        ticker: string;
+        marketContext: string;
+        trendRead: string;
+        weightAction: string;
+        outlook: string;
+      }>;
+    };
   };
   disclaimer: string;
   status: BriefingStatus;

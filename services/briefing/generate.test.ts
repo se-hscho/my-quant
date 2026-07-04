@@ -5,6 +5,7 @@ import { clearBriefingMemoryForTests, saveBriefing } from "./kv";
 vi.mock("@/lib/agent/yahoo-quote", () => ({
   fetchFxRatesFromYahoo: vi.fn(async () => ({ usdKrw: 1350, jpyKrw: 9.2 })),
   fetchYahooLatestClose: vi.fn(async () => 100),
+  fetchYahooPriceTrend: vi.fn(async () => ({ d1: 0.5, d7: 1.2, m1: 2.5 })),
 }));
 
 vi.mock("@/services/smart-money/adapter", () => ({
