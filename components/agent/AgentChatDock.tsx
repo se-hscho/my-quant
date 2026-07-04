@@ -78,6 +78,7 @@ export function AgentChatDock() {
     >
       <div className="mx-auto flex max-h-[min(48vh,20rem)] max-w-3xl flex-col">
         <div className="flex shrink-0 items-center justify-between gap-2 px-4 pt-2">
+        <div className="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:gap-2">
           <div className="flex items-center gap-2">
             <span className="text-xs font-medium text-muted-foreground">
               에이전트 대화
@@ -100,6 +101,12 @@ export function AgentChatDock() {
               </span>
             )}
           </div>
+          <span className="text-[10px] text-muted-foreground sm:hidden">
+            {llmStatus === "rules_first"
+              ? "자주 쓰는 명령은 규칙 처리, 나머지는 AI 보조"
+              : "규칙 파서만 사용 (GEMINI 미설정)"}
+          </span>
+        </div>
           {hasMessages ? (
             <Button
               type="button"
@@ -187,8 +194,8 @@ export function AgentChatDock() {
           </Button>
         </form>
         <p className="shrink-0 px-4 pb-2 text-[10px] text-muted-foreground">
-          참고용 안내이며 투자 권유가 아닙니다. 지금은 보유 등록·조회 위주이며, 브리핑 Q&A는 추후 제공됩니다.
-          AI 무료 한도 절약을 위해 자주 쓰는 표현은 규칙으로 먼저 처리합니다.
+          참고용 안내이며 투자 권유가 아닙니다. 보유 등록·조회와 브리핑 Q&A(예: &quot;안 1 설명해줘&quot;)를
+          지원합니다. AI 무료 한도 절약을 위해 자주 쓰는 표현은 규칙으로 먼저 처리합니다.
         </p>
       </div>
     </div>

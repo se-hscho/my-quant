@@ -56,7 +56,7 @@ function AgentHomeInner() {
       isDemo={isDemo}
       reportHref={
         isDemo
-          ? `/agent/report/${briefing.date}?demo=1`
+          ? `/agent/report/today?demo=1`
           : `/agent/report/${briefing.date}`
       }
     />

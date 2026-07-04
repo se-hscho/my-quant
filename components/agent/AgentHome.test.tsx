@@ -64,6 +64,10 @@ describe("AgentHome", () => {
       "href",
       "/agent/holdings"
     );
+    expect(screen.getByRole("link", { name: "상세 레포트 보기" })).toHaveAttribute(
+      "href",
+      "/agent/report/today?demo=1"
+    );
   });
 
   it("보유가 등록되면 요약과 상세 링크가 표시된다", async () => {

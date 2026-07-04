@@ -38,3 +38,8 @@ export const DEMO_PORTFOLIO_SNAPSHOT: HoldingsSnapshot = {
 export function isDemoPortfolioSnapshot(snapshot: HoldingsSnapshot): boolean {
   return snapshot.holdings.every((h) => h.id.startsWith("demo-"));
 }
+
+export function resolveBriefingDate(date: string): string {
+  if (date === "today") return new Date().toISOString().slice(0, 10);
+  return date;
+}

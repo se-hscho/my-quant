@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { briefingErrorResponse, fromThrownError } from "@/lib/agent/briefing-api-errors";
-import { DEMO_PORTFOLIO_SNAPSHOT } from "@/lib/agent/demo-portfolio";
+import { DEMO_PORTFOLIO_SNAPSHOT, resolveBriefingDate } from "@/lib/agent/demo-portfolio";
 import { generateBriefing } from "@/services/briefing/generate";
 import { getBriefing, saveBriefing } from "@/services/briefing/kv";
 
@@ -8,7 +8,8 @@ export async function GET(
   request: Request,
   context: { params: Promise<{ date: string }> }
 ) {
-  const { date } = await context.params;
+  const { date: rawDate } = await context.params;
+  const date = resolveBriefingDate(rawDate);
   const demo = new URL(request.url).searchParams.get("demo") === "1";
 
   let briefing = await getBriefing(date);

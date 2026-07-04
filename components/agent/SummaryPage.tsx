@@ -3,8 +3,7 @@
 import Link from "next/link";
 import type { Briefing } from "@/services/briefing/types";
 import { formatKrw } from "@/lib/agent/valuation";
-import { formatCashAmount } from "@/lib/agent/holdings-display";
-import { PortfolioValueCard } from "./PortfolioValueCard";
+import { PortfolioValueCard, PortfolioCashRow } from "./PortfolioValueCard";
 import { ScenarioCompareChart } from "./ScenarioCompareChart";
 import { SectorTop3Chart } from "./SectorTop3Chart";
 import { usePortfolioValuation } from "@/hooks/usePortfolioValuation";
@@ -44,11 +43,11 @@ export function SummaryPage({
         error={error}
         onRefresh={() => void refresh()}
       />
-      <p className="text-sm text-muted-foreground">
-        현금 {formatCashAmount("KRW", briefing.cash.krw)} ·{" "}
-        {formatCashAmount("USD", briefing.cash.usd)} ·{" "}
-        {formatCashAmount("JPY", briefing.cash.jpy)}
-      </p>
+      <PortfolioCashRow
+        krw={briefing.cash.krw}
+        usd={briefing.cash.usd}
+        jpy={briefing.cash.jpy}
+      />
 
       <Card>
         <CardHeader className="pb-2">

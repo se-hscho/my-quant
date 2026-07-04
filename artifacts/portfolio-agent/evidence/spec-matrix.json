@@ -1,6 +1,6 @@
 {
   "feature": "portfolio-agent",
-  "updatedAt": "2026-07-03",
+  "updatedAt": "2026-07-04",
   "scenarios": [
     {
       "id": "S1",
@@ -261,7 +261,7 @@
       "id": "S22",
       "title": "보유 없이 에이전트 접속",
       "specRef": "spec.md §시나리오 22",
-      "status": "partial",
+      "status": "pass",
       "implementedIn": [
         "components/agent/DemoPreviewBanner.tsx",
         "lib/agent/demo-portfolio.ts",
@@ -271,7 +271,7 @@
         "components/agent/AgentHome.test.tsx",
         "e2e/agent-usability.spec.ts"
       ],
-      "notes": "spec은 등록 안내만 — 구현은 예시 포트폴리오 실브리핑+등록 CTA (기획 의도 확장)"
+      "notes": "예시 포트폴리오 미리보기 + 등록 CTA (spec §22 갱신)"
     },
     {
       "id": "S23",
@@ -285,7 +285,7 @@
       "tests": [
         "components/agent/BriefingErrorState.test.tsx"
       ],
-      "notes": ""
+      "notes": "BriefingErrorState에 code·detail 표시 + KV memory 폴백"
     }
   ]
 }

@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import type { Briefing } from "@/services/briefing/types";
 import type { BriefingErrorInfo } from "@/types/agent-briefing";
 import { BriefingFetchError } from "@/types/agent-briefing";
+import { resolveBriefingDate } from "@/lib/agent/demo-portfolio";
 import { fetchBriefingByDate } from "@/lib/agent/briefing-fetch";
 import { ReportPageContent } from "./ReportPageContent";
 import { DemoPreviewBanner } from "./DemoPreviewBanner";
@@ -18,7 +19,8 @@ export function ReportPageClient({
 }: {
   params: Promise<{ date: string }>;
 }) {
-  const { date } = use(params);
+  const { date: rawDate } = use(params);
+  const date = resolveBriefingDate(rawDate);
   const searchParams = useSearchParams();
   const isDemo = searchParams.get("demo") === "1";
   const [briefing, setBriefing] = useState<Briefing | null>(null);

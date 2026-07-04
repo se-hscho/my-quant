@@ -3,6 +3,7 @@
 import type { ValuationResult } from "@/lib/agent/valuation";
 import { formatKrw } from "@/lib/agent/valuation";
 import { formatCashAmount, TOTAL_ASSETS_PLACEHOLDER } from "@/lib/agent/holdings-display";
+import type { Currency } from "@/types/agent";
 import { Button } from "@/components/ui/button";
 import { RefreshCwIcon } from "lucide-react";
 import {
@@ -11,6 +12,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 
 export interface PortfolioValueCardProps {
   valuation: ValuationResult | null;
@@ -85,10 +87,33 @@ export function PortfolioCashRow({
   usd: number;
   jpy: number;
 }) {
+  const entries = (
+    [
+      { currency: "KRW" as const, amount: krw },
+      { currency: "USD" as const, amount: usd },
+      { currency: "JPY" as const, amount: jpy },
+    ] satisfies Array<{ currency: Currency; amount: number }>
+  ).filter((e) => e.amount > 0);
+
+  if (entries.length === 0) {
+    return (
+      <p className="text-sm text-muted-foreground" data-testid="portfolio-cash-row">
+        현금 없음
+      </p>
+    );
+  }
+
   return (
-    <p className="text-sm text-muted-foreground">
-      현금 {formatCashAmount("KRW", krw)} · {formatCashAmount("USD", usd)} ·{" "}
-      {formatCashAmount("JPY", jpy)}
+    <p className="text-sm text-muted-foreground" data-testid="portfolio-cash-row">
+      현금{" "}
+      {entries.map((e, i) => (
+        <span key={e.currency}>
+          {i > 0 ? " · " : null}
+          <span className={cn(e.amount === 0 && "opacity-40")}>
+            {formatCashAmount(e.currency, e.amount)}
+          </span>
+        </span>
+      ))}
     </p>
   );
 }

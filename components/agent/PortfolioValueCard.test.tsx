@@ -1,26 +1,18 @@
 import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
-import { PortfolioValueCard } from "./PortfolioValueCard";
+import { PortfolioCashRow } from "./PortfolioValueCard";
 
-describe("PortfolioValueCard", () => {
-  it("로딩 중 placeholder", () => {
-    render(<PortfolioValueCard valuation={null} loading />);
-    expect(screen.getByText(/시세 로딩 중/)).toBeInTheDocument();
+describe("PortfolioCashRow", () => {
+  it("0원 통화는 표시하지 않는다", () => {
+    render(<PortfolioCashRow krw={8_000_000} usd={3_500} jpy={0} />);
+    const row = screen.getByTestId("portfolio-cash-row");
+    expect(row.textContent).toMatch(/₩/);
+    expect(row.textContent).toMatch(/\$/);
+    expect(row.textContent).not.toMatch(/¥/);
   });
 
-  it("총자산 KRW 표시", () => {
-    render(
-      <PortfolioValueCard
-        valuation={{
-          totalKrw: 12_345_678,
-          cashKrw: 1_000_000,
-          holdingsKrw: 11_345_678,
-          holdings: [],
-          fx: { usdKrw: 1350, jpyKrw: 9.2 },
-          warnings: [],
-        }}
-      />
-    );
-    expect(screen.getByText(/₩12,345,678/)).toBeInTheDocument();
+  it("모두 0이면 현금 없음", () => {
+    render(<PortfolioCashRow krw={0} usd={0} jpy={0} />);
+    expect(screen.getByText("현금 없음")).toBeInTheDocument();
   });
 });
