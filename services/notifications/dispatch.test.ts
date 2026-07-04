@@ -59,4 +59,25 @@ describe("dispatchNotification", () => {
       expect.objectContaining({ method: "POST" })
     );
   });
+
+  it("targets가 있으면 env 대신 targets를 사용한다", async () => {
+    process.env.RESEND_API_KEY = "re_test";
+    fetchMock.mockResolvedValue({ ok: true });
+
+    await dispatchNotification(
+      { subject: "t", text: "body" },
+      { emailTo: "custom@example.com", slackWebhookUrl: "https://hooks.slack.com/custom" }
+    );
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      "https://api.resend.com/emails",
+      expect.objectContaining({
+        body: expect.stringContaining("custom@example.com"),
+      })
+    );
+    expect(fetchMock).toHaveBeenCalledWith(
+      "https://hooks.slack.com/custom",
+      expect.objectContaining({ method: "POST" })
+    );
+  });
 });

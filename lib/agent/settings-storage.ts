@@ -1,10 +1,6 @@
-export interface NotificationSettings {
-  emailEnabled: boolean;
-  emailAddress: string;
-  slackEnabled: boolean;
-  slackWebhookUrl: string;
-  morningTimeKst: string;
-}
+import type { NotificationSettings } from "@/types/agent-settings";
+
+export type { NotificationSettings };
 
 const SETTINGS_KEY = "agent:settings:v1";
 

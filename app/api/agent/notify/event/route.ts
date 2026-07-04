@@ -4,6 +4,8 @@ import { regenerateBriefingOnEvent } from "@/services/briefing/regenerate-on-eve
 import { getBriefing } from "@/services/briefing/kv";
 import { formatEventAlert } from "@/services/notifications/format-event";
 import { dispatchNotification } from "@/services/notifications/dispatch";
+import { getNotificationSettings } from "@/services/notifications/settings-kv";
+import { resolveDispatchTargets } from "@/services/notifications/resolve-targets";
 
 export async function POST(request: Request) {
   const auth = request.headers.get("authorization");
@@ -38,6 +40,9 @@ export async function POST(request: Request) {
     ? `https://${process.env.VERCEL_URL}`
     : "http://localhost:3000";
 
+  const settings = await getNotificationSettings();
+  const targets = resolveDispatchTargets(settings);
+
   after(async () => {
     if (!briefing) return;
     const alert = formatEventAlert({
@@ -46,7 +51,7 @@ export async function POST(request: Request) {
       rationale: briefing.fxRebalanceLine,
       reportUrl: `${baseUrl}/agent/report/${regen.date}`,
     });
-    await dispatchNotification(alert);
+    await dispatchNotification(alert, targets);
   });
 
   return NextResponse.json({ ok: true, date: regen.date });

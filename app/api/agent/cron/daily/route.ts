@@ -3,6 +3,8 @@ import { generateBriefing } from "@/services/briefing/generate";
 import { getBriefing, saveBriefing } from "@/services/briefing/kv";
 import { formatMorningSummary } from "@/services/notifications/format-summary";
 import { dispatchNotification } from "@/services/notifications/dispatch";
+import { getNotificationSettings } from "@/services/notifications/settings-kv";
+import { resolveDispatchTargets } from "@/services/notifications/resolve-targets";
 import { createEmptySnapshot } from "@/lib/agent/holdings-storage";
 
 export async function GET(request: Request) {
@@ -28,9 +30,11 @@ export async function GET(request: Request) {
     : "http://localhost:3000";
   const reportUrl = `${baseUrl}/agent/report/${today}`;
   const formatted = formatMorningSummary(briefing, reportUrl);
+  const settings = await getNotificationSettings();
+  const targets = resolveDispatchTargets(settings);
 
   after(async () => {
-    await dispatchNotification(formatted);
+    await dispatchNotification(formatted, targets);
   });
 
   return NextResponse.json({ ok: true, date: today });

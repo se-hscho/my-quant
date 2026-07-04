@@ -1,5 +1,6 @@
 import { sendEmail } from "./email";
 import { sendSlackWebhook } from "./slack";
+import type { DispatchTargets } from "./resolve-targets";
 
 export interface NotificationPayload {
   subject: string;
@@ -12,13 +13,14 @@ export interface DispatchResult {
   slack: boolean;
 }
 
-/** Resend·Slack env가 설정된 채널로 알림을 발송한다. */
+/** Resend·Slack로 알림을 발송한다. targets 미지정 시 env만 사용 */
 export async function dispatchNotification(
-  payload: NotificationPayload
+  payload: NotificationPayload,
+  targets?: DispatchTargets
 ): Promise<DispatchResult> {
   const result: DispatchResult = { email: false, slack: false };
 
-  const emailTo = process.env.NOTIFICATION_EMAIL_TO;
+  const emailTo = targets?.emailTo ?? process.env.NOTIFICATION_EMAIL_TO ?? null;
   if (emailTo) {
     result.email = await sendEmail({
       to: emailTo,
@@ -28,7 +30,7 @@ export async function dispatchNotification(
     });
   }
 
-  const slackUrl = process.env.SLACK_WEBHOOK_URL;
+  const slackUrl = targets?.slackWebhookUrl ?? process.env.SLACK_WEBHOOK_URL ?? null;
   if (slackUrl) {
     result.slack = await sendSlackWebhook(slackUrl, payload.text);
   }

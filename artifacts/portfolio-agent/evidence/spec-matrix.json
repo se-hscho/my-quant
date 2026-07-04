@@ -225,10 +225,16 @@
       "status": "pass",
       "implementedIn": [
         "app/agent/settings/page.tsx",
-        "components/agent/NotificationSettingsForm.tsx"
+        "app/api/agent/settings/notifications/route.ts",
+        "components/agent/NotificationSettingsForm.tsx",
+        "services/notifications/settings-kv.ts"
       ],
-      "tests": [],
-      "notes": "localStorage"
+      "tests": [
+        "lib/agent/settings-storage.test.ts",
+        "app/api/agent/settings/notifications/route.test.ts",
+        "services/notifications/settings-kv.test.ts"
+      ],
+      "notes": "localStorage + KV 동기화; dispatch는 사용자 활성 채널 우선"
     },
     {
       "id": "S19",
