@@ -17,6 +17,11 @@
 ### E2E
 - 히스토리 빈 상태는 서버 briefing index에 따라 DOM이 바뀜 — **API route mock**으로 empty dates 고정.
 
+## Shipped (2026-07-04)
+
+- PR #14 → `main` merge (`0a552e4`)
+- `main`에서 `verify:feature -- portfolio-agent` PASS
+
 ## Deferred (의도적 제외)
 
 - KRX 실수급·애널 유료 API — 어댑터 인터페이스만 유지, fixture 기본

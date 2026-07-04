@@ -1,6 +1,6 @@
 # Verification — portfolio-agent
 
-**Generated:** 2026-07-04T01:24:45.218Z  
+**Generated:** 2026-07-04T01:28:53.290Z  
 **Overall:** PASS  
 **Deploy mode:** no
 
@@ -14,10 +14,10 @@ Source: `artifacts/portfolio-agent/evidence/spec-matrix.json`
 
 | Step | Result | Duration |
 |------|--------|----------|
-| vitest | pass | 18.3s |
+| vitest | pass | 18.4s |
 | build | pass | 11.7s |
-| e2e-stability | pass | 7.6s |
-| e2e-usability | pass | 18.0s |
+| e2e-stability | pass | 7.2s |
+| e2e-usability | pass | 17.2s |
 
 ## Step details
 
@@ -27,8 +27,8 @@ Source: `artifacts/portfolio-agent/evidence/spec-matrix.json`
 
  Test Files  67 passed (67)
       Tests  207 passed (207)
-   Start at  01:24:45
-   Duration  17.99s (transform 1.26s, setup 3.08s, import 7.11s, tests 7.29s, environment 27.09s)
+   Start at  01:28:53
+   Duration  18.02s (transform 1.24s, setup 3.14s, import 7.05s, tests 7.23s, environment 27.25s)
 
 
 $ vitest run
@@ -54,30 +54,30 @@ $ next build
 ### e2e-stability (pass)
 
 ```
-(node:284249) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(node:292202) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
 (Use `node --trace-warnings ...` to show where the warning was created)
-(node:284333) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(node:292287) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
 (Use `node --trace-warnings ...` to show where the warning was created)
-(node:284333) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(node:292287) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
 (Use `node --trace-warnings ...` to show where the warning was created)
-(node:284472) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(node:292426) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
 (Use `node --trace-warnings ...` to show where the warning was created)
-(node:284472) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(node:292426) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
 (Use `node --trace-warnings ...` to show where the warning was created)
 ```
 
 ### e2e-usability (pass)
 
 ```
-(node:284560) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(node:292521) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
 (Use `node --trace-warnings ...` to show where the warning was created)
-(node:284801) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(node:292741) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
 (Use `node --trace-warnings ...` to show where the warning was created)
-(node:284801) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(node:292741) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
 (Use `node --trace-warnings ...` to show where the warning was created)
-(node:284928) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(node:292899) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
 (Use `node --trace-warnings ...` to show where the warning was created)
-(node:284928) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(node:292899) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
 (Use `node --trace-warnings ...` to show where the warning was created)
 ```
 
