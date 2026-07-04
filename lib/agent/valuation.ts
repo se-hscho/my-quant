@@ -1,5 +1,7 @@
 import type { Currency, HoldingsSnapshot } from "@/types/agent";
 import { FX_SPREAD_PCT } from "@/config/agent";
+import type { PriceTrendPct } from "@/lib/agent/price-trends";
+import type { MomentumInsight } from "@/lib/agent/momentum-trend";
 
 export interface FxRates {
   usdKrw: number;
@@ -19,6 +21,10 @@ export interface HoldingValuation {
   costKrw?: number;
   pnlKrw?: number;
   returnPct?: number;
+  weightPct?: number;
+  priceTrend?: PriceTrendPct;
+  momentum?: MomentumInsight;
+  weightHint?: string;
 }
 
 export interface ValuationResult {

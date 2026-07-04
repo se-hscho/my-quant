@@ -64,7 +64,7 @@ describe("HoldingsList", () => {
     render(<HoldingsList snapshot={snapshot} />);
     expect(screen.getByText("SOXX")).toBeInTheDocument();
     expect(screen.getByText("005930.KS")).toBeInTheDocument();
-    expect(screen.getByText("반도체")).toBeInTheDocument();
+    expect(screen.getByText(/반도체/)).toBeInTheDocument();
     expect(screen.getByText(/50,000,000/)).toBeInTheDocument();
     expect(screen.getByText(/\$12,000/)).toBeInTheDocument();
   });

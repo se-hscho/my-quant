@@ -3,6 +3,7 @@ import type { HoldingsSnapshot } from "@/types/agent";
 import type { ValuationResult } from "@/lib/agent/valuation";
 import { computeSectorWeights, resolveHoldingSector, roundWeight } from "@/lib/agent/weights";
 import type { BrokeragePasteRow } from "@/services/agent/brokerage-paste-llm";
+import { derivePnlKrwFromReturn } from "@/lib/agent/cost-from-return";
 import { buildScenarios } from "@/services/briefing/scenarios";
 import { formatScenarioReference } from "@/config/agent-scenarios";
 
@@ -116,14 +117,20 @@ export function formatBrokeragePasteSummary(input: {
   }
 
   lines.push("");
-  lines.push("**주요 종목**");
+  lines.push("**주요 종목** (수익금·수익률 → 매수가 역산 저장)");
   for (const r of input.rows.slice(0, 12)) {
+    const pnl =
+      r.returnPct != null ? derivePnlKrwFromReturn(r.valueKrw, r.returnPct) : undefined;
+    const pnlStr =
+      pnl != null
+        ? ` · ${pnl >= 0 ? "+" : ""}${Math.round(pnl).toLocaleString("ko-KR")}원`
+        : "";
     const ret =
       r.returnPct != null
-        ? ` · ${r.returnPct > 0 ? "+" : ""}${r.returnPct.toFixed(2)}%`
+        ? ` (${r.returnPct > 0 ? "+" : ""}${r.returnPct.toFixed(2)}%)`
         : "";
     lines.push(
-      `· ${r.name} (${r.ticker}) ${Math.round(r.valueKrw).toLocaleString("ko-KR")}원${ret}`
+      `· ${r.name} (${r.ticker}) ${Math.round(r.valueKrw).toLocaleString("ko-KR")}원${pnlStr}${ret}`
     );
   }
   if (input.rows.length > 12) {
@@ -131,6 +138,9 @@ export function formatBrokeragePasteSummary(input: {
   }
 
   lines.push("");
+  lines.push(
+    "저장 후 `/agent/holdings`에서 **1일·7일·1개월** 가격 추세와 비중 조절 힌트를 확인할 수 있습니다."
+  );
   lines.push(
     `${formatScenarioReference(1)} 비중은 참고용 시나리오입니다. 아래 종목을 보유에 반영했습니다.`
   );

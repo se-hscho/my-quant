@@ -125,5 +125,7 @@ describe("formatBrokeragePasteSummary", () => {
     expect(text).toMatch(/리츠 \| 100% \| 85% \| -15%p/);
     expect(text).toMatch(/아메리칸 타워 \(AMT\)/);
     expect(text).toMatch(/-28\.51%/);
+    expect(text).toMatch(/매수가 역산/);
+    expect(text).toMatch(/1일·7일·1개월/);
   });
 });

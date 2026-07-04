@@ -10,6 +10,8 @@ export type ChatAction =
       quantity: number;
       assetType: AssetType;
       currency: Currency;
+      /** 붙여넣기·스크린샷 등에서 역산된 1주당 매수가 */
+      avgCost?: number;
     }
   | { type: "set_cash"; field: CashField; amount: number }
   | { type: "remove_holding"; ticker: string };
