@@ -18,9 +18,9 @@ export function EmptyHoldingsState() {
         </div>
         <CardTitle>보유 자산을 등록해주세요</CardTitle>
         <CardDescription>
-          티커·수량·통화별 현금을 입력하면
+          티커·수량·통화별 현금을 입력하면 매일 맞춤 브리핑을 받을 수 있습니다.
           <br />
-          매일 맞춤 브리핑을 받을 수 있습니다.
+          종목 없이 KRW 현금만 입력해도 신규 배분·분할 매수 가이드를 받을 수 있습니다.
         </CardDescription>
       </CardHeader>
       <CardContent>

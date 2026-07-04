@@ -10,6 +10,7 @@ import { SectorFlowsSection } from "./sections/SectorFlowsSection";
 import { ContextSection } from "./sections/ContextSection";
 import { EventsSection } from "./sections/EventsSection";
 import { InstitutionalLensSection } from "./sections/InstitutionalLensSection";
+import { InvestmentDirectionSection } from "./sections/InvestmentDirectionSection";
 import { AnalysisGuideSection } from "./sections/AnalysisGuideSection";
 import { RecommendationsSection } from "./sections/RecommendationsSection";
 import { ScenariosSection } from "./sections/ScenariosSection";
@@ -35,6 +36,9 @@ export function ReportPageContent({ briefing }: { briefing: Briefing }) {
       />
       <FxSection fx={briefing.sections.fx} />
       <SmartMoneySection data={briefing.sections.smartMoney} />
+      {briefing.sections.investmentDirection ? (
+        <InvestmentDirectionSection section={briefing.sections.investmentDirection} />
+      ) : null}
       <InstitutionalLensSection paragraphs={briefing.sections.institutional.paragraphs} />
       <SectorFlowsSection section={briefing.sections.sectorFlows} />
       <ContextSection items={briefing.sections.context.items} />

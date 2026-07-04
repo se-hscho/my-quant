@@ -9,8 +9,14 @@ import { getSmartMoneyData } from "@/services/smart-money/adapter";
 import type { SmartMoneyData } from "@/services/briefing/types";
 import { diffBriefings } from "./diff";
 import { getBriefing } from "./kv";
+import { isCashOnlySnapshot } from "@/lib/agent/snapshot-mode";
 import { buildScenarios } from "./scenarios";
 import { buildBriefingRecommendations } from "./recommendations";
+import {
+  buildCashDeploymentScenarios,
+  buildInvestmentDirection,
+  deploymentSummaryLines,
+} from "./cash-deployment";
 import { BRIEFING_DISCLAIMER, type Briefing } from "./types";
 
 export interface GenerateBriefingInput {
@@ -65,38 +71,65 @@ export async function generateBriefing(
     throw new Error("FX or price data unavailable");
   }
   const { valuation, priceSource } = resolved;
-
-  const scenarios = buildScenarios(input.snapshot, valuation);
   const smartMoney = await getSmartMoneyData();
+  const context = getContextFixture();
+  const events = getEventsFixture();
+  const deploymentMode = isCashOnlySnapshot(input.snapshot);
+
+  let investmentDirection = undefined;
+  let scenarios = buildScenarios(input.snapshot, valuation);
+
+  if (deploymentMode) {
+    investmentDirection = buildInvestmentDirection({
+      snapshot: input.snapshot,
+      valuation,
+      smartMoney,
+      context,
+    });
+    scenarios = buildCashDeploymentScenarios({
+      snapshot: input.snapshot,
+      valuation,
+      direction: investmentDirection,
+    });
+  }
+
   const { guide: analysisGuide, rows: recommendationRows } = buildBriefingRecommendations({
     snapshot: input.snapshot,
     valuation,
     smartMoney,
     scenarios,
   });
-  const context = getContextFixture();
-  const events = getEventsFixture();
   const tickers = input.snapshot.holdings.map((h) => h.ticker);
-  const analystReports = await getAnalystReports(tickers);
+  const analystReports = await getAnalystReports(
+    deploymentMode
+      ? scenarios[1]?.playbook
+          .filter((p) => p.ticker)
+          .map((p) => p.ticker!)
+          .filter((t, i, a) => a.indexOf(t) === i) ?? []
+      : tickers
+  );
 
   const prev = await getBriefing(
     new Date(Date.parse(date) - 86400000).toISOString().slice(0, 10)
   );
 
-  const fxRebalanceLine =
-    input.snapshot.cash.usd < 5000
+  const fxRebalanceLine = deploymentMode
+    ? `신규 배분 — USD ETF 포함 시 KRW→USD 환전을 분할 매수 1차와 함께 검토 (참고용)`
+    : input.snapshot.cash.usd < 5000
       ? `USD 현금 부족 — KRW→USD 환전 약 ${Math.round(5000 * valuation.fx.usdKrw).toLocaleString("ko-KR")}원 상당을 이번 주 검토 (참고용)`
       : "통화별 현금 균형 유지 — 즉시 환전 필요성 낮음 (참고용)";
 
-  const summaryLines = [
-    `총자산 ${Math.round(valuation.totalKrw).toLocaleString("ko-KR")}원 — 반도체 수급 강세 구간에서 Follow(안 1) 검토가 유리합니다.`,
-    `외국인 순매수·기관 매도 참고 데이터 — 개인은 소액·즉시 체결로 선점(안 2) 또는 최소변경(안 3)을 선택할 수 있습니다.`,
-    fxRebalanceLine,
-    events.some((e) => e.phase === "today")
-      ? `오늘 ${events.find((e) => e.phase === "today")?.title} — 이벤트 전 playbook 0단계(환전) 우선 검토.`
-      : "임박 이벤트 없음 — 안 0(유지)과 안 1 비교로 시작하세요.",
-    "상세 레포트에서 섹터 흐름·playbook·애널 요약을 확인하세요.",
-  ];
+  const summaryLines = deploymentMode && investmentDirection
+    ? deploymentSummaryLines(investmentDirection, valuation.totalKrw)
+    : [
+        `총자산 ${Math.round(valuation.totalKrw).toLocaleString("ko-KR")}원 — 반도체 수급 강세 구간에서 Follow(안 1) 검토가 유리합니다.`,
+        `외국인 순매수·기관 매도 참고 데이터 — 개인은 소액·즉시 체결로 선점(안 2) 또는 최소변경(안 3)을 선택할 수 있습니다.`,
+        fxRebalanceLine,
+        events.some((e) => e.phase === "today")
+          ? `오늘 ${events.find((e) => e.phase === "today")?.title} — 이벤트 전 playbook 0단계(환전) 우선 검토.`
+          : "임박 이벤트 없음 — 안 0(유지)과 안 1 비교로 시작하세요.",
+        "상세 레포트에서 섹터 흐름·playbook·애널 요약을 확인하세요.",
+      ];
 
   const briefing: Briefing = {
     date,
@@ -115,11 +148,18 @@ export async function generateBriefing(
     sections: {
       portfolio: {
         returns: { d1: 0.3, d7: 1.2, m1: 2.8, q1: 5.1, ytd: 8.4 },
-        caption: "포트폴리오 스냅샷 — 일봉 기준 (참고용)",
-        interpretation: [
-          "최근 7일 수익률은 반도체 비중에 따라 변동성이 확대되었습니다.",
-          "분기·YTD는 환율 효과가 포함된 KRW 환산 추정치입니다.",
-        ],
+        caption: deploymentMode
+          ? "신규 배분 모드 — 보유 종목 없음, 현금→목표 비중 배분 (참고용)"
+          : "포트폴리오 스냅샷 — 일봉 기준 (참고용)",
+        interpretation: deploymentMode
+          ? [
+              "현재는 현금 100%에서 목표 ETF·종목 비중으로 단계적 이동하는 시나리오입니다.",
+              "분할 매수·환전·보유 기간은 상세 레포트의 투자 방향 섹션과 playbook을 함께 보세요.",
+            ]
+          : [
+              "최근 7일 수익률은 반도체 비중에 따라 변동성이 확대되었습니다.",
+              "분기·YTD는 환율 효과가 포함된 KRW 환산 추정치입니다.",
+            ],
       },
       fx: {
         usdKrw: valuation.fx.usdKrw,
@@ -150,6 +190,7 @@ export async function generateBriefing(
       events: { timeline: events },
       institutional: { paragraphs: smartMoney.institutionalLens },
       analysisGuide,
+      investmentDirection,
       recommendations: { rows: recommendationRows },
       analyst: { reports: analystReports },
     },

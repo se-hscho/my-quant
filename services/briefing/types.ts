@@ -5,6 +5,7 @@ import type {
   RecommendationAction,
   RecommendationGuideRow,
 } from "@/types/analysis-guide";
+import type { InvestmentDirectionSection } from "@/types/deployment";
 
 export type BriefingScenarioId = 0 | 1 | 2 | 3;
 export type BriefingStatus = "complete" | "failed" | "partial";
@@ -52,6 +53,7 @@ export interface ContextItem {
   title: string;
   date: string;
   impact: string;
+  sourceUrl?: string;
 }
 
 export interface AnalystRow {
@@ -129,6 +131,7 @@ export interface Briefing {
     events: { timeline: EventTimelineItem[] };
     institutional: { paragraphs: string[] };
     analysisGuide: AnalysisGuideSnapshot;
+    investmentDirection?: InvestmentDirectionSection;
     recommendations: { rows: RecommendationRow[] };
     analyst: { reports: AnalystRow[] };
     diff?: { rows: DiffRow[]; reason: string[] };

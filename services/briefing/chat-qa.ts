@@ -24,7 +24,22 @@ export function answerBriefingQuestion(message: string, briefing: Briefing): str
     return `안 ${s.id} (${s.label}) — 예상 수익 ${s.expectedReturn}% · 변동성 ${s.expectedVolatility}% (참고용).\n\n${briefing.summaryLines[0]}\n\nPlaybook:\n${steps || "유지"}\n\n${briefing.disclaimer}`;
   }
 
-  if (/추천|신규|분석.?가이드|분할/.test(text)) {
+  if (/추천|신규|분석.?가이드|분할|배분|2천|투자.?방향/.test(text)) {
+    const dir = briefing.sections.investmentDirection;
+    if (dir) {
+      const combo = dir.combinations.find((c) => c.scenarioId === dir.recommendedScenarioId);
+      const tickers = combo?.tickers.map((t) => `${t.ticker} ${t.weightPct}%`).join(", ");
+      return [
+        dir.headline,
+        `권장: 안 ${dir.recommendedScenarioId} ${dir.recommendedScenarioLabel}`,
+        combo ? `조합: ${tickers}` : "",
+        combo ? `분할: ${combo.splitBuy.note}` : "",
+        combo ? `리밸런싱: ${combo.holdGuide.rebalanceTriggers[0]}` : "",
+        briefing.disclaimer,
+      ]
+        .filter(Boolean)
+        .join("\n\n");
+    }
     const rec = briefing.sections.recommendations.rows[0];
     const layerSummary = briefing.sections.analysisGuide.layers
       .map((l) => `${l.layer} ${l.title}`)

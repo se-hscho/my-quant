@@ -14,7 +14,7 @@ export function ContextSection({
       caption="제안에 반영된 맥락 요약"
       interpretation={[
         "각 항목은 당일 브리핑 시나리오 선택에 미치는 영향을 한 문장으로 연결합니다.",
-        "단독 뉴스가 아닌 포트폴리오 맥락에서 해석하세요.",
+        "출처 링크를 열어 원문·공시를 직접 확인하세요.",
       ]}
     >
       <ul className="space-y-2 text-sm">
@@ -25,6 +25,16 @@ export function ContextSection({
             </span>
             <p className="font-medium">{item.title}</p>
             <p className="text-muted-foreground">{item.impact}</p>
+            {item.sourceUrl ? (
+              <a
+                href={item.sourceUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-2 inline-block text-xs text-primary underline-offset-2 hover:underline"
+              >
+                근거 확인 →
+              </a>
+            ) : null}
           </li>
         ))}
       </ul>
