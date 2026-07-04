@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
-import { ChevronUpIcon, SendIcon } from "lucide-react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
+import { ChevronUpIcon, ImageUpIcon, Loader2Icon, SendIcon } from "lucide-react";
 import { useAgentChat } from "./AgentChatProvider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,13 +19,16 @@ const QUICK_PROMPTS = [
 type LlmStatus = "checking" | "active" | "inactive" | "rules_first";
 
 export function AgentChatDock() {
-  const { messages, isPending, sendMessage } = useAgentChat();
+  const { messages, isPending, isImporting, sendMessage, importHoldingsFromImage } =
+    useAgentChat();
   const [input, setInput] = useState("");
   const [expanded, setExpanded] = useState(false);
   const [llmStatus, setLlmStatus] = useState<LlmStatus>("checking");
+  const chatImageRef = useRef<HTMLInputElement>(null);
 
   const hasMessages = messages.length > 0;
   const showTranscript = expanded && hasMessages;
+  const busy = isPending || isImporting;
 
   useEffect(() => {
     let cancelled = false;
@@ -61,15 +64,23 @@ export function AgentChatDock() {
     e.preventDefault();
     const text = input;
     setInput("");
-    if (!text.trim() || isPending) return;
+    if (!text.trim() || busy) return;
     setExpanded(true);
     await sendMessage(text);
   }
 
   async function handleQuickPrompt(text: string) {
-    if (isPending) return;
+    if (busy) return;
     setExpanded(true);
     await sendMessage(text);
+  }
+
+  async function handleChatImageChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file || busy) return;
+    setExpanded(true);
+    await importHoldingsFromImage(file);
   }
 
   return (
@@ -79,35 +90,35 @@ export function AgentChatDock() {
     >
       <div className="mx-auto flex max-h-[min(48vh,20rem)] max-w-3xl flex-col">
         <div className="flex shrink-0 items-center justify-between gap-2 px-4 pt-2">
-        <div className="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:gap-2">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-medium text-muted-foreground">
-              에이전트 대화
+          <div className="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:gap-2">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-medium text-muted-foreground">
+                에이전트 대화
+              </span>
+              {llmStatus === "checking" ? (
+                <span className="text-[10px] text-muted-foreground">AI 확인 중…</span>
+              ) : llmStatus === "rules_first" ? (
+                <span
+                  className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] text-emerald-700 dark:text-emerald-400"
+                  title="자주 쓰는 표현은 AI 없이 처리, 나머지는 AI 보조"
+                >
+                  규칙 우선 · AI 보조
+                </span>
+              ) : (
+                <span
+                  className="rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground"
+                  title="GEMINI 미설정 또는 연결 실패 — 규칙 파서만 사용"
+                >
+                  오프라인 규칙
+                </span>
+              )}
+            </div>
+            <span className="text-[10px] text-muted-foreground sm:hidden">
+              {llmStatus === "rules_first"
+                ? "자주 쓰는 명령은 규칙 처리, 나머지는 AI 보조"
+                : "규칙 파서만 사용 (GEMINI 미설정)"}
             </span>
-            {llmStatus === "checking" ? (
-              <span className="text-[10px] text-muted-foreground">AI 확인 중…</span>
-            ) : llmStatus === "rules_first" ? (
-              <span
-                className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] text-emerald-700 dark:text-emerald-400"
-                title="자주 쓰는 표현은 AI 없이 처리, 나머지는 AI 보조"
-              >
-                규칙 우선 · AI 보조
-              </span>
-            ) : (
-              <span
-                className="rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground"
-                title="GEMINI 미설정 또는 연결 실패 — 규칙 파서만 사용"
-              >
-                오프라인 규칙
-              </span>
-            )}
           </div>
-          <span className="text-[10px] text-muted-foreground sm:hidden">
-            {llmStatus === "rules_first"
-              ? "자주 쓰는 명령은 규칙 처리, 나머지는 AI 보조"
-              : "규칙 파서만 사용 (GEMINI 미설정)"}
-          </span>
-        </div>
           {hasMessages ? (
             <Button
               type="button"
@@ -135,7 +146,7 @@ export function AgentChatDock() {
               variant="outline"
               size="sm"
               className="h-7 text-[11px]"
-              disabled={isPending}
+              disabled={busy}
               onClick={() => void handleQuickPrompt(text)}
             >
               {text}
@@ -161,8 +172,10 @@ export function AgentChatDock() {
                 {m.content}
               </li>
             ))}
-            {isPending ? (
-              <li className="mr-4 text-xs text-muted-foreground">답변 생성 중…</li>
+            {busy ? (
+              <li className="mr-4 text-xs text-muted-foreground">
+                {isImporting ? "스크린샷 분석 중…" : "답변 생성 중…"}
+              </li>
             ) : null}
           </ul>
         ) : hasMessages ? (
@@ -177,26 +190,50 @@ export function AgentChatDock() {
         ) : null}
 
         <form onSubmit={handleSubmit} className="flex shrink-0 gap-2 px-4 py-3">
+          <input
+            ref={chatImageRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
+            capture="environment"
+            className="sr-only"
+            aria-hidden
+            onChange={handleChatImageChange}
+          />
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            disabled={busy}
+            aria-label="보유 화면 캡처 첨부"
+            title="보유 앱 캡처로 종목 등록 (GEMINI 필요)"
+            onClick={() => chatImageRef.current?.click()}
+          >
+            {isImporting ? (
+              <Loader2Icon className="h-4 w-4 animate-spin" aria-hidden />
+            ) : (
+              <ImageUpIcon className="h-4 w-4" aria-hidden />
+            )}
+          </Button>
           <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="삼전 10주, 반도체 etf 10주 샀어…"
+            placeholder="삼전 10주 · 📷 버튼으로 캡처 등록…"
             aria-label="에이전트에게 질문"
-            disabled={isPending}
+            disabled={busy}
             className="flex-1"
           />
           <Button
             type="submit"
             size="icon"
-            disabled={isPending || !input.trim()}
+            disabled={busy || !input.trim()}
             aria-label="질문 보내기"
           >
             <SendIcon className="h-4 w-4" />
           </Button>
         </form>
         <p className="shrink-0 px-4 pb-2 text-[10px] text-muted-foreground">
-          참고용 안내이며 투자 권유가 아닙니다. 보유 등록·조회와 브리핑 Q&A(예: &quot;안 1 설명해줘&quot;)를
-          지원합니다. AI 무료 한도 절약을 위해 자주 쓰는 표현은 규칙으로 먼저 처리합니다.
+          📷 다른 앱 보유 화면 캡처를 첨부하면 티커·수량·매수가를 자동 등록합니다 (GEMINI_API_KEY
+          필요). 텍스트로는 &quot;SOXX 10주&quot; 등도 가능합니다. 참고용·투자 권유 아님.
         </p>
       </div>
     </div>

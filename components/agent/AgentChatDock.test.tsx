@@ -54,6 +54,7 @@ describe("AgentChatDock", () => {
     expect(screen.getByTestId("agent-chat-dock")).toBeInTheDocument();
     expect(screen.getByLabelText("에이전트에게 질문")).toBeInTheDocument();
     expect(screen.getByLabelText("질문 보내기")).toBeInTheDocument();
+    expect(screen.getByLabelText("보유 화면 캡처 첨부")).toBeInTheDocument();
   });
 
   it("질문 전송 후 에이전트 답변이 표시된다", async () => {
