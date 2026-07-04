@@ -5,6 +5,7 @@ export function ChartWithCaption({
   title,
   caption,
   help,
+  nested = false,
   children,
 }: {
   title: string;
@@ -12,12 +13,19 @@ export function ChartWithCaption({
   caption: string;
   /** 영역별 도움말 — 툴팁에만 표시 */
   help?: string[];
+  nested?: boolean;
   children: ReactNode;
 }) {
+  const TitleTag = nested ? "h4" : "h3";
   return (
-    <section className="space-y-2" data-testid="chart-with-caption">
+    <section
+      className={nested ? "space-y-2 pl-0 border-l-0" : "space-y-2"}
+      data-testid="chart-with-caption"
+    >
       <div className="flex items-start gap-2">
-        <h3 className="text-sm font-semibold flex-1">{title}</h3>
+        <TitleTag className={`font-semibold flex-1 ${nested ? "text-sm" : "text-sm"}`}>
+          {title}
+        </TitleTag>
         {help && help.length > 0 ? (
           <InfoTooltip label={`${title} 도움말`} description={help} />
         ) : null}
