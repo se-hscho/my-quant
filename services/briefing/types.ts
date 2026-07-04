@@ -1,4 +1,10 @@
 import type { CashBalances, Currency } from "@/types/agent";
+import type {
+  AnalysisGuideSnapshot,
+  AnalysisLayerId,
+  RecommendationAction,
+  RecommendationGuideRow,
+} from "@/types/analysis-guide";
 
 export type BriefingScenarioId = 0 | 1 | 2 | 3;
 export type BriefingStatus = "complete" | "failed" | "partial";
@@ -38,12 +44,8 @@ export interface SectorFlowRow {
   relativeStrength7d: number;
 }
 
-export interface RecommendationRow {
-  sector: string;
-  label: string;
-  ticker: string;
-  rationale: string;
-}
+export type { AnalysisGuideSnapshot, AnalysisLayerId, RecommendationAction };
+export type RecommendationRow = RecommendationGuideRow;
 
 export interface ContextItem {
   type: "news" | "disclosure" | "policy";
@@ -126,6 +128,7 @@ export interface Briefing {
     context: { items: ContextItem[] };
     events: { timeline: EventTimelineItem[] };
     institutional: { paragraphs: string[] };
+    analysisGuide: AnalysisGuideSnapshot;
     recommendations: { rows: RecommendationRow[] };
     analyst: { reports: AnalystRow[] };
     diff?: { rows: DiffRow[]; reason: string[] };

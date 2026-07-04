@@ -111,6 +111,7 @@ function mockBriefingForChat(): Briefing {
       context: { items: [] },
       events: { timeline: [] },
       institutional: { paragraphs: [] },
+      analysisGuide: { intro: "test", layers: [] },
       recommendations: { rows: [] },
     },
     disclaimer: BRIEFING_DISCLAIMER,

@@ -10,6 +10,7 @@ import type { SmartMoneyData } from "@/services/briefing/types";
 import { diffBriefings } from "./diff";
 import { getBriefing } from "./kv";
 import { buildScenarios } from "./scenarios";
+import { buildBriefingRecommendations } from "./recommendations";
 import { BRIEFING_DISCLAIMER, type Briefing } from "./types";
 
 export interface GenerateBriefingInput {
@@ -67,6 +68,12 @@ export async function generateBriefing(
 
   const scenarios = buildScenarios(input.snapshot, valuation);
   const smartMoney = await getSmartMoneyData();
+  const { guide: analysisGuide, rows: recommendationRows } = buildBriefingRecommendations({
+    snapshot: input.snapshot,
+    valuation,
+    smartMoney,
+    scenarios,
+  });
   const context = getContextFixture();
   const events = getEventsFixture();
   const tickers = input.snapshot.holdings.map((h) => h.ticker);
@@ -142,17 +149,8 @@ export async function generateBriefing(
       context: { items: context },
       events: { timeline: events },
       institutional: { paragraphs: smartMoney.institutionalLens },
-      recommendations: {
-        rows: smartMoney.sectorFlows
-          .filter((s) => s.flowScore > 0.5)
-          .slice(0, 3)
-          .map((s) => ({
-            sector: s.sector,
-            label: s.label,
-            ticker: s.sector === "semiconductor" ? "SOXX" : "QQQ",
-            rationale: `${s.label} 섹터 7일 상대강도 +${s.relativeStrength7d.toFixed(1)}%p — 유입 검토·고려 (참고용)`,
-          })),
-      },
+      analysisGuide,
+      recommendations: { rows: recommendationRows },
       analyst: { reports: analystReports },
     },
     disclaimer: `${BRIEFING_DISCLAIMER}${priceSourceDisclaimer(priceSource)}`,

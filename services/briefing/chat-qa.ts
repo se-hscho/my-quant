@@ -24,6 +24,17 @@ export function answerBriefingQuestion(message: string, briefing: Briefing): str
     return `안 ${s.id} (${s.label}) — 예상 수익 ${s.expectedReturn}% · 변동성 ${s.expectedVolatility}% (참고용).\n\n${briefing.summaryLines[0]}\n\nPlaybook:\n${steps || "유지"}\n\n${briefing.disclaimer}`;
   }
 
+  if (/추천|신규|분석.?가이드|분할/.test(text)) {
+    const rec = briefing.sections.recommendations.rows[0];
+    const layerSummary = briefing.sections.analysisGuide.layers
+      .map((l) => `${l.layer} ${l.title}`)
+      .join(" → ");
+    if (rec) {
+      return `분석 계층: ${layerSummary}.\n\n추천 예: ${rec.layer} ${rec.label} ${rec.ticker} — ${rec.splitGuide ?? "분할 검토"} (${rec.rationale})\n\n${briefing.disclaimer}`;
+    }
+    return `분석 계층: ${layerSummary}.\n\n${briefing.disclaimer}`;
+  }
+
   if (/섹터|반도체|에너지|금융/.test(text)) {
     const top = briefing.sectorTop3.map((s) => `${s.label} (수급 ${s.flowScore})`).join(", ");
     return `오늘 섹터 흐름 상위: ${top}.\n${briefing.sections.sectorFlows.inflowNote}\n\n${briefing.disclaimer}`;

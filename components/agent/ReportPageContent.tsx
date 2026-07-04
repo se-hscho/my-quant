@@ -10,6 +10,7 @@ import { SectorFlowsSection } from "./sections/SectorFlowsSection";
 import { ContextSection } from "./sections/ContextSection";
 import { EventsSection } from "./sections/EventsSection";
 import { InstitutionalLensSection } from "./sections/InstitutionalLensSection";
+import { AnalysisGuideSection } from "./sections/AnalysisGuideSection";
 import { RecommendationsSection } from "./sections/RecommendationsSection";
 import { ScenariosSection } from "./sections/ScenariosSection";
 import { PlaybookSection } from "./sections/PlaybookSection";
@@ -39,6 +40,7 @@ export function ReportPageContent({ briefing }: { briefing: Briefing }) {
       <ContextSection items={briefing.sections.context.items} />
       <AnalystSection reports={reports} missingTickers={missingTickers} />
       <EventsSection timeline={briefing.sections.events.timeline} />
+      <AnalysisGuideSection guide={briefing.sections.analysisGuide} />
       <RecommendationsSection rows={briefing.sections.recommendations.rows} />
       <ScenariosSection scenarios={briefing.scenarios} />
       <PlaybookSection scenarios={briefing.scenarios} />
