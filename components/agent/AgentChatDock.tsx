@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { ChevronUpIcon, ImageUpIcon, Loader2Icon, SendIcon } from "lucide-react";
 import { useAgentChat } from "./AgentChatProvider";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 
 const QUICK_PROMPTS = [
@@ -220,7 +220,13 @@ export function AgentChatDock() {
           </button>
         ) : null}
 
-        <form onSubmit={handleSubmit} className="flex shrink-0 gap-2 px-4 py-3">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            void handleSubmit(e);
+          }}
+          className="flex shrink-0 items-end gap-2 px-4 py-3"
+        >
           <input
             ref={chatImageRef}
             type="file"
@@ -245,13 +251,22 @@ export function AgentChatDock() {
               <ImageUpIcon className="h-4 w-4" aria-hidden />
             )}
           </Button>
-          <Input
+          <Textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="삼전 10주 · 📷 버튼으로 캡처 등록…"
+            placeholder="보유 목록 붙여넣기 · 삼전 10주 · Enter=줄바꿈, 전송=버튼"
             aria-label="에이전트에게 질문"
             disabled={busy}
-            className="flex-1"
+            rows={2}
+            className="max-h-32 min-h-[2.5rem] flex-1 resize-y"
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+                e.preventDefault();
+                if (!busy && input.trim()) {
+                  void handleSubmit(e as unknown as FormEvent);
+                }
+              }
+            }}
           />
           <Button
             type="submit"
@@ -263,8 +278,8 @@ export function AgentChatDock() {
           </Button>
         </form>
         <p className="shrink-0 px-4 pb-2 text-[10px] text-muted-foreground">
-          📷 보유 캡처 등록·자연어 AI는 GEMINI_API_KEY가 필요합니다. 지금은 &quot;SOXX
-          10주&quot; 같은 규칙 입력은 가능합니다. 참고용·투자 권유 아님.
+          증권앱 보유 목록을 붙여넣으면 섹터 비중·추천(1안) 표를 보여줍니다. Enter는 줄바꿈,
+          전송은 ➤ 버튼(⌘/Ctrl+Enter 가능). 참고용·투자 권유 아님.
         </p>
       </div>
     </div>

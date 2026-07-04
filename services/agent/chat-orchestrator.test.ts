@@ -28,13 +28,19 @@ vi.mock("@/services/agent/chat-llm", () => ({
   normalizeChatInputWithLlm: vi.fn(),
 }));
 
+vi.mock("@/services/agent/brokerage-paste-llm", () => ({
+  parseBrokeragePasteWithLlm: vi.fn(),
+}));
+
 import { isGeminiConfigured } from "@/services/ai/gemini";
 import { canInvokeLlm } from "@/services/ai/llm-rate-limit";
 import { normalizeChatInputWithLlm } from "@/services/agent/chat-llm";
+import { parseBrokeragePasteWithLlm } from "@/services/agent/brokerage-paste-llm";
 
 const mockConfigured = vi.mocked(isGeminiConfigured);
 const mockCanInvoke = vi.mocked(canInvokeLlm);
 const mockNormalize = vi.mocked(normalizeChatInputWithLlm);
+const mockBrokeragePaste = vi.mocked(parseBrokeragePasteWithLlm);
 
 const soxxAction = {
   type: "add_holding" as const,
@@ -124,6 +130,7 @@ describe("processAgentChat", () => {
     mockConfigured.mockReset();
     mockCanInvoke.mockReset();
     mockNormalize.mockReset();
+    mockBrokeragePaste.mockReset();
     mockCanInvoke.mockReturnValue(true);
   });
 
@@ -212,5 +219,71 @@ describe("processAgentChat", () => {
     const result = await processAgentChat({ message: "이상한 말" });
     expect(mockNormalize).not.toHaveBeenCalled();
     expect(result.llmStatus).toBe("unconfigured");
+  });
+
+  it("증권앱 보유 목록 붙여넣기는 LLM 파서와 섹터 비중 표를 사용한다", async () => {
+    mockConfigured.mockReturnValue(true);
+    mockBrokeragePaste.mockResolvedValue({
+      holdings: [
+        {
+          name: "아메리칸 타워",
+          ticker: "AMT",
+          valueKrw: 6_346_704,
+          returnPct: -28.51,
+          quantity: 1,
+          assetType: "stock",
+          currency: "USD",
+        },
+      ],
+      confidence: "high",
+    });
+
+    const paste = `키움증권
+아메리칸 타워
+6,346,704원
+- 2,532,259원(-28.51%)
+
+한두
+CREDIT SUISSE HIGH YIEL...
+2,691원
+• 841원(-23.81%)
+
+키움증권
+TIGER 리츠부동산인프라
+1,234,567원
++ 12,345원(+1.01%)`;
+
+    const result = await processAgentChat({ message: paste });
+
+    expect(mockBrokeragePaste).toHaveBeenCalled();
+    expect(mockNormalize).not.toHaveBeenCalled();
+    expect(result.llmStatus).toBe("active");
+    expect(result.reply).toMatch(/자산 현황/);
+    expect(result.reply).toMatch(/추천\(1안\)/);
+    expect(result.actions[0]).toMatchObject({ ticker: "AMT", type: "add_holding" });
+  });
+
+  it("보유 목록 붙여넣기는 GEMINI 미설정 시 안내한다", async () => {
+    mockConfigured.mockReturnValue(false);
+
+    const paste = `키움증권
+아메리칸 타워
+6,346,704원
+- 2,532,259원(-28.51%)
+
+한두
+CREDIT SUISSE HIGH YIEL...
+2,691원
+• 841원(-23.81%)
+
+키움증권
+TIGER 리츠부동산인프라
+1,234,567원
++ 12,345원(+1.01%)`;
+
+    const result = await processAgentChat({ message: paste });
+    expect(result.llmStatus).toBe("unconfigured");
+    expect(result.reply).toMatch(/GEMINI_API_KEY/);
+    expect(mockBrokeragePaste).not.toHaveBeenCalled();
   });
 });

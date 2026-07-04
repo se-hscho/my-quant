@@ -1,4 +1,5 @@
 import type { ChatAction, ChatCommandResult, ParseChatOptions } from "@/types/agent-chat";
+import { looksLikeBrokeragePaste } from "@/lib/agent/brokerage-paste-detect";
 import { isReadOnlyChatMessage, parseChatCommand } from "@/lib/agent/chat-commands";
 import { ASSET_TYPE_LABELS } from "@/lib/agent/holdings-display";
 import {
@@ -14,6 +15,7 @@ import {
   recordLlmCall,
 } from "@/services/ai/llm-rate-limit";
 import { normalizeChatInputWithLlm } from "@/services/agent/chat-llm";
+import { processBrokeragePasteMessage } from "@/services/agent/brokerage-paste-handler";
 
 export interface AgentChatResponse extends ChatCommandResult {
   normalizedCommand?: string | null;
@@ -171,6 +173,27 @@ export async function processAgentChat(
     if (qa) {
       return { reply: qa, actions: [], llmStatus: "skipped" };
     }
+  }
+
+  if (looksLikeBrokeragePaste(message)) {
+    if (!isGeminiConfigured()) {
+      return {
+        reply:
+          "보유 목록 붙여넣기는 GEMINI_API_KEY 설정 후 사용할 수 있습니다.\n" +
+          "지금은 `SOXX 10주` 형식으로 등록해 주세요. (참고용)",
+        actions: [],
+        llmStatus: "unconfigured",
+      };
+    }
+    if (!canInvokeLlm()) {
+      return {
+        reply: `보유 목록 분석 한도에 도달했습니다.${rateLimitHint()}`,
+        actions: [],
+        llmStatus: "rate_limited",
+      };
+    }
+    recordLlmCall();
+    return processBrokeragePasteMessage(message, options);
   }
 
   if (isReadOnlyChatMessage(message)) {
