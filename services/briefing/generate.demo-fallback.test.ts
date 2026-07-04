@@ -6,6 +6,7 @@ import "./generate.test-setup";
 vi.mock("@/lib/agent/yahoo-quote", () => ({
   fetchFxRatesFromYahoo: vi.fn(async () => ({ usdKrw: null, jpyKrw: null })),
   fetchYahooLatestClose: vi.fn(async () => null),
+  fetchYahooPriceTrend: vi.fn(async () => null),
   toYahooSymbol: (t: string) => t,
 }));
 

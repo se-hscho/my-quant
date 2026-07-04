@@ -1,8 +1,11 @@
 import type { ChatAction, ParseChatOptions } from "@/types/agent-chat";
 import type { ImportedHoldingDraft } from "@/types/holdings-import";
+import { enrichBrokeragePasteRows } from "@/lib/agent/enrich-paste-holdings";
 import { createEmptySnapshot } from "@/lib/agent/holdings-storage";
 import {
+  buildAssetClassWeights,
   buildSectorWeightComparison,
+  buildSubSectorWeightRows,
   buildValuationFromPasteRows,
   formatBrokeragePasteSummary,
 } from "@/lib/agent/portfolio-weight-summary";
@@ -10,35 +13,17 @@ import { mergeImportedHoldingsIntoSnapshot } from "@/lib/agent/holdings-import-m
 import { parseBrokeragePasteWithLlm } from "@/services/agent/brokerage-paste-llm";
 import type { AgentChatResponse } from "@/services/agent/chat-orchestrator";
 
-import type { BrokeragePasteRow } from "@/services/agent/brokerage-paste-llm";
-import { deriveAvgCostFromPaste } from "@/lib/agent/cost-from-return";
-
-const DEFAULT_FX = { usdKrw: 1350, jpyKrw: 9.2 };
-
 function rowsToDrafts(
-  rows: Awaited<ReturnType<typeof parseBrokeragePasteWithLlm>>["holdings"]
+  rows: Awaited<ReturnType<typeof enrichBrokeragePasteRows>>
 ): ImportedHoldingDraft[] {
-  return rows.map((r) => {
-    const avgCost =
-      r.returnPct != null
-        ? deriveAvgCostFromPaste({
-            valueKrw: r.valueKrw,
-            returnPct: r.returnPct,
-            quantity: r.quantity,
-            currency: r.currency,
-            fx: DEFAULT_FX,
-          })
-        : undefined;
-
-    return {
-      ticker: r.ticker,
-      name: r.name,
-      quantity: r.quantity,
-      assetType: r.assetType,
-      currency: r.currency,
-      avgCost,
-    };
-  });
+  return rows.map((r) => ({
+    ticker: r.ticker,
+    name: r.name,
+    quantity: r.quantity,
+    assetType: r.assetType,
+    currency: r.currency,
+    avgCost: r.avgCost,
+  }));
 }
 
 function draftsToActions(drafts: ImportedHoldingDraft[]): ChatAction[] {
@@ -68,15 +53,20 @@ export async function processBrokeragePasteMessage(
     };
   }
 
-  const drafts = rowsToDrafts(parsed.holdings);
+  const enriched = await enrichBrokeragePasteRows(parsed.holdings);
+  const drafts = rowsToDrafts(enriched);
   const base = options.snapshot ?? createEmptySnapshot();
   const { snapshot } = mergeImportedHoldingsIntoSnapshot(base, drafts);
-  const valuation = buildValuationFromPasteRows(parsed.holdings);
+  const valuation = buildValuationFromPasteRows(enriched);
   const comparison = buildSectorWeightComparison({ snapshot, valuation });
+  const assetClasses = buildAssetClassWeights({ snapshot, valuation });
+  const subSectors = buildSubSectorWeightRows({ snapshot, valuation });
 
   const reply = formatBrokeragePasteSummary({
-    rows: parsed.holdings,
+    rows: enriched,
     comparison,
+    assetClasses,
+    subSectors,
     totalKrw: valuation.totalKrw,
     confidence: parsed.confidence,
   });

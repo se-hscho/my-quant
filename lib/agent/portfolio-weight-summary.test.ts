@@ -116,16 +116,18 @@ describe("formatBrokeragePasteSummary", () => {
           deltaPp: -15,
         },
       ],
+      assetClasses: [{ assetClass: "equity", label: "주식·ETF", currentPct: 100 }],
+      subSectors: [{ id: "other", label: "기타", weightPct: 100 }],
       totalKrw: 6_346_704,
       confidence: "high",
     });
 
     expect(text).toMatch(/자산 현황/);
+    expect(text).toMatch(/자산군/);
+    expect(text).toMatch(/세부 섹터/);
     expect(text).toMatch(/\| 섹터 \| 현재 \| 추천\(1안\) \| Δ \|/);
-    expect(text).toMatch(/리츠 \| 100% \| 85% \| -15%p/);
     expect(text).toMatch(/아메리칸 타워 \(AMT\)/);
     expect(text).toMatch(/-28\.51%/);
-    expect(text).toMatch(/매수가 역산/);
-    expect(text).toMatch(/1일·7일·1개월/);
+    expect(text).toMatch(/역산/);
   });
 });

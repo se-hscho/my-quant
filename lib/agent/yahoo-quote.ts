@@ -43,12 +43,28 @@ export async function fetchYahooCloseSeries(
   const res = await fetch(url, {
     headers: { "User-Agent": "Mozilla/5.0 (compatible; quant-portfolio/1.0)" },
     cache: "no-store",
-    signal: AbortSignal.timeout(10_000),
+    signal: AbortSignal.timeout(12_000),
   });
+
+  if (res.status === 503 || res.status === 429) {
+    await new Promise((r) => setTimeout(r, 600));
+    const retry = await fetch(url, {
+      headers: { "User-Agent": "Mozilla/5.0 (compatible; quant-portfolio/1.0)" },
+      cache: "no-store",
+      signal: AbortSignal.timeout(12_000),
+    });
+    if (!retry.ok) return [];
+    const data = (await retry.json()) as YahooChartResponse;
+    return extractCloses(data);
+  }
 
   if (!res.ok) return [];
 
   const data = (await res.json()) as YahooChartResponse;
+  return extractCloses(data);
+}
+
+function extractCloses(data: YahooChartResponse): number[] {
   const result = data.chart.result?.[0];
   if (!result) return [];
 

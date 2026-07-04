@@ -8,6 +8,12 @@ import { getContextFixture } from "@/services/context/adapter";
 import { getEventsFixture } from "@/services/events/adapter";
 import { getSmartMoneyData } from "@/services/smart-money/adapter";
 import type { SmartMoneyData } from "@/services/briefing/types";
+import { fetchYahooPriceTrend } from "@/lib/agent/yahoo-quote";
+import {
+  buildHoldingInsightRows,
+  generateLlmBriefingNarrative,
+} from "./llm-narrative";
+import { computeWeightedPortfolioReturns } from "./portfolio-returns";
 import { diffBriefings } from "./diff";
 import { getBriefing } from "./kv";
 import { isCashOnlySnapshot } from "@/lib/agent/snapshot-mode";
@@ -100,6 +106,32 @@ export async function generateBriefing(
     smartMoney,
     scenarios,
   });
+
+  const trendsByTicker: Record<string, Awaited<ReturnType<typeof fetchYahooPriceTrend>>> = {};
+  await Promise.all(
+    valuation.holdings.map(async (h) => {
+      trendsByTicker[h.ticker.toUpperCase()] = await fetchYahooPriceTrend(h.ticker);
+    })
+  );
+
+  const portfolioReturns = computeWeightedPortfolioReturns({
+    valuation,
+    trendsByTicker,
+  });
+
+  const holdingInsights = buildHoldingInsightRows({
+    snapshot: input.snapshot,
+    valuation,
+    trendsByTicker,
+  });
+
+  const llmNarrative = await generateLlmBriefingNarrative({
+    snapshot: input.snapshot,
+    valuation,
+    smartMoney,
+    holdings: holdingInsights,
+    portfolioReturns,
+  });
   const tickers = input.snapshot.holdings.map((h) => h.ticker);
   const analystReports = await getAnalystReports(
     deploymentMode
@@ -122,16 +154,18 @@ export async function generateBriefing(
 
   const summaryLines = deploymentMode && investmentDirection
     ? deploymentSummaryLines(investmentDirection, valuation.totalKrw)
-    : [
-        `총자산 ${Math.round(valuation.totalKrw).toLocaleString("ko-KR")}원 — 반도체 수급 강세, ${formatScenarioReference(1)} 검토 구간.`,
-        `외국인 순매수·기관 매도 — ${formatScenarioReference(2)} 또는 ${formatScenarioReference(3)} 대안.`,
-        fxRebalanceLine,
-        events.some((e) => e.phase === "today")
-          ? `오늘 ${events.find((e) => e.phase === "today")?.title} — 이벤트 전 환전·재원 확보 우선.`
-          : `임박 이벤트 없음 — ${formatScenarioReference(0)} vs ${formatScenarioReference(1)} 비교.`,
-      ];
+    : llmNarrative?.executiveLines?.length
+      ? llmNarrative.executiveLines
+      : [
+          `총자산 ${Math.round(valuation.totalKrw).toLocaleString("ko-KR")}원 — 반도체 수급 강세, ${formatScenarioReference(1)} 검토 구간.`,
+          `외국인 순매수·기관 매도 — ${formatScenarioReference(2)} 또는 ${formatScenarioReference(3)} 대안.`,
+          fxRebalanceLine,
+          events.some((e) => e.phase === "today")
+            ? `오늘 ${events.find((e) => e.phase === "today")?.title} — 이벤트 전 환전·재원 확보 우선.`
+            : `임박 이벤트 없음 — ${formatScenarioReference(0)} vs ${formatScenarioReference(1)} 비교.`,
+        ];
 
-  if (!deploymentMode && valuation.holdingsReturnPct != null) {
+  if (!deploymentMode && valuation.holdingsReturnPct != null && !llmNarrative) {
     summaryLines.splice(
       1,
       0,
@@ -155,13 +189,19 @@ export async function generateBriefing(
     scenarios,
     sections: {
       portfolio: {
-        returns: { d1: 0.3, d7: 1.2, m1: 2.8, q1: 5.1, ytd: 8.4 },
+        returns: {
+          d1: portfolioReturns.d1,
+          d7: portfolioReturns.d7,
+          m1: portfolioReturns.m1,
+          q1: portfolioReturns.m1 * 1.8,
+          ytd: portfolioReturns.m1 * 3,
+        },
         holdingsReturnPct: valuation.holdingsReturnPct,
         holdingsPnlKrw: valuation.holdingsPnlKrw,
         caption: deploymentMode
           ? `신규 배분 — 현금 ${Math.round(valuation.totalKrw).toLocaleString("ko-KR")}원, 보유 0종목`
           : valuation.holdingsReturnPct != null
-            ? `매수가 기준 수익률 ${valuation.holdingsReturnPct >= 0 ? "+" : ""}${valuation.holdingsReturnPct.toFixed(1)}% · 7일 +1.2% (참고용)`
+            ? `매수가 기준 수익률 ${valuation.holdingsReturnPct >= 0 ? "+" : ""}${valuation.holdingsReturnPct.toFixed(1)}% · 7일 ${portfolioReturns.d7 >= 0 ? "+" : ""}${portfolioReturns.d7.toFixed(1)}% (참고용)`
             : "포트폴리오 수익률 스냅샷 — Yahoo 일봉·환율 KRW 환산 (참고용)",
         help: deploymentMode
           ? [
@@ -210,6 +250,7 @@ export async function generateBriefing(
       investmentDirection,
       recommendations: { rows: recommendationRows },
       analyst: { reports: analystReports },
+      llmNarrative: llmNarrative ?? undefined,
     },
     disclaimer: `${BRIEFING_DISCLAIMER}${priceSourceDisclaimer(priceSource)}`,
     status: "complete",

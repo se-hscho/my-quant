@@ -21,7 +21,27 @@ describe("resolveValuation", () => {
     expect(result!.priceSource).toBe("demo-seed");
   });
 
-  it("일반 스냅샷은 Yahoo 실패 시 null", async () => {
+  it("avgCost가 있으면 Yahoo 실패 시에도 부분 valuation", async () => {
+    const result = await resolveValuation({
+      holdings: [
+        {
+          id: "1",
+          ticker: "SOXX",
+          quantity: 10,
+          avgCost: 200,
+          assetType: "etf",
+          currency: "USD",
+        },
+      ],
+      cash: { krw: 1_000_000, usd: 0, jpy: 0 },
+      updatedAt: new Date().toISOString(),
+    });
+    expect(result).not.toBeNull();
+    expect(result!.priceSource).toBe("yahoo-partial");
+    expect(result!.valuation.holdings).toHaveLength(1);
+  });
+
+  it("시세·매수가 모두 없고 현금도 없으면 null", async () => {
     const result = await resolveValuation({
       holdings: [
         {

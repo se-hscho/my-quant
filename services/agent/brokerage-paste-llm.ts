@@ -6,6 +6,8 @@ export interface BrokeragePasteRow {
   name: string;
   ticker: string;
   valueKrw: number;
+  pnlKrw?: number;
+  costKrw?: number;
   returnPct?: number;
   broker?: string;
   quantity: number;
@@ -32,29 +34,30 @@ const BROKERAGE_PASTE_PROMPT = `당신은 한국·미국 증권앱 보유 목록
 6,346,704원
 - 2,532,259원(-28.51%)
 
-## 규칙
-- broker: 키움증권, 한투, 한두 등 (있으면)
-- name: 종목 표시명
-- ticker: Yahoo Finance 심볼 (미국 주식·ETF는 티커, 한국 6자리는 005930.KS, ETF는 069500.KS 등)
-- valueKrw: 평가금액(원) 숫자만 — "6,346,704원" → 6346704
-- returnPct: 손익률 숫자 (-28.51) — 괄호 안 퍼센트
-- quantity: 모르면 1
-- assetType: stock | etf | bond_etf | gold_etf
-- currency: KRW | USD | JPY (미국 종목은 USD)
+한두
+CREDIT SUISSE HIGH YIEL...
+2,691원
+• 841원(-23.81%)
 
-## 티커 힌트
-- ACE 미국S&P500 → ACE US S&P500 ETF 티커 추론
-- KODEX 코스닥150 → 229200.KS etf KRW
-- TIGER 리츠부동산인프라 → 한국 ETF 코드 추론
-- ISHARES GLOBAL CLEAN → ICLN USD etf
-- 제이피모간 체이스 → JPM USD stock
-- 코카콜라 → KO
-- W&T 오프쇼어 → WTI or appropriate US ticker
-- CREDIT SUISSE HIGH YIEL → HY ETF ticker if identifiable
+## 필드 의미 (중요)
+- valueKrw: **현재 평가금액**(원) — "6,346,704원" 줄
+- pnlKrw: **평가손익 금액**(원, 손실이면 음수) — "- 2,532,259원" 또는 "• 841원" (손실)
+- returnPct: **투자금 대비 수익률** — 괄호 (-28.51%)
+- costKrw: 투자원금(원) = valueKrw - pnlKrw (또는 valueKrw/(1+returnPct/100))
+- quantity: 앱에 **수량이 명시된 경우만**. 없으면 null (서버가 현재가로 역산)
+- ticker: Yahoo Finance 심볼
+- assetType: stock | etf | bond_etf | gold_etf
+- currency: KRW | USD | JPY
+
+## 규칙
+- broker: 키움증권, 한투, 한두 등
+- name: 종목 표시명
+- bond ETF·하이일드·채권 → bond_etf, 금 ETF → gold_etf
+- 미국 종목 currency=USD, 한국 6자리 → 005930.KS currency=KRW
 
 ## 출력 JSON
 {
-  "holdings": [{ "name", "ticker", "valueKrw", "returnPct?", "broker?", "quantity", "assetType", "currency" }],
+  "holdings": [{ "name", "ticker", "valueKrw", "pnlKrw?", "returnPct?", "costKrw?", "broker?", "quantity": number | null, "assetType", "currency" }],
   "confidence": "high" | "low",
   "notes": string | null
 }`;
@@ -69,23 +72,56 @@ function parseRow(raw: unknown): BrokeragePasteRow | null {
   const valueKrw = Number(r.valueKrw);
   if (!name || !ticker || !Number.isFinite(valueKrw) || valueKrw <= 0) return null;
 
-  const quantity = Number(r.quantity ?? 1);
+  const quantityRaw = r.quantity;
+  const quantity =
+    quantityRaw == null || quantityRaw === ""
+      ? 1
+      : Number(quantityRaw);
   if (!Number.isFinite(quantity) || quantity <= 0) return null;
+
+  const pnlRaw = r.pnlKrw;
+  const pnlKrw =
+    pnlRaw == null || pnlRaw === "" ? undefined : Number(pnlRaw);
+
+  const costRaw = r.costKrw;
+  const costKrw =
+    costRaw == null || costRaw === "" ? undefined : Number(costRaw);
 
   const assetType = (r.assetType ?? "stock") as AssetType;
   const currency = (r.currency ?? "USD") as Currency;
   if (!ASSET_TYPES.has(assetType) || !CURRENCIES.has(currency)) return null;
 
   const returnPctRaw = r.returnPct;
-  const returnPct =
+  let returnPct =
     returnPctRaw == null || returnPctRaw === ""
       ? undefined
       : Number(returnPctRaw);
+
+  if (
+    returnPct == null &&
+    pnlKrw != null &&
+    Number.isFinite(pnlKrw) &&
+    valueKrw > 0
+  ) {
+    const cost = valueKrw - pnlKrw;
+    if (cost > 0) returnPct = (pnlKrw / cost) * 100;
+  }
+
+  if (
+    returnPct == null &&
+    costKrw != null &&
+    Number.isFinite(costKrw) &&
+    costKrw > 0
+  ) {
+    returnPct = ((valueKrw - costKrw) / costKrw) * 100;
+  }
 
   return {
     name,
     ticker,
     valueKrw: Math.round(valueKrw),
+    pnlKrw: pnlKrw != null && Number.isFinite(pnlKrw) ? Math.round(pnlKrw) : undefined,
+    costKrw: costKrw != null && Number.isFinite(costKrw) ? Math.round(costKrw) : undefined,
     returnPct: Number.isFinite(returnPct) ? returnPct : undefined,
     broker: typeof r.broker === "string" ? r.broker.trim() : undefined,
     quantity,
