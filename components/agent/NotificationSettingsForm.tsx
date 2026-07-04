@@ -40,6 +40,7 @@ export function NotificationSettingsForm() {
   const [settings, setSettings] = useState<NotificationSettings | null>(null);
   const [saved, setSaved] = useState(false);
   const [serverSynced, setServerSynced] = useState<boolean | null>(null);
+  const [testResult, setTestResult] = useState<"ok" | "failed" | null>(null);
 
   useEffect(() => {
     const local = loadNotificationSettings();
@@ -65,6 +66,19 @@ export function NotificationSettingsForm() {
     const remoteOk = await syncSettingsToServer(settings);
     setSaved(localOk);
     setServerSynced(remoteOk);
+    setTestResult(null);
+  }
+
+  async function handleTestSend() {
+    if (!settings) return;
+    await handleSave();
+    setTestResult(null);
+    try {
+      const res = await fetch("/api/agent/notifications/test", { method: "POST" });
+      setTestResult(res.ok ? "ok" : "failed");
+    } catch {
+      setTestResult("failed");
+    }
   }
 
   return (
@@ -118,10 +132,28 @@ export function NotificationSettingsForm() {
             value={settings.morningTimeKst}
             onChange={(e) => update("morningTimeKst", e.target.value)}
           />
+          <p className="text-[10px] text-muted-foreground">
+            Cron이 30분마다 확인하며, 설정한 시·분(KST)에 하루 1회 아침 요약을 보냅니다.
+          </p>
         </div>
-        <Button type="button" onClick={() => void handleSave()}>
-          저장
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button type="button" onClick={() => void handleSave()}>
+            저장
+          </Button>
+          <Button type="button" variant="outline" onClick={() => void handleTestSend()}>
+            테스트 알림 보내기
+          </Button>
+        </div>
+        {testResult === "ok" ? (
+          <p className="text-sm text-muted-foreground" data-testid="settings-test-ok">
+            테스트 알림을 보냈습니다. 이메일·Slack 수신함을 확인해 주세요.
+          </p>
+        ) : null}
+        {testResult === "failed" ? (
+          <p className="text-sm text-destructive" data-testid="settings-test-failed">
+            테스트 발송에 실패했습니다. 채널 설정·RESEND_API_KEY·Webhook을 확인해 주세요.
+          </p>
+        ) : null}
         {saved ? (
           <p className="text-sm text-muted-foreground" data-testid="settings-saved-local">
             이 기기에 저장되었습니다.

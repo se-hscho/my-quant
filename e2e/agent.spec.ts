@@ -46,13 +46,6 @@ test.describe("Agent UI", () => {
     await page.reload();
   });
 
-  test("agent page shows chat dock", async ({ page }) => {
-    await expect(page.getByTestId("agent-chat-dock")).toBeVisible();
-    await expect(page.getByLabel("에이전트에게 질문")).toBeEnabled({
-      timeout: 30_000,
-    });
-  });
-
   test("삼전 10주 입력 시 보유가 등록된다", async ({ page }) => {
     const input = page.getByLabel("에이전트에게 질문");
     await expect(input).toBeEnabled({ timeout: 30_000 });
@@ -71,5 +64,33 @@ test.describe("Agent UI", () => {
       localStorage.getItem("agent:holdings:v1")
     );
     expect(holdings).toContain("005930.KS");
+  });
+
+  test("agent page shows chat dock", async ({ page }) => {
+    await expect(page.getByTestId("agent-chat-dock")).toBeVisible();
+    await expect(page.getByLabel("에이전트에게 질문")).toBeEnabled({
+      timeout: 30_000,
+    });
+  });
+
+  test("settings page saves notification preferences", async ({ page }) => {
+    await page.goto("/agent/settings");
+    await expect(page.getByTestId("notification-settings")).toBeVisible();
+
+    await page.getByLabel("이메일 알림").click();
+    await page.getByLabel("이메일 주소").fill("test@example.com");
+    await page.getByRole("button", { name: "저장" }).click();
+
+    await expect(page.getByTestId("settings-saved-local")).toBeVisible({
+      timeout: 10_000,
+    });
+    await expect(page.getByTestId("settings-saved-server")).toBeVisible({
+      timeout: 10_000,
+    });
+
+    const stored = await page.evaluate(() =>
+      localStorage.getItem("agent:settings:v1")
+    );
+    expect(stored).toContain("test@example.com");
   });
 });

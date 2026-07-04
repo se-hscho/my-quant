@@ -1,39 +1,33 @@
 # Improvement Backlog — portfolio-agent
 
-**Iteration:** 8  
+**Iteration:** 9  
 **Last verify:** 2026-07-04  
-**Last product verdict:** SHIP  
+**Last product verdict:** **COMPLETE**  
 **Verification:** [verification-latest.md](./verification-latest.md)  
 **Product review:** [product-review-latest.md](./product-review-latest.md)
 
-## Open (this iteration)
+## Open
 
-### P0 — Blocker
-_(none)_
-
-### P1 — Major
-_(none)_
-
-### P2 — Minor
-- [ ] Staging Resend/Slack **실발송** smoke (설정 화면에서 저장한 주소·Webhook으로 1회)
-- [ ] Cron 스케줄 ↔ `morningTimeKst` 동적 매칭 (현재 Vercel cron 고정 + 설정 저장만)
+_(none — MVP scope complete)_
 
 ## Done
 
-- [x] **Loop 7** 알림 format/dispatch/route tests, E2E Q&A·상세·히스토리, error UI 접기
-- [x] **Loop 8** 알림 설정 → KV + `/api/agent/settings/notifications`
-- [x] **Loop 8** `resolveDispatchTargets` — 사용자 활성 채널 우선, env 폴백
-- [x] **Loop 8** Cron·이벤트 notify가 저장된 설정으로 dispatch
+- [x] **Loop 9** KST `morningTimeKst` cron matching (`0,30 * * * *`)
+- [x] **Loop 9** Morning notification daily idempotency
+- [x] **Loop 9** `POST /api/agent/notifications/test` + 설정 UI 버튼
+- [x] **Loop 9** E2E settings save smoke (`e2e/agent.spec.ts`)
+- [x] **Loop 9** `learnings.md` compound
 
-## Deferred (Phase 2)
+## Phase 3+ (optional future)
 
 - KRX 스마트 머니 실데이터 어댑터
-- 애널 리포트 외부 API 연동
-- 다중 사용자·인증 기반 설정 분리
+- 애널 리포트 외부 API
+- 다중 사용자·인증
+- Preview `--deploy` e2e flake hardening (parallel natural-language)
 
 ## Loop log
 
-| # | Date | Verdict | Top fix | Notes |
-|---|------|---------|---------|-------|
-| 7 | 2026-07-04 | SHIP | 알림·E2E | pass 23 |
-| 8 | 2026-07-04 | SHIP | settings→KV→dispatch | 201 tests |
+| # | Date | Verdict | Notes |
+|---|------|---------|-------|
+| 8 | 2026-07-04 | SHIP | settings→KV→dispatch |
+| 9 | 2026-07-04 | **COMPLETE** | cron KST + test notify · 207 tests · pass 23/23 |

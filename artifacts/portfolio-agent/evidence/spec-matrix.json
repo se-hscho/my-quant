@@ -214,9 +214,11 @@
       "tests": [
         "services/notifications/format-summary.test.ts",
         "services/notifications/dispatch.test.ts",
-        "app/api/agent/cron/daily/route.test.ts"
+        "services/notifications/morning-schedule.test.ts",
+        "app/api/agent/cron/daily/route.test.ts",
+        "app/api/agent/notifications/test/route.test.ts"
       ],
-      "notes": "Cron + dispatch; staging 실발송은 수동 검증"
+      "notes": "Cron 30분 간격 + KST morningTimeKst 매칭 + 일 1회 idempotency; 테스트 알림 API"
     },
     {
       "id": "S18",

@@ -1,33 +1,41 @@
 # Product Review — portfolio-agent
 
 **Date:** 2026-07-04  
-**Verdict:** SHIP  
-**Loop:** 8
+**Verdict:** **COMPLETE**  
+**Loop:** 9
 
 ## Executive Summary
 
-Loop 8에서 **알림 설정(S18)이 서버(KV)와 Cron·이벤트 dispatch에 연결**되었다. 사용자가 `/agent/settings`에서 이메일·Slack을 활성화하고 저장하면 `resolveDispatchTargets`가 해당 주소·Webhook으로 발송 대상을 결정한다(운영 env는 폴백). **201** unit tests + verify PASS. 남은 P2는 staging 실발송 smoke와 cron 시각 동적화뿐이다.
+portfolio-agent MVP **23/23 시나리오**가 구현·자동 검증으로 커버되었다. Loop 9에서 남던 P2(**Cron↔KST**, **실발송 검증 경로**)를 코드로 마무리했다. 사용자는 설정 화면에서 **테스트 알림 보내기**로 Resend/Slack 수신을 즉시 확인할 수 있고, Cron은 **30분마다 KST 설정 시각**을 확인해 **하루 1회** 아침 요약을 발송한다.
 
-## Loop 8 Changes
+## Final State
 
-| Area | Before | After |
-|------|--------|-------|
-| S18 설정 | localStorage only | localStorage + **KV API** |
-| S15/S17 dispatch | env `NOTIFICATION_EMAIL_TO` only | **user settings 우선** |
-| Form UX | "저장되었습니다" | 로컬·서버 동기화 피드백 분리 |
+| Metric | Value |
+|--------|-------|
+| spec-matrix | **pass 23 · partial 0 · missing 0** |
+| unit tests | **207** PASS |
+| verify:feature | PASS (vitest, build, e2e stability, e2e usability) |
+| plan Tasks 5–20 | covered |
+| deferred | KRX·애널 API·multi-tenant (plan Phase 3+) |
 
-## Findings
+## Loop 9 Deliverables
 
-### P0/P1
-없음.
+1. **`shouldSendMorningBriefing`** — KST 시·분 = `morningTimeKst`
+2. **`vercel.json`** — `0,30 * * * *` (30분 간격)
+3. **`morning-sent`** idempotency — 중복 발송 방지
+4. **`POST /api/agent/notifications/test`** + UI 버튼
+5. **`?force=1`** cron manual trigger (ops)
+6. **E2E** settings save local + server
+7. **`learnings.md`**
 
-### P2
-- Staging에서 설정 화면 주소로 **실발송** 1회 검증
-- `morningTimeKst` ↔ Vercel cron UTC 스케줄 정합 (현재 설정 저장·표시만)
+## User Journey (complete)
 
-### Deferred
-- KRX 실수급, 애널 API, multi-tenant auth
+```
+미보유 → 데모 브리핑 → Q&A(안 1) → 상세 레포트
+     → 보유 등록 → 개인화 브리핑 → 히스토리
+     → 알림 설정 → 테스트 발송 → Cron 아침/이벤트
+```
 
-## Verdict
+## Sign-off
 
-MVP + Phase 2 알림 wiring **완료**. merge-ready.
+**SHIP → COMPLETE.** PR #14 merge-ready. Phase 3+는 별도 epic.

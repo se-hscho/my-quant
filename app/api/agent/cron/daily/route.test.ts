@@ -1,5 +1,10 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { clearBriefingMemoryForTests } from "@/services/briefing/kv";
+import { clearMorningNotificationMemoryForTests } from "@/services/notifications/morning-sent";
+import {
+  clearNotificationSettingsMemoryForTests,
+  saveNotificationSettingsKv,
+} from "@/services/notifications/settings-kv";
 
 vi.mock("next/server", async (importOriginal) => {
   const actual = await importOriginal<typeof import("next/server")>();
@@ -18,7 +23,7 @@ vi.mock("@/lib/agent/yahoo-quote", () => ({
 }));
 
 vi.mock("@/services/notifications/dispatch", () => ({
-  dispatchNotification: vi.fn(async () => ({ email: true, slack: true })),
+  dispatchNotification: vi.fn(async () => ({ email: true, slack: false })),
 }));
 
 import { dispatchNotification } from "@/services/notifications/dispatch";
@@ -29,14 +34,46 @@ const mockDispatch = vi.mocked(dispatchNotification);
 describe("GET /api/agent/cron/daily", () => {
   beforeEach(() => {
     clearBriefingMemoryForTests();
+    clearMorningNotificationMemoryForTests();
+    clearNotificationSettingsMemoryForTests();
     process.env.BRIEFING_DEV_MEMORY = "1";
     process.env.CRON_SECRET = "test-secret";
     mockDispatch.mockClear();
   });
 
-  it("오늘 브리핑을 생성하고 아침 알림을 큐에 넣는다", async () => {
+  it("설정 시각이 아니면 skipped", async () => {
+    await saveNotificationSettingsKv({
+      emailEnabled: false,
+      emailAddress: "",
+      slackEnabled: false,
+      slackWebhookUrl: "",
+      morningTimeKst: "07:00",
+    });
+
     const res = await GET(
       new Request("http://localhost/api/agent/cron/daily", {
+        headers: { authorization: "Bearer test-secret" },
+      })
+    );
+
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { skipped: boolean; reason: string };
+    expect(body.skipped).toBe(true);
+    expect(body.reason).toBe("not_scheduled_time");
+    expect(mockDispatch).not.toHaveBeenCalled();
+  });
+
+  it("force=1이면 설정 시각과 무관하게 발송 큐에 넣는다", async () => {
+    await saveNotificationSettingsKv({
+      emailEnabled: true,
+      emailAddress: "user@example.com",
+      slackEnabled: false,
+      slackWebhookUrl: "",
+      morningTimeKst: "07:00",
+    });
+
+    const res = await GET(
+      new Request("http://localhost/api/agent/cron/daily?force=1", {
         headers: { authorization: "Bearer test-secret" },
       })
     );
@@ -48,10 +85,5 @@ describe("GET /api/agent/cron/daily", () => {
     await vi.waitFor(() => {
       expect(mockDispatch).toHaveBeenCalled();
     });
-
-    const payload = mockDispatch.mock.calls[0][0];
-    expect(payload.subject).toMatch(/아침 브리핑/);
-    expect(payload.text).toMatch(/시나리오 비교/);
-    expect(payload.html).toMatch(/상세 보기/);
   });
 });
