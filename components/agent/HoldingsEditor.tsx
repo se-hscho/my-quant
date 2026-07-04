@@ -1,16 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import type { AssetType, Currency, Holding, HoldingsSnapshot } from "@/types/agent";
+import type { HoldingsImportResult } from "@/types/holdings-import";
 import {
   ASSET_TYPE_LABELS,
   CURRENCY_LABELS,
-  formatCashAmount,
   formatPrice,
-  formatQuantity,
-  formatReturnPct,
   parseNumericInput,
 } from "@/lib/agent/holdings-display";
+import {
+  applySectorTagToSnapshotHolding,
+  mergeImportedHoldingsIntoSnapshot,
+} from "@/lib/agent/holdings-import-merge";
 import {
   applySectorTag,
   classifyTicker,
@@ -19,6 +21,7 @@ import {
 import type { AgentSectorId } from "@/config/agent";
 import type { Region } from "@/types/agent";
 import { SectorTagDialog } from "./SectorTagDialog";
+import { HoldingsScreenshotImport } from "./HoldingsScreenshotImport";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -49,9 +52,61 @@ export function HoldingsEditor({ draft, onDraftChange }: HoldingsEditorProps) {
   const [currency, setCurrency] = useState<Currency>("KRW");
   const [sectorDialogOpen, setSectorDialogOpen] = useState(false);
   const [pendingHolding, setPendingHolding] = useState<PendingHolding | null>(null);
+  const [sectorQueue, setSectorQueue] = useState<Holding[]>([]);
+  const [workingDraft, setWorkingDraft] = useState<HoldingsSnapshot>(draft);
+
+  const syncDraft = useCallback(
+    (next: HoldingsSnapshot) => {
+      setWorkingDraft(next);
+      onDraftChange(next);
+    },
+    [onDraftChange]
+  );
+
+  function processSectorQueue(snapshot: HoldingsSnapshot, queue: Holding[]) {
+    if (queue.length === 0) return;
+    setWorkingDraft(snapshot);
+    onDraftChange(snapshot);
+    setSectorQueue(queue);
+    setPendingHolding(null);
+    setSectorDialogOpen(true);
+  }
+
+  function handleScreenshotImport(result: HoldingsImportResult) {
+    const { snapshot, needsSectorTag } = mergeImportedHoldingsIntoSnapshot(
+      draft,
+      result.holdings,
+      result.cash
+    );
+    if (needsSectorTag.length > 0) {
+      processSectorQueue(snapshot, needsSectorTag);
+    } else {
+      syncDraft(snapshot);
+    }
+  }
+
+  function handleSectorConfirm(sector: AgentSectorId, region?: Region) {
+    if (sectorQueue.length > 0) {
+      const [current, ...rest] = sectorQueue;
+      const updated = applySectorTagToSnapshotHolding(workingDraft, current.id, sector, region);
+      setWorkingDraft(updated);
+      onDraftChange(updated);
+      setSectorQueue(rest);
+      if (rest.length === 0) {
+        setSectorDialogOpen(false);
+      }
+      return;
+    }
+
+    if (!pendingHolding) return;
+    appendHolding(pendingHolding, { sector, region });
+  }
+
+  const sectorDialogTicker =
+    sectorQueue[0]?.ticker ?? pendingHolding?.ticker ?? "";
 
   function updateCash(key: keyof HoldingsSnapshot["cash"], value: string) {
-    onDraftChange({
+    syncDraft({
       ...draft,
       cash: { ...draft.cash, [key]: parseNumericInput(value) },
     });
@@ -72,7 +127,7 @@ export function HoldingsEditor({ draft, onDraftChange }: HoldingsEditorProps) {
     const tagged = classification
       ? applySectorTag(holding, classification.sector, classification.region)
       : holding;
-    onDraftChange({
+    syncDraft({
       ...draft,
       holdings: [...draft.holdings, tagged],
     });
@@ -106,13 +161,8 @@ export function HoldingsEditor({ draft, onDraftChange }: HoldingsEditorProps) {
     setSectorDialogOpen(true);
   }
 
-  function handleSectorConfirm(sector: AgentSectorId, region?: Region) {
-    if (!pendingHolding) return;
-    appendHolding(pendingHolding, { sector, region });
-  }
-
   function removeHolding(id: string) {
-    onDraftChange({
+    syncDraft({
       ...draft,
       holdings: draft.holdings.filter((h) => h.id !== id),
     });
@@ -120,6 +170,11 @@ export function HoldingsEditor({ draft, onDraftChange }: HoldingsEditorProps) {
 
   return (
     <div className="space-y-6">
+      <FieldSet>
+        <FieldLegend>스크린샷으로 가져오기</FieldLegend>
+        <HoldingsScreenshotImport onImport={handleScreenshotImport} />
+      </FieldSet>
+
       <FieldSet>
         <FieldLegend>통화별 현금</FieldLegend>
         <FieldGroup>
@@ -251,8 +306,11 @@ export function HoldingsEditor({ draft, onDraftChange }: HoldingsEditorProps) {
 
       <SectorTagDialog
         open={sectorDialogOpen}
-        ticker={pendingHolding?.ticker ?? ""}
-        onOpenChange={setSectorDialogOpen}
+        ticker={sectorDialogTicker}
+        onOpenChange={(open) => {
+          setSectorDialogOpen(open);
+          if (!open) setSectorQueue([]);
+        }}
         onConfirm={handleSectorConfirm}
       />
     </div>

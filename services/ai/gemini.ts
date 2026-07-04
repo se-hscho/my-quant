@@ -210,14 +210,29 @@ export function extractJsonText(text: string): string {
   return text.trim();
 }
 
+export interface GeminiInlineImage {
+  mimeType: string;
+  base64: string;
+}
+
 async function generateWithRestApi<T>(
   apiKey: string,
   modelName: string,
   systemInstruction: string,
   userPrompt: string,
-  jsonMode: boolean
+  jsonMode: boolean,
+  image?: GeminiInlineImage
 ): Promise<T> {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(modelName)}:generateContent?key=${encodeURIComponent(apiKey)}`;
+
+  const userParts: Array<{ text?: string; inlineData?: { mimeType: string; data: string } }> = [
+    { text: userPrompt },
+  ];
+  if (image) {
+    userParts.push({
+      inlineData: { mimeType: image.mimeType, data: image.base64 },
+    });
+  }
 
   const res = await fetch(url, {
     method: "POST",
@@ -225,7 +240,7 @@ async function generateWithRestApi<T>(
     cache: "no-store",
     body: JSON.stringify({
       systemInstruction: { parts: [{ text: systemInstruction }] },
-      contents: [{ role: "user", parts: [{ text: userPrompt }] }],
+      contents: [{ role: "user", parts: userParts }],
       generationConfig: jsonMode
         ? { responseMimeType: "application/json", temperature: 0.1 }
         : { temperature: 0.1 },
@@ -253,7 +268,8 @@ async function generateWithSdk<T>(
   modelName: string,
   systemInstruction: string,
   userPrompt: string,
-  jsonMode: boolean
+  jsonMode: boolean,
+  image?: GeminiInlineImage
 ): Promise<T> {
   const model = genAI.getGenerativeModel({
     model: modelName,
@@ -263,7 +279,19 @@ async function generateWithSdk<T>(
       : { temperature: 0.1 },
   });
 
-  const result = await model.generateContent(userPrompt);
+  const content = image
+    ? [
+        userPrompt,
+        {
+          inlineData: {
+            mimeType: image.mimeType,
+            data: image.base64,
+          },
+        },
+      ]
+    : userPrompt;
+
+  const result = await model.generateContent(content);
   const rawText = result.response.text()?.trim();
   if (!rawText) {
     throw new Error("empty response");
@@ -272,9 +300,10 @@ async function generateWithSdk<T>(
   return JSON.parse(extractJsonText(rawText)) as T;
 }
 
-export async function generateGeminiJson<T>(
+async function generateGeminiJsonInternal<T>(
   systemInstruction: string,
-  userPrompt: string
+  userPrompt: string,
+  image?: GeminiInlineImage
 ): Promise<GeminiJsonResult<T>> {
   const apiKey = getGeminiApiKey();
   if (!apiKey) {
@@ -302,7 +331,8 @@ export async function generateGeminiJson<T>(
           modelName,
           systemInstruction,
           userPrompt,
-          true
+          true,
+          image
         );
         return { ok: true, data, model: modelName };
       } catch (err) {
@@ -324,7 +354,8 @@ export async function generateGeminiJson<T>(
         modelName,
         systemInstruction,
         userPrompt,
-        true
+        true,
+        image
       );
       return { ok: true, data, model: modelName };
     } catch (err) {
@@ -334,6 +365,21 @@ export async function generateGeminiJson<T>(
   }
 
   return { ok: false, error: errors.slice(0, 4).join(" | ") || "all models failed" };
+}
+
+export async function generateGeminiJson<T>(
+  systemInstruction: string,
+  userPrompt: string
+): Promise<GeminiJsonResult<T>> {
+  return generateGeminiJsonInternal<T>(systemInstruction, userPrompt);
+}
+
+export async function generateGeminiJsonWithImage<T>(
+  systemInstruction: string,
+  userPrompt: string,
+  image: GeminiInlineImage
+): Promise<GeminiJsonResult<T>> {
+  return generateGeminiJsonInternal<T>(systemInstruction, userPrompt, image);
 }
 
 export async function probeGeminiConnection(): Promise<{

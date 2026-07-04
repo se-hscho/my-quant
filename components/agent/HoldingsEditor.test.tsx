@@ -25,6 +25,13 @@ describe("HoldingsEditor", () => {
     expect(screen.getByLabelText("JPY")).toBeInTheDocument();
   });
 
+  it("스크린샷 업로드 버튼이 있다", () => {
+    render(
+      <HoldingsEditor draft={createEmptySnapshot()} onDraftChange={vi.fn()} />
+    );
+    expect(screen.getByRole("button", { name: /보유 화면 캡처 업로드/i })).toBeInTheDocument();
+  });
+
   it("종목 추가 시 onDraftChange에 보유 종목이 포함된다", async () => {
     const user = userEvent.setup();
     const onDraftChange = vi.fn();
