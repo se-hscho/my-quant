@@ -1,3 +1,8 @@
+import {
+  computePriceTrendFromCloses,
+  type PriceTrendPct,
+} from "@/lib/agent/price-trends";
+
 interface YahooResult {
   timestamp: number[];
   indicators: {
@@ -21,10 +26,19 @@ export function toYahooSymbol(ticker: string): string {
 }
 
 export async function fetchYahooLatestClose(ticker: string): Promise<number | null> {
+  const series = await fetchYahooCloseSeries(ticker, "5d");
+  return series.length > 0 ? series[series.length - 1] : null;
+}
+
+/** 시간순 유효 종가 배열 (마지막=최신) */
+export async function fetchYahooCloseSeries(
+  ticker: string,
+  range: "5d" | "3mo" = "5d"
+): Promise<number[]> {
   const symbol = toYahooSymbol(ticker);
   const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(
     symbol
-  )}?interval=1d&range=5d`;
+  )}?interval=1d&range=${range}`;
 
   const res = await fetch(url, {
     headers: { "User-Agent": "Mozilla/5.0 (compatible; quant-portfolio/1.0)" },
@@ -32,21 +46,27 @@ export async function fetchYahooLatestClose(ticker: string): Promise<number | nu
     signal: AbortSignal.timeout(10_000),
   });
 
-  if (!res.ok) return null;
+  if (!res.ok) return [];
 
   const data = (await res.json()) as YahooChartResponse;
   const result = data.chart.result?.[0];
-  if (!result) return null;
+  if (!result) return [];
 
   const adj = result.indicators.adjclose?.[0]?.adjclose;
   const raw = result.indicators.quote[0]?.close ?? [];
   const series = adj ?? raw;
 
-  for (let i = series.length - 1; i >= 0; i--) {
-    const v = series[i];
-    if (v != null && Number.isFinite(v)) return v;
+  const closes: number[] = [];
+  for (const v of series) {
+    if (v != null && Number.isFinite(v)) closes.push(v);
   }
-  return null;
+  return closes;
+}
+
+export async function fetchYahooPriceTrend(ticker: string): Promise<PriceTrendPct | null> {
+  const closes = await fetchYahooCloseSeries(ticker, "3mo");
+  if (closes.length < 2) return null;
+  return computePriceTrendFromCloses(closes);
 }
 
 export async function fetchFxRatesFromYahoo(): Promise<{

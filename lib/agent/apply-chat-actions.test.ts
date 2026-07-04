@@ -26,4 +26,18 @@ describe("applyChatActions", () => {
     applyChatActions([{ type: "set_cash", field: "krw", amount: 5_000_000 }]);
     expect(loadHoldingsSnapshot()?.cash.krw).toBe(5_000_000);
   });
+
+  it("add_holding이 avgCost와 함께 localStorage에 반영된다", () => {
+    applyChatActions([
+      {
+        type: "add_holding",
+        ticker: "AMT",
+        quantity: 1,
+        assetType: "stock",
+        currency: "USD",
+        avgCost: 150.5,
+      },
+    ]);
+    expect(loadHoldingsSnapshot()?.holdings[0].avgCost).toBe(150.5);
+  });
 });

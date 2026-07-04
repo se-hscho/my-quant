@@ -45,6 +45,11 @@ export function formatReturnPct(pct: number): string {
   return `${sign}${pct.toFixed(2)}%`;
 }
 
+export function formatPnlKrw(pnl: number): string {
+  const sign = pnl > 0 ? "+" : "";
+  return `${sign}${Math.round(pnl).toLocaleString("ko-KR")}원`;
+}
+
 export function formatQuantity(quantity: number): string {
   return quantity.toLocaleString("ko-KR", { maximumFractionDigits: 4 });
 }

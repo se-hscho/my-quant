@@ -10,16 +10,35 @@ import { mergeImportedHoldingsIntoSnapshot } from "@/lib/agent/holdings-import-m
 import { parseBrokeragePasteWithLlm } from "@/services/agent/brokerage-paste-llm";
 import type { AgentChatResponse } from "@/services/agent/chat-orchestrator";
 
+import type { BrokeragePasteRow } from "@/services/agent/brokerage-paste-llm";
+import { deriveAvgCostFromPaste } from "@/lib/agent/cost-from-return";
+
+const DEFAULT_FX = { usdKrw: 1350, jpyKrw: 9.2 };
+
 function rowsToDrafts(
   rows: Awaited<ReturnType<typeof parseBrokeragePasteWithLlm>>["holdings"]
 ): ImportedHoldingDraft[] {
-  return rows.map((r) => ({
-    ticker: r.ticker,
-    name: r.name,
-    quantity: r.quantity,
-    assetType: r.assetType,
-    currency: r.currency,
-  }));
+  return rows.map((r) => {
+    const avgCost =
+      r.returnPct != null
+        ? deriveAvgCostFromPaste({
+            valueKrw: r.valueKrw,
+            returnPct: r.returnPct,
+            quantity: r.quantity,
+            currency: r.currency,
+            fx: DEFAULT_FX,
+          })
+        : undefined;
+
+    return {
+      ticker: r.ticker,
+      name: r.name,
+      quantity: r.quantity,
+      assetType: r.assetType,
+      currency: r.currency,
+      avgCost,
+    };
+  });
 }
 
 function draftsToActions(drafts: ImportedHoldingDraft[]): ChatAction[] {
@@ -29,6 +48,7 @@ function draftsToActions(drafts: ImportedHoldingDraft[]): ChatAction[] {
     quantity: d.quantity,
     assetType: d.assetType,
     currency: d.currency,
+    ...(d.avgCost != null && d.avgCost > 0 ? { avgCost: d.avgCost } : {}),
   }));
 }
 

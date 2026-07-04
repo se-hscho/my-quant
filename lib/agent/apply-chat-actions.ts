@@ -25,6 +25,9 @@ export function applyChatActions(actions: ChatAction[]): HoldingsSnapshot {
               quantity: action.quantity,
               assetType: action.assetType,
               currency: action.currency,
+              ...(action.avgCost != null && action.avgCost > 0
+                ? { avgCost: action.avgCost }
+                : {}),
             },
           ],
         };
