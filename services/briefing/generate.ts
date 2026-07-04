@@ -131,6 +131,14 @@ export async function generateBriefing(
         "상세 레포트에서 섹터 흐름·playbook·애널 요약을 확인하세요.",
       ];
 
+  if (!deploymentMode && valuation.holdingsReturnPct != null) {
+    summaryLines.splice(
+      1,
+      0,
+      `보유 수익률 ${valuation.holdingsReturnPct >= 0 ? "+" : ""}${valuation.holdingsReturnPct.toFixed(1)}% — 손익 구간·섹터 흐름에 따라 추가 매수·차익실현·관찰 가이드가 조정됩니다 (참고용).`
+    );
+  }
+
   const briefing: Briefing = {
     date,
     summaryLines,
@@ -148,6 +156,8 @@ export async function generateBriefing(
     sections: {
       portfolio: {
         returns: { d1: 0.3, d7: 1.2, m1: 2.8, q1: 5.1, ytd: 8.4 },
+        holdingsReturnPct: valuation.holdingsReturnPct,
+        holdingsPnlKrw: valuation.holdingsPnlKrw,
         caption: deploymentMode
           ? "신규 배분 모드 — 보유 종목 없음, 현금→목표 비중 배분 (참고용)"
           : "포트폴리오 스냅샷 — 일봉 기준 (참고용)",
@@ -156,10 +166,15 @@ export async function generateBriefing(
               "현재는 현금 100%에서 목표 ETF·종목 비중으로 단계적 이동하는 시나리오입니다.",
               "분할 매수·환전·보유 기간은 상세 레포트의 투자 방향 섹션과 playbook을 함께 보세요.",
             ]
-          : [
-              "최근 7일 수익률은 반도체 비중에 따라 변동성이 확대되었습니다.",
-              "분기·YTD는 환율 효과가 포함된 KRW 환산 추정치입니다.",
-            ],
+          : valuation.holdingsReturnPct != null
+            ? [
+                `매수가 기준 보유 수익률 ${valuation.holdingsReturnPct >= 0 ? "+" : ""}${valuation.holdingsReturnPct.toFixed(1)}% — 추천·playbook에 반영됩니다.`,
+                "고수익 구간은 차익실현, 손실+유출은 축소, 유입+눌림은 분할 추가 매수를 검토하세요 (참고용).",
+              ]
+            : [
+                "최근 7일 수익률은 반도체 비중에 따라 변동성이 확대되었습니다.",
+                "분기·YTD는 환율 효과가 포함된 KRW 환산 추정치입니다.",
+              ],
       },
       fx: {
         usdKrw: valuation.fx.usdKrw,

@@ -50,6 +50,12 @@ export function RecommendationsSection({
                 {r.currentWeightPct != null ? (
                   <span>현재 {r.currentWeightPct}%</span>
                 ) : null}
+                {r.returnPct != null ? (
+                  <span>
+                    수익률 {r.returnPct >= 0 ? "+" : ""}
+                    {r.returnPct.toFixed(1)}%
+                  </span>
+                ) : null}
                 {r.amountKrw != null ? (
                   <span>참고 {r.amountKrw.toLocaleString("ko-KR")}원</span>
                 ) : null}

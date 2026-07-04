@@ -33,6 +33,8 @@ export interface RecommendationGuideRow {
   amountKrw?: number;
   splitGuide?: string;
   scenarioId?: 0 | 1 | 2 | 3;
+  /** 매수가 대비 현재 수익률(%) */
+  returnPct?: number;
   rationale: string;
   signals: string[];
 }

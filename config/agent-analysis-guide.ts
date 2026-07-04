@@ -32,3 +32,8 @@ export const SECTOR_PROXY_TICKERS: Partial<
 export const INFLOW_THRESHOLD = 0.5;
 export const OUTFLOW_THRESHOLD = 0.4;
 export const OVERWEIGHT_MIN_PP = 3;
+
+/** 수익률 기반 행동 힌트 (참고용) */
+export const RETURN_TAKE_PROFIT_PCT = 25;
+export const RETURN_CUT_LOSS_PCT = -15;
+export const RETURN_DIP_BUY_PCT = -10;

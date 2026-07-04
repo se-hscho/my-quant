@@ -16,6 +16,17 @@ export function PortfolioSnapshotSection({
     ["YTD", `${section.returns.ytd}%`],
   ];
 
+  if (section.holdingsReturnPct != null) {
+    rows.unshift([
+      "보유(매수가 기준)",
+      `${section.holdingsReturnPct >= 0 ? "+" : ""}${section.holdingsReturnPct.toFixed(1)}%${
+        section.holdingsPnlKrw != null
+          ? ` (${Math.round(section.holdingsPnlKrw).toLocaleString("ko-KR")}원)`
+          : ""
+      }`,
+    ]);
+  }
+
   return (
     <ChartWithCaption
       title="포트폴리오 스냅샷"

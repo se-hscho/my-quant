@@ -10,6 +10,7 @@ import { computePortfolioWeights, computeSectorWeights, resolveHoldingSector } f
 import { inferRegionFromTicker } from "./sector-classify";
 import type { ValuationResult } from "./valuation";
 import { convertToKrw } from "./valuation";
+import { classifyReturnSignal, formatReturnPct } from "./return-signals";
 
 type LayerItem = AnalysisLayerItem;
 
@@ -135,6 +136,29 @@ export function buildAnalysisGuideSnapshot(
 
   const topSector = l3Items[0];
   const topHolding = l4Items[0];
+  const withReturn = valuation.holdings
+    .filter((h) => h.returnPct != null)
+    .toSorted((a, b) => (b.returnPct ?? 0) - (a.returnPct ?? 0));
+  const best = withReturn[0];
+  const worst = withReturn[withReturn.length - 1];
+
+  let l4Insight = topHolding
+    ? `${topHolding.label} ${topHolding.weightPct}% — 과대 시 분할 매도, 유입 섹터는 분할 매수로 연결합니다.`
+    : "보유 종목이 없습니다.";
+
+  if (best && worst) {
+    l4Insight += ` 수익률 ${best.ticker} ${formatReturnPct(best.returnPct!)}`;
+    if (withReturn.length > 1 && worst.ticker !== best.ticker) {
+      l4Insight += ` · ${worst.ticker} ${formatReturnPct(worst.returnPct!)}`;
+    }
+    l4Insight += " — 손익 구간에 따라 추가 매수·차익실현·관찰이 달라집니다.";
+  } else if (
+    snapshot.holdings.some(
+      (h) => h.avgCost == null || !Number.isFinite(h.avgCost) || h.avgCost <= 0
+    )
+  ) {
+    l4Insight += " 매수가 미입력 종목은 수익률 기반 가이드에서 제외됩니다.";
+  }
 
   return {
     intro:
@@ -178,9 +202,7 @@ export function buildAnalysisGuideSnapshot(
         title: ANALYSIS_LAYERS[4].title,
         role: ANALYSIS_LAYERS[4].role,
         items: l4Items,
-        insight: topHolding
-          ? `${topHolding.label} ${topHolding.weightPct}% — 과대 시 분할 매도, 유입 섹터는 분할 매수로 연결합니다.`
-          : "보유 종목이 없습니다.",
+        insight: l4Insight,
       },
     ],
   };

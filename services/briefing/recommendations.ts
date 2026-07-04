@@ -6,6 +6,7 @@ import {
 } from "@/config/agent-analysis-guide";
 import { AGENT_SECTOR_LABELS, KNOWN_TICKER_CLASSIFICATIONS, type AgentSectorId } from "@/config/agent";
 import { buildAnalysisGuideSnapshot } from "@/lib/agent/analysis-layers";
+import { classifyReturnSignal, formatReturnPct } from "@/lib/agent/return-signals";
 import { inferRegionFromTicker } from "@/lib/agent/sector-classify";
 import type { ValuationResult } from "@/lib/agent/valuation";
 import { deltaToKrw } from "@/lib/agent/weights";
@@ -93,6 +94,7 @@ function buildSignals(input: {
   targetDeltaPp?: number;
   owned?: boolean;
   smartMoney?: SmartMoneyData;
+  returnPct?: number;
 }): string[] {
   const signals: string[] = [];
   if (input.layer === "L3" && input.flowScore != null) {
@@ -111,6 +113,9 @@ function buildSignals(input: {
     signals.push("L3 유입 · L4 미보유 — 신규 편입 검토");
   } else if (input.owned === true && input.targetDeltaPp != null && input.targetDeltaPp > 0) {
     signals.push("L4 보유 · L3 유입 정합 — 비중 확대 검토");
+  }
+  if (input.returnPct != null) {
+    signals.push(`매수가 대비 수익률 ${input.returnPct >= 0 ? "+" : ""}${input.returnPct.toFixed(1)}%`);
   }
   if (input.smartMoney && input.flowScore != null && input.flowScore > INFLOW_THRESHOLD) {
     signals.push("스마트 머니 유입 방향과 정합 (참고용)");
@@ -258,8 +263,129 @@ export function buildBriefingRecommendations(input: {
     }
   }
 
-  const unique = dedupeRecommendations(rows);
-  return { guide, rows: unique.slice(0, 8) };
+  const unique = dedupeRecommendations([
+    ...rows,
+    ...buildReturnAwareRecommendations(input, weights, rowId),
+  ]);
+  return { guide, rows: unique.slice(0, 10) };
+}
+
+function sectorFlowScore(smartMoney: SmartMoneyData, ticker: string, snapshot: HoldingsSnapshot): number | undefined {
+  const snap = snapshot.holdings.find((h) => h.ticker === ticker);
+  const sector =
+    snap?.sector ??
+    KNOWN_TICKER_CLASSIFICATIONS[ticker]?.sector ??
+    resolveHoldingSector(ticker, snap?.sector);
+  if (sector === "other") return undefined;
+  return smartMoney.sectorFlows.find((f) => f.sector === sector)?.flowScore;
+}
+
+function buildReturnAwareRecommendations(
+  input: {
+    snapshot: HoldingsSnapshot;
+    valuation: ValuationResult;
+    smartMoney: SmartMoneyData;
+    scenarios: BriefingScenario[];
+  },
+  weights: Record<string, number>,
+  startId: number
+): RecommendationRow[] {
+  const rows: RecommendationRow[] = [];
+  let rowId = startId;
+  const follow = input.scenarios.find((s) => s.id === 1);
+  const minChange = input.scenarios.find((s) => s.id === 3);
+
+  for (const hv of input.valuation.holdings) {
+    const flowScore = sectorFlowScore(input.smartMoney, hv.ticker, input.snapshot);
+    const signal = classifyReturnSignal(hv, flowScore);
+    if (!signal) continue;
+
+    const snap = input.snapshot.holdings.find((h) => h.id === hv.id);
+    const sector = resolveHoldingSector(hv.ticker, snap?.sector);
+    const sectorLabel =
+      sector === "other"
+        ? "보유 종목"
+        : (AGENT_SECTOR_LABELS[sector as AgentSectorId] ?? sector);
+    const weight = weights[hv.ticker] ?? 0;
+
+    if (signal.hint === "take_profit") {
+      const sellPp = 3;
+      rows.push({
+        id: `rec-ret-${rowId++}`,
+        layer: "L4",
+        action: "sell",
+        sector: sector === "other" ? "other" : sector,
+        label: sectorLabel,
+        ticker: hv.ticker,
+        currentWeightPct: weight,
+        targetDeltaPp: -sellPp,
+        returnPct: signal.returnPct,
+        amountKrw: deltaToKrw(sellPp, input.valuation.totalKrw),
+        splitGuide:
+          (follow && splitGuideFromPlaybook(follow.playbook, hv.ticker, "sell")) ??
+          "2분할 — 차익실현",
+        scenarioId: 1,
+        rationale: `${hv.ticker} ${formatReturnPct(signal.returnPct)} — 수익 구간·과대 비중 시 분할 매도 검토 (참고용)`,
+        signals: [signal.reason, `현재 비중 ${weight}%`],
+      });
+    } else if (signal.hint === "cut_loss") {
+      const sellPp = 3;
+      rows.push({
+        id: `rec-ret-${rowId++}`,
+        layer: "L4",
+        action: "sell",
+        sector: sector === "other" ? "other" : sector,
+        label: sectorLabel,
+        ticker: hv.ticker,
+        currentWeightPct: weight,
+        targetDeltaPp: -sellPp,
+        returnPct: signal.returnPct,
+        amountKrw: deltaToKrw(sellPp, input.valuation.totalKrw),
+        splitGuide:
+          (minChange && splitGuideFromPlaybook(minChange.playbook, hv.ticker, "sell")) ??
+          "2분할 — 소량",
+        scenarioId: 3,
+        rationale: `${hv.ticker} ${formatReturnPct(signal.returnPct)} — 손실·섹터 유출 겹침, 축소 검토 (참고용)`,
+        signals: [signal.reason],
+      });
+    } else if (signal.hint === "dip_add") {
+      const buyPp = 2;
+      rows.push({
+        id: `rec-ret-${rowId++}`,
+        layer: "L4",
+        action: "buy",
+        sector: sector === "other" ? "other" : sector,
+        label: sectorLabel,
+        ticker: hv.ticker,
+        currentWeightPct: weight,
+        targetDeltaPp: buyPp,
+        returnPct: signal.returnPct,
+        amountKrw: deltaToKrw(buyPp, input.valuation.totalKrw),
+        splitGuide:
+          (follow && splitGuideFromPlaybook(follow.playbook, hv.ticker, "buy")) ??
+          "균등 3분할 — 추가",
+        scenarioId: 1,
+        rationale: `${hv.ticker} ${formatReturnPct(signal.returnPct)} — 유입 섹터 조정(눌림) 분할 추가 매수 검토 (참고용)`,
+        signals: [signal.reason],
+      });
+    } else if (signal.hint === "hold_loss") {
+      rows.push({
+        id: `rec-ret-${rowId++}`,
+        layer: "L4",
+        action: "hold",
+        sector: sector === "other" ? "other" : sector,
+        label: sectorLabel,
+        ticker: hv.ticker,
+        currentWeightPct: weight,
+        returnPct: signal.returnPct,
+        scenarioId: 3,
+        rationale: `${hv.ticker} ${formatReturnPct(signal.returnPct)} — 추가 매수보다 회복·섹터 흐름 관찰 (참고용)`,
+        signals: [signal.reason],
+      });
+    }
+  }
+
+  return rows;
 }
 
 function roundDelta(n: number): number {

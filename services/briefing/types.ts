@@ -121,6 +121,9 @@ export interface Briefing {
   sections: {
     portfolio: {
       returns: { d1: number; d7: number; m1: number; q1: number; ytd: number };
+      /** 매수가 입력 종목의 수익률 요약 */
+      holdingsReturnPct?: number;
+      holdingsPnlKrw?: number;
       caption: string;
       interpretation: string[];
     };

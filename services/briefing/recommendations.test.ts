@@ -105,4 +105,52 @@ describe("buildBriefingRecommendations", () => {
       expect(r.rationale).not.toMatch(/반드시 매수|즉시 매수/);
     }
   });
+
+  it("고수익 종목은 차익실현 sell 추천", () => {
+    const snap = createEmptySnapshot();
+    snap.holdings.push({
+      id: "1",
+      ticker: "SOXX",
+      quantity: 10,
+      avgCost: 150,
+      assetType: "etf",
+      currency: "USD",
+      sector: "semiconductor",
+    });
+    snap.cash.usd = 6000;
+    const valuation = {
+      totalKrw: 10_000_000,
+      cashKrw: 1_000_000,
+      holdingsKrw: 9_000_000,
+      holdings: [
+        {
+          id: "1",
+          ticker: "SOXX",
+          quantity: 10,
+          currency: "USD" as const,
+          price: 300,
+          valueNative: 3000,
+          valueKrw: 9_000_000,
+          avgCost: 150,
+          returnPct: 100,
+          pnlKrw: 4_500_000,
+        },
+      ],
+      fx: { usdKrw: 1350, jpyKrw: 9 },
+      warnings: [],
+      holdingsReturnPct: 100,
+    };
+    const scenarios = buildScenarios(snap, valuation);
+    const { rows } = buildBriefingRecommendations({
+      snapshot: snap,
+      valuation,
+      smartMoney: getSmartMoneyFixture(),
+      scenarios,
+    });
+    const profitRow = rows.find(
+      (r) => r.ticker === "SOXX" && r.action === "sell" && r.returnPct != null && r.returnPct >= 25
+    );
+    expect(profitRow).toBeDefined();
+    expect(profitRow?.rationale).toMatch(/차익실현|수익/);
+  });
 });
