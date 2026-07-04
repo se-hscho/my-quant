@@ -9,6 +9,12 @@ export interface PlaybookStep {
   ticker?: string;
   deltaPp?: number;
   currency: Currency;
+  /** KRW 환산 참고 금액 */
+  amountKrw?: number;
+  /** 분할 실행 — n번째 */
+  tranche?: number;
+  /** 분할 총 횟수 */
+  trancheTotal?: number;
   note?: string;
 }
 

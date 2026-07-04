@@ -1,5 +1,7 @@
 import type { HoldingsSnapshot } from "@/types/agent";
 import { resolveValuation, type PriceSource } from "@/lib/agent/market-data";
+import { computeSectorWeights } from "@/lib/agent/weights";
+import type { ValuationResult } from "@/lib/agent/valuation";
 import { getAnalystReports } from "@/services/analyst/adapter";
 import { getContextFixture } from "@/services/context/adapter";
 import { getEventsFixture } from "@/services/events/adapter";
@@ -28,27 +30,21 @@ function priceSourceDisclaimer(source: PriceSource): string {
 
 function sectorTop3(
   snapshot: HoldingsSnapshot,
-  totalKrw: number,
+  valuation: ValuationResult,
   smartMoney: SmartMoneyData
 ) {
+  const sectorWeights = computeSectorWeights(valuation, snapshot);
+  const weightBySector = Object.fromEntries(
+    sectorWeights.map((s) => [s.sector, s.weightPct])
+  );
+
   return smartMoney.sectorFlows
     .toSorted((a, b) => b.flowScore - a.flowScore)
     .slice(0, 3)
     .map((f) => ({
       sector: f.sector,
       label: f.label,
-      weightPct:
-        totalKrw > 0
-          ? Math.round(
-              (snapshot.holdings.filter(
-                (h) =>
-                  (h.sector ?? "") === f.sector ||
-                  h.ticker.startsWith("005930")
-              ).length /
-                Math.max(snapshot.holdings.length, 1)) *
-                100
-            )
-          : 0,
+      weightPct: weightBySector[f.sector] ?? 0,
       flowScore: f.flowScore,
     }));
 }
@@ -69,11 +65,7 @@ export async function generateBriefing(
   }
   const { valuation, priceSource } = resolved;
 
-  const scenarios = buildScenarios(
-    input.snapshot,
-    valuation.totalKrw,
-    valuation.fx.usdKrw
-  );
+  const scenarios = buildScenarios(input.snapshot, valuation);
   const smartMoney = await getSmartMoneyData();
   const context = getContextFixture();
   const events = getEventsFixture();
@@ -104,7 +96,7 @@ export async function generateBriefing(
     summaryLines,
     totalAssetsKrw: valuation.totalKrw,
     cash: input.snapshot.cash,
-    sectorTop3: sectorTop3(input.snapshot, valuation.totalKrw, smartMoney),
+    sectorTop3: sectorTop3(input.snapshot, valuation, smartMoney),
     scenarioComparison: scenarios.map((s) => ({
       id: s.id,
       label: s.label,

@@ -2,6 +2,7 @@
 
 import type { Briefing } from "@/services/briefing/types";
 import { ReportLayout } from "./ReportLayout";
+import { PortfolioWeightsSection } from "./sections/PortfolioWeightsSection";
 import { PortfolioSnapshotSection } from "./sections/PortfolioSnapshotSection";
 import { FxSection } from "./sections/FxSection";
 import { SmartMoneySection } from "./sections/SmartMoneySection";
@@ -27,6 +28,10 @@ export function ReportPageContent({ briefing }: { briefing: Briefing }) {
   return (
     <ReportLayout date={briefing.date} disclaimer={briefing.disclaimer}>
       <PortfolioSnapshotSection section={briefing.sections.portfolio} />
+      <PortfolioWeightsSection
+        scenarios={briefing.scenarios}
+        totalAssetsKrw={briefing.totalAssetsKrw}
+      />
       <FxSection fx={briefing.sections.fx} />
       <SmartMoneySection data={briefing.sections.smartMoney} />
       <InstitutionalLensSection paragraphs={briefing.sections.institutional.paragraphs} />

@@ -14,7 +14,25 @@ function mockBriefing(): Briefing {
     assetType: "etf",
     currency: "USD",
   });
-  const scenarios = buildScenarios(snap, 10_000_000, 1350);
+  const valuation = {
+    totalKrw: 10_000_000,
+    cashKrw: 2_000_000,
+    holdingsKrw: 8_000_000,
+    holdings: [
+      {
+        id: "1",
+        ticker: "SOXX",
+        quantity: 10,
+        currency: "USD" as const,
+        price: 800_000,
+        valueNative: 800_000,
+        valueKrw: 8_000_000,
+      },
+    ],
+    fx: { usdKrw: 1350, jpyKrw: 9 },
+    warnings: [],
+  };
+  const scenarios = buildScenarios(snap, valuation);
   return {
     date: "2026-07-03",
     summaryLines: ["line1", "line2", "line3"],

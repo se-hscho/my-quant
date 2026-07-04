@@ -41,7 +41,7 @@ export function WeightPieChart({
             cy="50%"
             outerRadius="55%"
             label={(entry) =>
-              `${entry.name} ${(((entry.value as number) ?? 0) * 100).toFixed(1)}%`
+              `${entry.name} ${((entry.value as number) ?? 0).toFixed(1)}%`
             }
           >
             {data.map((_, idx) => (
@@ -50,7 +50,7 @@ export function WeightPieChart({
           </Pie>
           <RechartsTooltip
             formatter={(v) =>
-              typeof v === "number" ? `${(v * 100).toFixed(2)}%` : String(v)
+              typeof v === "number" ? `${v.toFixed(1)}%` : String(v)
             }
           />
           <Legend />
