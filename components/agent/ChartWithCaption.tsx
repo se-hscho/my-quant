@@ -1,26 +1,29 @@
 import type { ReactNode } from "react";
+import { InfoTooltip } from "@/components/common/InfoTooltip";
 
 export function ChartWithCaption({
   title,
   caption,
-  interpretation,
+  help,
   children,
 }: {
   title: string;
+  /** 당일 분석 결과 한 줄 요약 */
   caption: string;
-  interpretation: string[];
+  /** 영역별 도움말 — 툴팁에만 표시 */
+  help?: string[];
   children: ReactNode;
 }) {
   return (
     <section className="space-y-2" data-testid="chart-with-caption">
-      <h3 className="text-sm font-semibold">{title}</h3>
+      <div className="flex items-start gap-2">
+        <h3 className="text-sm font-semibold flex-1">{title}</h3>
+        {help && help.length > 0 ? (
+          <InfoTooltip label={`${title} 도움말`} description={help} />
+        ) : null}
+      </div>
+      <p className="text-sm text-foreground">{caption}</p>
       {children}
-      <p className="text-xs font-medium text-muted-foreground">{caption}</p>
-      {interpretation.map((p) => (
-        <p key={p} className="text-sm text-muted-foreground">
-          {p}
-        </p>
-      ))}
     </section>
   );
 }

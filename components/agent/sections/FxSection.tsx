@@ -8,8 +8,8 @@ export function FxSection({ fx }: { fx: Briefing["sections"]["fx"] }) {
   return (
     <ChartWithCaption
       title="환율·환전 시점"
-      caption={`USD/KRW ${fx.usdKrw.toLocaleString("ko-KR")} · 권장 시점: ${fx.rebalanceTiming}`}
-      interpretation={fx.rationale}
+      caption={`USD/KRW ${fx.usdKrw.toLocaleString("ko-KR")} · 환전 ${fx.rebalanceTiming}${fx.rebalanceAmountKrw > 0 ? ` · 약 ${Math.round(fx.rebalanceAmountKrw).toLocaleString("ko-KR")}원` : ""}`}
+      help={fx.rationale}
     >
       <div className="h-40">
         <ResponsiveContainer width="100%" height="100%">
@@ -22,12 +22,6 @@ export function FxSection({ fx }: { fx: Briefing["sections"]["fx"] }) {
           </LineChart>
         </ResponsiveContainer>
       </div>
-      {fx.rebalanceAmountKrw > 0 ? (
-        <p className="text-sm">
-          환전 검토액: ₩{Math.round(fx.rebalanceAmountKrw).toLocaleString("ko-KR")} (≈ $
-          {fx.rebalanceAmountUsd.toLocaleString("en-US")})
-        </p>
-      ) : null}
     </ChartWithCaption>
   );
 }

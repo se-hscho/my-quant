@@ -11,12 +11,17 @@ export function InstitutionalLensSection({
   return (
     <ChartWithCaption
       title="기관 vs 개인"
-      caption="제약과 이점을 번역한 실행 렌즈"
-      interpretation={paragraphs}
+      caption={paragraphs[0] ?? "기관·개인 실행 제약 분석"}
+      help={[
+        "기관(13F·펀드)과 개인(소액·즉시 체결)의 차이를 실행 전략으로 번역합니다.",
+        "스마트 머니 수치와 함께 읽으세요.",
+      ]}
     >
-      <p className="text-sm text-muted-foreground">
-        스마트 머니 차트와 별도로, 실행 전략 관점의 요약입니다.
-      </p>
+      <ul className="list-disc space-y-2 pl-5 text-sm">
+        {paragraphs.map((p) => (
+          <li key={p}>{p}</li>
+        ))}
+      </ul>
     </ChartWithCaption>
   );
 }

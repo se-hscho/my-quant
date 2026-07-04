@@ -1,3 +1,4 @@
+import { formatScenarioHeading } from "@/config/agent-scenarios";
 import type { AssetType, Currency, HoldingsSnapshot } from "@/types/agent";
 import type {
   CashField,
@@ -198,10 +199,10 @@ function tryParseRemove(message: string): ChatAction | null {
 function tryQaReply(message: string): string | null {
   const lower = message.toLowerCase();
   if (/안\s*2|선점/.test(message)) {
-    return "안 2(선점)는 유입 상위 섹터로 먼저 기울이는 검토안입니다. (참고용·투자 권유 아님)";
+    return `${formatScenarioHeading(2)} — 유입 상위 섹터 선행 분할 매수 검토안 (참고용·투자 권유 아님)`;
   }
   if (/안\s*1|follow/i.test(lower)) {
-    return "안 1(Follow)은 수급 방향에 맞춰 점진 조정하는 검토안입니다. (참고용)";
+    return `${formatScenarioHeading(1)} — 수급 방향에 맞춰 점진 조정 (참고용)`;
   }
   if (/환전|usd|달러/i.test(lower)) {
     return "환전 시점은 환율 추세·FOMC 등 이벤트와 함께 검토합니다. (참고용)";

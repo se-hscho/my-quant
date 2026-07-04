@@ -2,6 +2,7 @@
 
 import type { Briefing } from "@/services/briefing/types";
 import { recommendationActionLabel } from "@/services/briefing/recommendations";
+import { formatScenarioReference } from "@/config/agent-scenarios";
 import { ChartWithCaption } from "../ChartWithCaption";
 
 export function RecommendationsSection({
@@ -9,13 +10,19 @@ export function RecommendationsSection({
 }: {
   rows: Briefing["sections"]["recommendations"]["rows"];
 }) {
+  const inflowCount = rows.filter((r) => r.action === "buy" || r.action === "new_sector").length;
+  const caption =
+    rows.length === 0
+      ? "당일 L3·L4 신호 없음"
+      : `L3·L4 신호 ${rows.length}건 — 매수·신규 ${inflowCount}건, 축소·관찰 ${rows.length - inflowCount}건`;
+
   return (
     <ChartWithCaption
-      title="분석 가이드 기반 추천 (검토용)"
-      caption="L3(섹터)·L4(종목) 신호와 playbook 분할 실행을 연결한 제안입니다."
-      interpretation={[
-        "신규 섹터는 L3 유입 + L4 미보유, 비중 확대·축소는 L4 보유 종목 기준입니다.",
-        "분할 가이드는 Follow(안 1)·선점(안 2)·최소변경(안 3) playbook과 동일한 차수를 따릅니다.",
+      title="분석 기반 검토안"
+      caption={caption}
+      help={[
+        "L3=섹터 자금 흐름, L4=보유 종목 기준입니다.",
+        "분할 가이드는 playbook과 동일한 차수를 따릅니다.",
         "확정 매수가 아닌 검토·고려 톤입니다.",
       ]}
     >
@@ -33,7 +40,9 @@ export function RecommendationsSection({
                   {recommendationActionLabel(r.action)}
                 </span>
                 {r.scenarioId != null ? (
-                  <span className="text-xs text-muted-foreground">안 {r.scenarioId}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {formatScenarioReference(r.scenarioId)}
+                  </span>
                 ) : null}
               </div>
               <p className="mt-2 font-medium">

@@ -1,6 +1,7 @@
 "use client";
 
 import type { Briefing } from "@/services/briefing/types";
+import { formatScenarioHeading, formatScenarioReference } from "@/config/agent-scenarios";
 import { ChartWithCaption } from "../ChartWithCaption";
 import { InfoTooltip } from "@/components/common/InfoTooltip";
 
@@ -15,14 +16,21 @@ export function ScenariosSection({
 }: {
   scenarios: Briefing["scenarios"];
 }) {
+  const active = scenarios.filter((s) => s.id !== 0);
+  const topReturn = active.toSorted((a, b) => b.expectedReturn - a.expectedReturn)[0];
+
   return (
     <ChartWithCaption
       title="시나리오 Before/After"
-      caption="안 0~3 예상 수익률·비중 비교 (참고용·보장 아님)"
-      interpretation={[
-        "Before는 시장가치 기준 현재 비중, After는 리밸런싱 제안 후 비중입니다.",
-        "CASH는 KRW·USD·JPY 현금을 합산한 비중입니다.",
-        "Follow·선점·최소변경은 기관 방향을 개인 규모로 번역한 시나리오입니다.",
+      caption={
+        topReturn
+          ? `예상 수익률 최고 ${formatScenarioReference(topReturn.id)} ${topReturn.expectedReturn}% (σ ${topReturn.expectedVolatility}%, 참고용)`
+          : "시나리오별 비중·수익률 비교 (참고용)"
+      }
+      help={[
+        "Before=현재 시장가치 비중, After=리밸런싱 제안 후 비중입니다.",
+        "CASH는 KRW·USD·JPY 현금 합산 비중입니다.",
+        "Follow·선점·최소변경은 기관 수급을 개인 규모로 번역한 시나리오입니다.",
       ]}
     >
       <div className="space-y-4">
@@ -41,9 +49,9 @@ export function ScenariosSection({
           return (
             <div key={s.id} className="rounded-md border p-3 text-sm">
               <div className="flex items-center gap-2 font-medium">
-                안 {s.id} {s.label}
+                {formatScenarioHeading(s.id)}
                 <InfoTooltip
-                  label={s.label}
+                  label={formatScenarioHeading(s.id)}
                   description={`예상 수익 ${s.expectedReturn}% · 변동성 ${s.expectedVolatility}% (참고용)`}
                 />
               </div>

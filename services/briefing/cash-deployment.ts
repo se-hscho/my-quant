@@ -16,12 +16,12 @@ import type {
 import type { BriefingScenario, BriefingScenarioId, ContextItem, PlaybookStep, SmartMoneyData } from "./types";
 import { playbookBuyCurrency } from "./scenarios";
 
-const SCENARIO_LABELS: Record<BriefingScenarioId, string> = {
-  0: "유지",
-  1: "Follow",
-  2: "선점",
-  3: "최소변경",
-};
+import {
+  formatScenarioHeading,
+  formatScenarioReference,
+  SCENARIO_DISPLAY,
+  SCENARIO_SHORT_LABELS,
+} from "@/config/agent-scenarios";
 
 const TEMPLATE_BY_SCENARIO: Record<BriefingScenarioId, keyof typeof DEPLOYMENT_TEMPLATES | null> = {
   0: null,
@@ -126,7 +126,7 @@ function holdGuideForScenario(id: BriefingScenarioId): PortfolioCombination["hol
       "포트폴리오 섹터 비중이 제안 대비 ±8%p 이탈",
       "유입 상위 섹터가 2주 연속 flowScore 하락",
       "단일 ETF·종목 손실 -15% — 다음 분할 차수 보류 검토",
-      "분기 실적 시즌 — 안 3(최소변경)으로 속도 전환 검토",
+        "분기 실적 시즌 — 최소변경 (3안)으로 속도 전환 검토",
     ],
   };
 }
@@ -155,7 +155,7 @@ function buildCombination(
 
   return {
     id: `combo-${id}`,
-    label: `${SCENARIO_LABELS[id]} — ${templateKey === "lead" ? "성장·선점" : templateKey === "minimal" ? "방어·소량" : "균형·Follow"} 조합`,
+    label: formatScenarioHeading(id),
     scenarioId: id,
     description: `총 ${formatKrw(totalKrw)} 중 약 ${template.deployPct}% (${formatKrw(Math.round((totalKrw * template.deployPct) / 100))})를 ${tranches}회 분할 배분`,
     marketRationale,
@@ -189,7 +189,7 @@ export function buildInvestmentDirection(input: {
 
   const recommendedScenarioId: BriefingScenarioId = 1;
   const recommendedReason =
-    "현금 100% 상태 — 급격한 일괄 매수보다 Follow 균등 3분할로 유입 섹터에 단계적 진입을 검토 (참고용).";
+    `현금 100% — ${formatScenarioReference(1)}: ${SCENARIO_DISPLAY[1].summary} (참고용).`;
 
   return {
     mode: "deployment",
@@ -198,7 +198,7 @@ export function buildInvestmentDirection(input: {
     marketNarrative,
     policyNarrative,
     recommendedScenarioId,
-    recommendedScenarioLabel: SCENARIO_LABELS[recommendedScenarioId],
+    recommendedScenarioLabel: SCENARIO_SHORT_LABELS[recommendedScenarioId],
     recommendedReason,
     combinations,
     evidenceLinks: evidenceLinks("naverInvestorFlow", "fedCalendar", "dartKr", "yahooFx"),
@@ -290,7 +290,7 @@ export function buildCashDeploymentScenarios(input: {
 
   const s0: BriefingScenario = {
     id: 0,
-    label: SCENARIO_LABELS[0],
+    label: SCENARIO_SHORT_LABELS[0],
     expectedReturn: 2.0,
     ...base,
     weightsBefore: before,
@@ -326,7 +326,7 @@ export function buildCashDeploymentScenarios(input: {
 
     return {
       id,
-      label: SCENARIO_LABELS[id],
+      label: SCENARIO_SHORT_LABELS[id],
       expectedReturn: r.expectedReturn,
       expectedVolatility: r.vol,
       assetReturn: r.asset,
@@ -353,11 +353,10 @@ export function deploymentSummaryLines(
   const tickers = combo.tickers.map((t) => `${t.ticker} ${t.weightPct}%`).join(", ");
   return [
     direction.headline,
-    `시장 맥락: ${direction.marketNarrative[0]}`,
+    `시장: ${direction.marketNarrative[0]}`,
     `정책·이벤트: ${direction.policyNarrative[0]}`,
-    `권장 안 ${direction.recommendedScenarioId}(${direction.recommendedScenarioLabel}) — ${direction.recommendedReason}`,
-    `Follow 조합 예: ${tickers} · ${combo.splitBuy.note}`,
-    `보유 가이드: ${combo.holdGuide.reviewHorizon} 점검, ${combo.holdGuide.rebalanceTriggers[0]}`,
-    "상세 레포트에서 조합별 금액·분할 일정·근거 링크를 확인하세요.",
+    `권장 ${formatScenarioReference(direction.recommendedScenarioId)} — ${direction.recommendedReason}`,
+    `${formatScenarioHeading(1)} 조합: ${tickers} · ${combo.splitBuy.note}`,
+    `보유: ${combo.holdGuide.reviewHorizon} 점검 · ${combo.holdGuide.rebalanceTriggers[0]}`,
   ];
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import type { Briefing } from "@/services/briefing/types";
+import { ANALYSIS_LAYERS } from "@/config/agent-analysis-guide";
 import { ChartWithCaption } from "../ChartWithCaption";
 import { InfoTooltip } from "@/components/common/InfoTooltip";
 
@@ -19,11 +20,11 @@ export function AnalysisGuideSection({
 }) {
   return (
     <ChartWithCaption
-      title="분석·제안 계층 (L0→L4)"
+      title="계층별 분석 결과 (L0→L4)"
       caption={guide.intro}
-      interpretation={[
-        "위에서 아래로 내려가며 현금 → 섹터 → 종목 순으로 조정안을 해석합니다.",
-        "각 계층 insight는 당일 playbook·추천과 같은 신호를 공유합니다.",
+      help={[
+        "L0(현금) → L4(종목) 순으로 비중·신호를 내려갑니다.",
+        "각 계층 insight는 당일 playbook·검토안과 같은 데이터를 사용합니다.",
       ]}
     >
       <div className="space-y-4">
@@ -31,7 +32,10 @@ export function AnalysisGuideSection({
           <div key={layer.layer} className="rounded-md border p-3 text-sm">
             <div className="flex items-center gap-2 font-medium">
               {layer.layer} {layer.title}
-              <InfoTooltip label={layer.layer} description={LAYER_HINTS[layer.layer] ?? layer.role} />
+              <InfoTooltip
+                label={`${layer.layer} ${layer.title}`}
+                description={LAYER_HINTS[layer.layer] ?? layer.role}
+              />
             </div>
             <p className="text-xs text-muted-foreground mt-1">{layer.role}</p>
             <table className="mt-2 w-full text-xs">
@@ -55,7 +59,7 @@ export function AnalysisGuideSection({
                 ))}
               </tbody>
             </table>
-            <p className="mt-2 text-muted-foreground">{layer.insight}</p>
+            <p className="mt-2 font-medium">{layer.insight}</p>
           </div>
         ))}
       </div>

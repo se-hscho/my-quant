@@ -29,7 +29,7 @@ describe("formatMorningSummary", () => {
 
     expect(formatted.subject).toMatch(/2026-07-04/);
     expect(formatted.text).toMatch(/요약 A/);
-    expect(formatted.text).toMatch(/안 1 Follow/);
+    expect(formatted.text).toMatch(/Follow \(1안\)/);
     expect(formatted.text).toMatch(url);
     expect(formatted.text).toContain(BRIEFING_DISCLAIMER);
     expect(formatted.html).toMatch(/href="https:\/\/example.com/);

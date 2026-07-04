@@ -9,7 +9,21 @@ import {
 
 export interface InfoTooltipProps {
   label: string;
-  description: string;
+  description: string | string[];
+}
+
+function renderDescription(description: string | string[]) {
+  const lines = Array.isArray(description) ? description : [description];
+  if (lines.length === 1) {
+    return <p className="mt-1 text-xs text-muted-foreground">{lines[0]}</p>;
+  }
+  return (
+    <ul className="mt-1 list-disc space-y-1 pl-4 text-xs text-muted-foreground">
+      {lines.map((line) => (
+        <li key={line}>{line}</li>
+      ))}
+    </ul>
+  );
 }
 
 export function InfoTooltip({ label, description }: InfoTooltipProps) {
@@ -19,14 +33,14 @@ export function InfoTooltip({ label, description }: InfoTooltipProps) {
         <button
           type="button"
           aria-label={`${label} 설명`}
-          className="inline-flex h-4 w-4 items-center justify-center rounded-full text-muted-foreground hover:text-foreground"
+          className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:text-foreground"
         >
           <HelpCircleIcon className="h-4 w-4" aria-hidden />
         </button>
       </HoverCardTrigger>
-      <HoverCardContent>
+      <HoverCardContent className="max-w-sm">
         <div className="text-sm font-medium">{label}</div>
-        <p className="mt-1 text-xs text-muted-foreground">{description}</p>
+        {renderDescription(description)}
       </HoverCardContent>
     </HoverCard>
   );

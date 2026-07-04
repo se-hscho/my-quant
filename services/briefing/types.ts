@@ -125,7 +125,7 @@ export interface Briefing {
       holdingsReturnPct?: number;
       holdingsPnlKrw?: number;
       caption: string;
-      interpretation: string[];
+      help: string[];
     };
     fx: FxBriefingData;
     smartMoney: SmartMoneyData;

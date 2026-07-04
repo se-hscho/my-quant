@@ -1,6 +1,10 @@
 "use client";
 
 import type { InvestmentDirectionSection } from "@/types/deployment";
+import {
+  formatScenarioHeading,
+  formatScenarioReference,
+} from "@/config/agent-scenarios";
 import { ChartWithCaption } from "../ChartWithCaption";
 import { InfoTooltip } from "@/components/common/InfoTooltip";
 
@@ -34,28 +38,25 @@ export function InvestmentDirectionSection({
 }) {
   return (
     <ChartWithCaption
-      title="투자 방향 · 자산 배분 · 분할 매수"
+      title="투자 방향 · 자산 배분"
       caption={section.headline}
-      interpretation={[
-        "시장·정책 맥락을 바탕으로 안 1~3별 구체 종목 조합을 제안합니다.",
-        "분할 매수 일정·장기 보유·리밸런싱 조건을 함께 확인하세요.",
-        "링크는 공개 출처이며, 직접 열어 사실 관계를 검증할 수 있습니다.",
+      help={[
+        "시장·정책 맥락과 3가지 배분 조합을 비교합니다.",
+        "각 조합의 분할 매수·보유·리밸런싱 조건을 함께 확인하세요.",
+        "링크는 공개 출처이며 직접 열어 검증할 수 있습니다.",
       ]}
     >
       <div className="space-y-4 text-sm">
         <div className="rounded-md border border-primary/30 bg-primary/5 p-3">
           <p className="font-medium">
-            권장: 안 {section.recommendedScenarioId} {section.recommendedScenarioLabel}
-            <InfoTooltip
-              label="권장 안"
-              description={section.recommendedReason}
-            />
+            권장: {formatScenarioReference(section.recommendedScenarioId)}
+            <InfoTooltip label="권장 조합" description={section.recommendedReason} />
           </p>
           <p className="mt-1 text-muted-foreground">{section.recommendedReason}</p>
         </div>
 
         <div>
-          <p className="font-medium mb-1">시장 방향</p>
+          <p className="font-medium mb-1">시장 분석</p>
           <ul className="list-disc pl-5 text-muted-foreground space-y-1">
             {section.marketNarrative.map((line) => (
               <li key={line}>{line}</li>
@@ -74,11 +75,9 @@ export function InvestmentDirectionSection({
 
         {section.combinations.map((combo) => (
           <div key={combo.id} className="rounded-md border p-3">
-            <p className="font-medium">
-              안 {combo.scenarioId} — {combo.label}
-            </p>
+            <p className="font-medium">{formatScenarioHeading(combo.scenarioId)}</p>
             <p className="text-muted-foreground mt-1">{combo.description}</p>
-            <p className="text-xs text-muted-foreground mt-1">{combo.marketRationale}</p>
+            <p className="text-xs mt-1">{combo.marketRationale}</p>
 
             <table className="mt-3 w-full text-xs">
               <thead>
@@ -113,7 +112,7 @@ export function InvestmentDirectionSection({
               <p>
                 <span className="font-medium">보유 검토:</span> {combo.holdGuide.holdUntil}
               </p>
-              <p className="font-medium">리밸런싱 권장 조건:</p>
+              <p className="font-medium">리밸런싱 조건:</p>
               <ul className="list-disc pl-5 text-muted-foreground">
                 {combo.holdGuide.rebalanceTriggers.map((t) => (
                   <li key={t}>{t}</li>

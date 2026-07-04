@@ -52,7 +52,7 @@ describe("buildBriefingRecommendations", () => {
     const tech = rows.find((r) => r.sector === "technology" && r.action === "new_sector");
     expect(tech?.layer).toBe("L3");
     expect(tech?.splitGuide).toBeDefined();
-    expect(tech?.rationale).toMatch(/검토/);
+    expect(tech?.rationale).toMatch(/\(1안\)/);
   });
 
   it("보유 유입 섹터는 L4 buy + 분할 가이드", () => {

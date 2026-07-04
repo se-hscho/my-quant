@@ -11,12 +11,18 @@ export function AnalystSection({
   reports: AnalystRow[];
   missingTickers: string[];
 }) {
+  const buyCount = reports.filter((r) => /buy|매수|overweight|긍정/i.test(r.rating)).length;
+
   return (
     <ChartWithCaption
-      title="증권사 애널 리포트 (공개 요약)"
-      caption="출처·날짜가 있는 항목만 표시합니다."
-      interpretation={[
-        "다수 의견이 Follow 안과 정합하는지 스스로 판단하세요.",
+      title="증권사 애널 리포트"
+      caption={
+        reports.length === 0
+          ? "공개 요약 데이터 없음"
+          : `${reports.length}건 — 긍정·매수 ${buyCount}건 (출처·날짜 표시)`
+      }
+      help={[
+        "다수 의견이 Follow (1안)과 정합하는지 스스로 판단하세요.",
         "목표가·투자의견은 참고용이며 투자 권유가 아닙니다.",
       ]}
     >

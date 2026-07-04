@@ -90,7 +90,7 @@ function mockBriefingForChat(): Briefing {
       portfolio: {
         returns: { d1: 0, d7: 0, m1: 0, q1: 0, ytd: 0 },
         caption: "c",
-        interpretation: ["a", "b"],
+        help: ["a", "b"],
       },
       fx: {
         usdKrw: 1350,

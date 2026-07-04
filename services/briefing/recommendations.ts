@@ -1,3 +1,4 @@
+import { formatScenarioReference } from "@/config/agent-scenarios";
 import {
   INFLOW_THRESHOLD,
   OUTFLOW_THRESHOLD,
@@ -182,8 +183,8 @@ export function buildBriefingRecommendations(input: {
       splitGuide,
       scenarioId: 1,
       rationale: owned
-        ? `${flow.label} 섹터 유입 — 보유 ${ticker} 비중 확대를 Follow(안 1)에서 ${splitGuide ?? "분할"}로 검토 (참고용)`
-        : `${flow.label} 섹터 유입 — 미보유 · 대표 ${ticker} 신규 편입을 ${splitGuide ?? "분할"}로 검토 (참고용)`,
+        ? `${flow.label} 섹터 유입 — ${ticker} 비중 +${followDelta}%p · ${formatScenarioReference(1)} ${splitGuide ?? "분할"} (참고용)`
+        : `${flow.label} 섹터 유입 — 미보유 ${ticker} 신규 +${followDelta}%p · ${formatScenarioReference(1)} (참고용)`,
       signals: buildSignals({
         layer: owned ? "L4" : "L3",
         flowScore: flow.flowScore,
@@ -217,7 +218,7 @@ export function buildBriefingRecommendations(input: {
       amountKrw: deltaToKrw(reducePp, input.valuation.totalKrw),
       splitGuide: splitGuide ?? "2분할 — 소량",
       scenarioId: 3,
-      rationale: `${flow.label} 섹터 유출 — 보유 ${existingTicker} 축소를 최소변경(안 3)에서 검토 (참고용)`,
+      rationale: `${flow.label} 섹터 유출 — ${existingTicker} −${reducePp}%p · ${formatScenarioReference(3)} (참고용)`,
       signals: buildSignals({
         layer: "L4",
         flowScore: flow.flowScore,

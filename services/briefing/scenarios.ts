@@ -12,12 +12,7 @@ import {
 } from "@/lib/agent/weights";
 import type { BriefingScenario, BriefingScenarioId, PlaybookStep } from "./types";
 
-const SCENARIO_LABELS: Record<BriefingScenarioId, string> = {
-  0: "유지",
-  1: "Follow",
-  2: "선점",
-  3: "최소변경",
-};
+import { SCENARIO_SHORT_LABELS } from "@/config/agent-scenarios";
 
 function adjustWeights(
   before: Record<string, number>,
@@ -186,7 +181,7 @@ export function buildScenarios(
 
   const s0: BriefingScenario = {
     id: 0,
-    label: SCENARIO_LABELS[0],
+    label: SCENARIO_SHORT_LABELS[0],
     expectedReturn: 5.0,
     ...base,
     weightsBefore: before,
@@ -199,7 +194,7 @@ export function buildScenarios(
 
   const s1: BriefingScenario = {
     id: 1,
-    label: SCENARIO_LABELS[1],
+      label: SCENARIO_SHORT_LABELS[1],
     expectedReturn: 6.8,
     expectedVolatility: 14.2,
     assetReturn: 5.5,
@@ -232,7 +227,7 @@ export function buildScenarios(
 
   const s2: BriefingScenario = {
     id: 2,
-    label: SCENARIO_LABELS[2],
+    label: SCENARIO_SHORT_LABELS[2],
     expectedReturn: 8.1,
     expectedVolatility: 17.5,
     assetReturn: 6.8,
@@ -287,7 +282,7 @@ export function buildScenarios(
 
   const s3: BriefingScenario = {
     id: 3,
-    label: SCENARIO_LABELS[3],
+    label: SCENARIO_SHORT_LABELS[3],
     expectedReturn: 5.4,
     expectedVolatility: 12.8,
     assetReturn: 4.5,

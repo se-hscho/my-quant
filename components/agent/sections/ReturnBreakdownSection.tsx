@@ -1,6 +1,7 @@
 "use client";
 
 import type { Briefing } from "@/services/briefing/types";
+import { formatScenarioReference } from "@/config/agent-scenarios";
 import { ChartWithCaption } from "../ChartWithCaption";
 
 export function ReturnBreakdownSection({
@@ -13,10 +14,10 @@ export function ReturnBreakdownSection({
   return (
     <ChartWithCaption
       title="예상 수익률 — 자산 vs 환율"
-      caption={`안 ${follow.id} 기준 KRW 환산 (참고용)`}
-      interpretation={[
-        `자산 수익 기여: 약 ${follow.assetReturn}%p.`,
-        `환율 영향: 약 ${follow.fxImpact}%p — USD 보유·환전 타이밍에 민감합니다.`,
+      caption={`${formatScenarioReference(follow.id)} 합계 ${follow.expectedReturn}% = 자산 ${follow.assetReturn}% + FX ${follow.fxImpact}%p`}
+      help={[
+        "자산 수익은 보유·제안 비중 변화에서 기인합니다.",
+        "환율 영향은 USD 보유·환전 타이밍에 민감합니다.",
       ]}
     >
       <table className="w-full text-sm">

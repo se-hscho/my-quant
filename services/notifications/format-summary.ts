@@ -1,5 +1,6 @@
 import type { Briefing } from "@/services/briefing/types";
 import { BRIEFING_DISCLAIMER } from "@/services/briefing/types";
+import { formatScenarioChartLabel } from "@/config/agent-scenarios";
 
 export function formatMorningSummary(briefing: Briefing, reportUrl: string): {
   subject: string;
@@ -8,7 +9,7 @@ export function formatMorningSummary(briefing: Briefing, reportUrl: string): {
 } {
   const lines = briefing.summaryLines.slice(0, 5);
   const scenarioBlock = briefing.scenarioComparison
-    .map((s) => `안 ${s.id} ${s.label}: ${s.expectedReturn}% / σ ${s.expectedVolatility}%`)
+    .map((s) => `${formatScenarioChartLabel(s.id)}: ${s.expectedReturn}% / σ ${s.expectedVolatility}%`)
     .join("\n");
 
   const text = [

@@ -56,6 +56,6 @@ describe("diffBriefings", () => {
       ],
     });
     const diff = diffBriefings(prev, curr);
-    expect(diff?.rows.some((r) => r.field.includes("안 1"))).toBe(true);
+    expect(diff?.rows.some((r) => r.field.includes("Follow") && r.field.includes("(1안)"))).toBe(true);
   });
 });

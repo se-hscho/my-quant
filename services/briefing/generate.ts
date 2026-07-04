@@ -1,3 +1,4 @@
+import { formatScenarioReference } from "@/config/agent-scenarios";
 import type { HoldingsSnapshot } from "@/types/agent";
 import { resolveValuation, type PriceSource } from "@/lib/agent/market-data";
 import { computeSectorWeights } from "@/lib/agent/weights";
@@ -122,13 +123,12 @@ export async function generateBriefing(
   const summaryLines = deploymentMode && investmentDirection
     ? deploymentSummaryLines(investmentDirection, valuation.totalKrw)
     : [
-        `총자산 ${Math.round(valuation.totalKrw).toLocaleString("ko-KR")}원 — 반도체 수급 강세 구간에서 Follow(안 1) 검토가 유리합니다.`,
-        `외국인 순매수·기관 매도 참고 데이터 — 개인은 소액·즉시 체결로 선점(안 2) 또는 최소변경(안 3)을 선택할 수 있습니다.`,
+        `총자산 ${Math.round(valuation.totalKrw).toLocaleString("ko-KR")}원 — 반도체 수급 강세, ${formatScenarioReference(1)} 검토 구간.`,
+        `외국인 순매수·기관 매도 — ${formatScenarioReference(2)} 또는 ${formatScenarioReference(3)} 대안.`,
         fxRebalanceLine,
         events.some((e) => e.phase === "today")
-          ? `오늘 ${events.find((e) => e.phase === "today")?.title} — 이벤트 전 playbook 0단계(환전) 우선 검토.`
-          : "임박 이벤트 없음 — 안 0(유지)과 안 1 비교로 시작하세요.",
-        "상세 레포트에서 섹터 흐름·playbook·애널 요약을 확인하세요.",
+          ? `오늘 ${events.find((e) => e.phase === "today")?.title} — 이벤트 전 환전·재원 확보 우선.`
+          : `임박 이벤트 없음 — ${formatScenarioReference(0)} vs ${formatScenarioReference(1)} 비교.`,
       ];
 
   if (!deploymentMode && valuation.holdingsReturnPct != null) {
@@ -159,21 +159,23 @@ export async function generateBriefing(
         holdingsReturnPct: valuation.holdingsReturnPct,
         holdingsPnlKrw: valuation.holdingsPnlKrw,
         caption: deploymentMode
-          ? "신규 배분 모드 — 보유 종목 없음, 현금→목표 비중 배분 (참고용)"
-          : "포트폴리오 스냅샷 — 일봉 기준 (참고용)",
-        interpretation: deploymentMode
+          ? `신규 배분 — 현금 ${Math.round(valuation.totalKrw).toLocaleString("ko-KR")}원, 보유 0종목`
+          : valuation.holdingsReturnPct != null
+            ? `매수가 기준 수익률 ${valuation.holdingsReturnPct >= 0 ? "+" : ""}${valuation.holdingsReturnPct.toFixed(1)}% · 7일 +1.2% (참고용)`
+            : "포트폴리오 수익률 스냅샷 — Yahoo 일봉·환율 KRW 환산 (참고용)",
+        help: deploymentMode
           ? [
-              "현재는 현금 100%에서 목표 ETF·종목 비중으로 단계적 이동하는 시나리오입니다.",
-              "분할 매수·환전·보유 기간은 상세 레포트의 투자 방향 섹션과 playbook을 함께 보세요.",
+              "현금 100%에서 목표 비중으로 이동하는 신규 배분 모드입니다.",
+              "종목 조합·분할 일정은 투자 방향 섹션과 playbook을 함께 보세요.",
             ]
           : valuation.holdingsReturnPct != null
             ? [
-                `매수가 기준 보유 수익률 ${valuation.holdingsReturnPct >= 0 ? "+" : ""}${valuation.holdingsReturnPct.toFixed(1)}% — 추천·playbook에 반영됩니다.`,
-                "고수익 구간은 차익실현, 손실+유출은 축소, 유입+눌림은 분할 추가 매수를 검토하세요 (참고용).",
+                "매수가 기준 보유 수익률은 추천·playbook에 반영됩니다.",
+                "고수익=차익실현, 손실+유출=축소, 유입+눌림=분할 추가 매수를 검토하세요.",
               ]
             : [
-                "최근 7일 수익률은 반도체 비중에 따라 변동성이 확대되었습니다.",
-                "분기·YTD는 환율 효과가 포함된 KRW 환산 추정치입니다.",
+                "7일·분기·YTD는 Yahoo 일봉과 환율을 KRW로 환산한 참고치입니다.",
+                "실제 체결가·배당은 반영되지 않을 수 있습니다.",
               ],
       },
       fx: {
@@ -191,7 +193,7 @@ export async function generateBriefing(
         rebalanceAmountUsd: input.snapshot.cash.usd < 5000 ? 5000 : 0,
         rationale: [
           "USD 자산 매수 전 환전 스프레드(0.3%)를 감안한 금액입니다.",
-          "급격한 환율 변동 시 안 3(환전만)으로 단계를 나누는 것을 고려하세요.",
+          "급격한 환율 변동 시 최소변경 (3안)으로 환전 단계를 나누세요.",
         ],
       },
       smartMoney,
@@ -217,7 +219,7 @@ export async function generateBriefing(
 
   if (analystReports.length > 0) {
     briefing.summaryLines.push(
-      `애널 ${analystReports[0].broker} ${analystReports[0].rating} — ${analystReports[0].ticker} Follow 안과 정합 검토.`
+      `애널 ${analystReports[0].broker} ${analystReports[0].rating} — ${analystReports[0].ticker} · ${formatScenarioReference(1)} 정합 검토.`
     );
   }
 

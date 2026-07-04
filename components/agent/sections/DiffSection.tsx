@@ -4,11 +4,19 @@ import type { Briefing } from "@/services/briefing/types";
 import { ChartWithCaption } from "../ChartWithCaption";
 
 export function DiffSection({ diff }: { diff: NonNullable<Briefing["sections"]["diff"]> }) {
+  const caption =
+    diff.rows.length === 0
+      ? "전일 대비 변경 없음"
+      : diff.rows.map((r) => `${r.field} ${r.before}→${r.after}`).join(" · ");
+
   return (
     <ChartWithCaption
       title="전일 대비 변경"
-      caption="제안·시점 diff"
-      interpretation={diff.reason}
+      caption={caption}
+      help={[
+        "시나리오·수익률·제안 변경을 전일 브리핑과 비교합니다.",
+        ...(diff.reason.length > 0 ? diff.reason : []),
+      ]}
     >
       <table className="w-full text-sm">
         <thead>

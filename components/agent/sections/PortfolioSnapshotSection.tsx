@@ -31,7 +31,7 @@ export function PortfolioSnapshotSection({
     <ChartWithCaption
       title="포트폴리오 스냅샷"
       caption={section.caption}
-      interpretation={section.interpretation}
+      help={section.help}
     >
       <table className="w-full text-sm border-collapse">
         <thead>

@@ -161,8 +161,9 @@ export function buildAnalysisGuideSnapshot(
   }
 
   return {
-    intro:
-      "L0(현금) → L1(자산군) → L2(지역) → L3(섹터) → L4(종목) 순으로 내려가며, 유입·과대 비중 신호를 playbook과 연결합니다.",
+    intro: topSector && topHolding
+      ? `${topSector.label} ${topSector.weightPct}% · 최대 보유 ${topHolding.label} ${topHolding.weightPct}% — L0~L4 계층별 비중 분석`
+      : "L0~L4 계층별 포트폴리오 비중 분석",
     layers: [
       {
         layer: "L0",
@@ -171,7 +172,7 @@ export function buildAnalysisGuideSnapshot(
         items: l0Items.length ? l0Items : [{ key: "CASH", label: "현금", weightPct: weights.CASH ?? 0 }],
         insight:
           (weights.CASH ?? 0) < 5
-            ? "현금 비중이 낮아 Follow·선점 실행 전 환전·매도 재원 확보를 우선 검토합니다."
+            ? "현금 비중 5% 미만 — 환전·매도로 재원 확보 필요 (Follow·선점 실행 전)."
             : "통화별 현금 여유가 있어 분할 매수 재원 조달이 가능합니다.",
       },
       {
