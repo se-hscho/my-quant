@@ -12,7 +12,8 @@ describe("BriefingErrorState", () => {
     expect(onRetry).toHaveBeenCalled();
   });
 
-  it("구조화 오류 코드·메시지·상세를 표시한다", () => {
+  it("구조화 오류 코드·메시지·상세를 표시한다", async () => {
+    const user = userEvent.setup();
     render(
       <BriefingErrorState
         onRetry={() => {}}
@@ -24,6 +25,8 @@ describe("BriefingErrorState", () => {
         }}
       />
     );
+    expect(screen.queryByTestId("briefing-error-detail")).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "고급 정보 보기" }));
     const detail = screen.getByTestId("briefing-error-detail");
     expect(detail).toHaveTextContent("FX_OR_PRICE_UNAVAILABLE");
     expect(detail).toHaveTextContent("HTTP 503");

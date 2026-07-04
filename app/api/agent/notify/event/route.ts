@@ -3,8 +3,7 @@ import type { HoldingsSnapshot } from "@/types/agent";
 import { regenerateBriefingOnEvent } from "@/services/briefing/regenerate-on-event";
 import { getBriefing } from "@/services/briefing/kv";
 import { formatEventAlert } from "@/services/notifications/format-event";
-import { sendEmail } from "@/services/notifications/email";
-import { sendSlackWebhook } from "@/services/notifications/slack";
+import { dispatchNotification } from "@/services/notifications/dispatch";
 
 export async function POST(request: Request) {
   const auth = request.headers.get("authorization");
@@ -47,19 +46,7 @@ export async function POST(request: Request) {
       rationale: briefing.fxRebalanceLine,
       reportUrl: `${baseUrl}/agent/report/${regen.date}`,
     });
-    const emailTo = process.env.NOTIFICATION_EMAIL_TO;
-    if (emailTo) {
-      await sendEmail({
-        to: emailTo,
-        subject: alert.subject,
-        html: `<pre>${alert.text}</pre>`,
-        text: alert.text,
-      });
-    }
-    const slackUrl = process.env.SLACK_WEBHOOK_URL;
-    if (slackUrl) {
-      await sendSlackWebhook(slackUrl, alert.text);
-    }
+    await dispatchNotification(alert);
   });
 
   return NextResponse.json({ ok: true, date: regen.date });

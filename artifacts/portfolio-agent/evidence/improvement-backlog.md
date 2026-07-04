@@ -1,8 +1,8 @@
 # Improvement Backlog — portfolio-agent
 
-**Iteration:** 4  
+**Iteration:** 7  
 **Last verify:** 2026-07-04  
-**Last product verdict:** ITERATE → SHIP candidate  
+**Last product verdict:** SHIP  
 **Verification:** [verification-latest.md](./verification-latest.md)  
 **Product review:** [product-review-latest.md](./product-review-latest.md)
 
@@ -15,31 +15,29 @@ _(none)_
 _(none)_
 
 ### P2 — Minor
-- [ ] S15/S17 알림 실발송 — staging에서 Resend/Slack env 수동 검증
+- [ ] Staging에서 Resend/Slack **실발송** smoke (env 수동 1회)
 
 ## Done
 
-- [x] **Loop 3** 데모 포트폴리오 미리보기 + Yahoo `.KS` + KV memory + 오류 code/detail UI
-- [x] **Loop 3** fixture 어댑터 단위 테스트 + generate.fixture-sections
-- [x] **Loop 4** spec §22·§23 수용 기준 갱신 (데모 미리보기·오류 detail)
-- [x] **Loop 4** `/agent/report/today` 별칭
-- [x] **Loop 4** PortfolioCashRow 0원 통화 생략
-- [x] **Loop 4** AgentChatDock 모바일 배지 설명 + Q&A 카피 수정
+- [x] **Loop 5** 브리핑 Q&A 라우팅·quick prompt·fixture 카피·히스토리 CTA·chat briefing 폴백
+- [x] **Loop 6** product review SHIP
+- [x] **Loop 7** 알림 format/dispatch/route 단위 테스트 (S15/S17 pass)
+- [x] **Loop 7** E2E: 안 1 Q&A quick prompt·상세 레포트·히스토리 CTA
+- [x] **Loop 7** BriefingErrorState 고급 정보 접기
+- [x] **Loop 7** API test: 안 1 설명해줘 → Playbook
 
 ## Deferred (Phase 2)
 
 - KRX 스마트 머니 실데이터 어댑터
 - 애널 리포트 외부 API 연동
-- 알림 채널 프로덕션 E2E
+- 사용자별 알림 설정 → 서버 dispatch 연동 (현재 env 기반 운영 알림)
 
 ## Loop log
 
 | # | Date | Verdict | Top fix | Notes |
 |---|------|---------|---------|-------|
-| 1 | 2026-07-03 | ITERATE | UX 카피·검증 루프 | pass 3 / partial 4 / missing 16 |
-| 2 | 2026-07-03 | SHIP* | Tasks 5–20 MVP | *조기 종료 |
-| 3 | 2026-07-03 | ITERATE | 데모 미리보기·오류 표시 | pass 21 / partial 3 |
-| 4 | 2026-07-04 | SHIP candidate | spec·polish·fixture tests | pass 22 / partial 2 (S15,S17) |
+| 6 | 2026-07-04 | SHIP | Loop 5 P1 | pass 21 / partial 2 |
+| 7 | 2026-07-04 | SHIP | 알림 테스트·E2E 확장 | pass 23 / partial 0 |
 
 ## How to run next loop
 

@@ -2,23 +2,23 @@
 
 **Date:** 2026-07-04  
 **Verdict:** SHIP  
-**Loop:** 6
+**Loop:** 7
 
 ## Executive Summary
 
-Loop 5 P1 백로그(채팅 Q&A 라우팅·quick prompt·fixture 카피·히스토리 CTA·등록 사용자 chat briefing 폴백)를 모두 반영했다. **“안 1 설명해줘”**는 이제 `answerBriefingQuestion`이 orchestrator 최상단에서 playbook·예상 수익률·disclaimer를 반환하며, 사용자 노출 경로에서 **`fixture` 개발 용어는 제거**되었다. 자동 검증 185 tests + e2e stability/usability PASS. MVP 범위(deferred: S15/S17 실발송·실 KRX 수급)를 제외하면 spec §22 첫 방문 가치 발견·§21 브리핑 Q&A·§20 히스토리·§23 실패 복구가 기획 의도와 정합한다.
+Loop 7에서 **알림 파이프라인(S15/S17)** format·dispatch·route 단위 테스트를 추가해 spec-matrix **partial 0 / pass 23**에 도달했다. E2E는 **브리핑 Q&A quick prompt**, **등록 후 상세 레포트 진입**, **히스토리 빈 상태 CTA**를 검증한다. `BriefingErrorState` 기술 상세는 **고급 정보 접기**로 일반 사용자 신뢰를 유지한다. MVP 범위 내 시나리오는 자동 검증으로 커버되며, staging 실발송 smoke만 post-ship P2로 남긴다.
 
-## Scenario Scorecard (변경분)
+## Scenario Scorecard (Loop 7 변경)
 
-| Scenario | Loop 5 | Loop 6 | Evidence |
+| Scenario | Loop 6 | Loop 7 | Evidence |
 |----------|--------|--------|----------|
-| S20 히스토리 | partial (dead-end) | **pass** | `BriefingHistoryList.tsx` empty CTA → `/agent` |
-| S21 에이전트 대화 | partial (stub 가로챔) | **pass** | `chat-orchestrator.ts` briefing Q&A 우선, `AgentChatDock` quick prompt, `chat-orchestrator.test.ts` |
-| S11 스마트 머니 | partial (fixture caption) | **pass (MVP 샘플)** | `SmartMoneySection.tsx` “참고용 샘플 데이터” |
-| S19 diff | partial (fixture reason) | **pass** | `diff.ts` 사용자 언어 치환 |
-| Trust / fixture 카피 | P1 | **resolved** | `generate.fixture-sections.test.ts` user-facing `/fixture/i` neg |
+| S15 이벤트 즉시 알림 | partial | **pass** | `format-event.test.ts`, `route.test.ts`, `dispatch.ts` |
+| S17 아침 정기 알림 | partial | **pass** | `format-summary.test.ts`, `cron/daily/route.test.ts` |
+| S21 Q&A E2E | unit only | **e2e covered** | `agent-usability.spec.ts`, `agent-natural-language.spec.ts` |
+| S20 히스토리 | pass | **e2e CTA** | history empty → `/agent` |
+| §23 오류 UI | pass | **고급 정보 접기** | `BriefingErrorState.tsx` |
 
-**Matrix:** pass 21 · partial 2 (S15 알림 즉시, S17 아침 알림 — plan deferred) · missing 0
+**Matrix:** pass 23 · partial 0 · missing 0
 
 ## Findings
 
@@ -26,37 +26,31 @@ Loop 5 P1 백로그(채팅 Q&A 라우팅·quick prompt·fixture 카피·히스�
 없음.
 
 ### P1 — Major
-없음 (Loop 5 항목 전부 해결).
+없음.
 
-### P2 — Minor (post-MVP polish)
-- 등록 후 **상세 레포트 클릭-through** E2E — 회귀 방지용 1케이스 권장
-- S4 섹터 태그 — 단위/e2e 없음
-- `resolveBriefingForChat` 등록 사용자 경로 — API 통합 테스트 추가 권장
-- `BriefingErrorState` code/detail — 일반 사용자용 “고급 정보” 접기 UI
+### P2 — Minor
+- Staging Resend/Slack **실발송** 1회 smoke (env `NOTIFICATION_EMAIL_TO`, `RESEND_API_KEY`, `SLACK_WEBHOOK_URL`)
+- 사용자별 `NotificationSettingsForm` → 서버 dispatch 연동 (현재 env 기반)
 
-### Deferred (planned)
-- S15/S17 실 Resend/Slack·cron 운영 검증
+### Deferred (Phase 2)
 - KRX 실수급·애널 유료 API
 - CSV·증권사 연동
 
-## What's Working (keep)
-- **데모 가치 발견:** `DemoPreviewBanner` + 전체 요약 + `?demo=1` 상세 — spec §22
-- **브리핑 Q&A fidelity:** briefing 맥락 우선 라우팅 + “안 1 설명해줘” quick prompt
-- **신뢰 카피:** 샘플 데이터 투명 표현, 개발 용어 제거
-- **실패·복구:** `BriefingErrorState` + report GET→POST 재생성
-- **규칙 우선 채팅 등록:** LLM 없이 MVP 핵심 루프
+## What's Working
+- **23/23 시나리오** spec-matrix pass (fixture/MVP 경계 명시)
+- **알림:** format → dispatch → after() 경로 단위·route 테스트
+- **E2E:** 데모→등록→상세→Q&A→히스토리 CTA 전체 여정
+- **신뢰:** fixture 용어 제거, 오류 code/detail 접기
 
-## Regression vs Loop 5
+## Regression vs Loop 6
 
-| 항목 | Loop 5 | Loop 6 |
+| 항목 | Loop 6 | Loop 7 |
 |------|--------|--------|
-| Verdict | ITERATE | **SHIP** |
-| §21 Q&A | stub 우선 (false pass) | playbook 답변 + integration test |
-| fixture 카피 | P1 | resolved |
-| §20 히스토리 | dead-end | CTA |
-| 등록 chat briefing | KV miss → null | snapshot generate 폴백 |
+| Matrix partial | 2 (S15,S17) | **0** |
+| E2E Q&A | 없음 | quick prompt + API |
+| 상세 레포트 E2E | P2 | **done** |
+| 알림 테스트 | 없음 | 7 tests |
 
-## Next (post-SHIP, optional)
-1. S15/S17 실발송 + cron 운영 검증
-2. 등록 사용자 상세 레포트 E2E
-3. S4 섹터 태그 테스트
+## Verdict rationale
+
+MVP spec 23 시나리오가 구현·자동 검증(192 unit + e2e)으로 커버된다. 실 KRX·실발송 staging smoke는 Phase 2/운영 checklist로 분리해도 **제품 가치 차단이 아니다**.

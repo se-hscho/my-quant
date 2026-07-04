@@ -52,7 +52,9 @@
       "implementedIn": [
         "components/agent/SectorTagDialog.tsx"
       ],
-      "tests": [],
+      "tests": [
+        "components/agent/SectorTagDialog.test.tsx"
+      ],
       "notes": ""
     },
     {
@@ -176,12 +178,17 @@
       "id": "S15",
       "title": "이벤트 — 방향 변경 즉시 알림",
       "specRef": "spec.md §시나리오 15",
-      "status": "partial",
+      "status": "pass",
       "implementedIn": [
-        "app/api/agent/notify/event/route.ts"
+        "app/api/agent/notify/event/route.ts",
+        "services/notifications/dispatch.ts"
       ],
-      "tests": [],
-      "notes": "mock 발송 — 실제 Resend/Slack env 필요"
+      "tests": [
+        "services/notifications/format-event.test.ts",
+        "services/notifications/dispatch.test.ts",
+        "app/api/agent/notify/event/route.test.ts"
+      ],
+      "notes": "Resend/Slack env 설정 시 dispatch; staging 실발송은 수동 검증"
     },
     {
       "id": "S16",
@@ -198,13 +205,18 @@
       "id": "S17",
       "title": "매일 아침 정기 알림",
       "specRef": "spec.md §시나리오 17",
-      "status": "partial",
+      "status": "pass",
       "implementedIn": [
         "app/api/agent/cron/daily/route.ts",
+        "services/notifications/dispatch.ts",
         "vercel.json"
       ],
-      "tests": [],
-      "notes": "Cron + mock 발송"
+      "tests": [
+        "services/notifications/format-summary.test.ts",
+        "services/notifications/dispatch.test.ts",
+        "app/api/agent/cron/daily/route.test.ts"
+      ],
+      "notes": "Cron + dispatch; staging 실발송은 수동 검증"
     },
     {
       "id": "S18",

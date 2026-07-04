@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -16,6 +17,8 @@ export interface BriefingErrorStateProps {
 }
 
 export function BriefingErrorState({ onRetry, loading, error }: BriefingErrorStateProps) {
+  const [showDetail, setShowDetail] = useState(false);
+
   return (
     <Card data-testid="briefing-error-state">
       <CardHeader>
@@ -28,18 +31,34 @@ export function BriefingErrorState({ onRetry, loading, error }: BriefingErrorSta
         </p>
 
         {error ? (
-          <div
-            className="rounded-md border border-destructive/30 bg-destructive/5 p-3 text-xs"
-            data-testid="briefing-error-detail"
-            role="alert"
-          >
-            <p className="font-mono font-medium text-destructive">
-              [{error.code}]
-              {error.httpStatus != null ? ` HTTP ${error.httpStatus}` : ""}
-            </p>
-            <p className="mt-1 text-foreground">{error.message}</p>
-            {error.detail ? (
-              <p className="mt-2 break-all font-mono text-muted-foreground">{error.detail}</p>
+          <div className="space-y-2">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-7 px-2 text-xs text-muted-foreground"
+              aria-expanded={showDetail}
+              onClick={() => setShowDetail((v) => !v)}
+            >
+              {showDetail ? "고급 정보 숨기기" : "고급 정보 보기"}
+            </Button>
+            {showDetail ? (
+              <div
+                className="rounded-md border border-destructive/30 bg-destructive/5 p-3 text-xs"
+                data-testid="briefing-error-detail"
+                role="alert"
+              >
+                <p className="font-mono font-medium text-destructive">
+                  [{error.code}]
+                  {error.httpStatus != null ? ` HTTP ${error.httpStatus}` : ""}
+                </p>
+                <p className="mt-1 text-foreground">{error.message}</p>
+                {error.detail ? (
+                  <p className="mt-2 break-all font-mono text-muted-foreground">
+                    {error.detail}
+                  </p>
+                ) : null}
+              </div>
             ) : null}
           </div>
         ) : null}

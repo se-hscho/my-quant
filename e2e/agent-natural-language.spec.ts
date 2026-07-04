@@ -35,6 +35,14 @@ test.describe("Agent natural language API", () => {
     expectSetCash(body, { field: "krw", amount: 50_000 });
   });
 
+  test("안 1 설명해줘 → playbook 답변", async ({ request }) => {
+    const body = await postAgentChat(request, "안 1 설명해줘", null);
+    expect(body.actions).toHaveLength(0);
+    expect(body.reply).toMatch(/Playbook:/);
+    expect(body.reply).toMatch(/Follow|안 1/);
+    expect(body.reply).toMatch(/예상 수익/);
+  });
+
   test("Gemini status endpoint is reachable", async ({ request }) => {
     const res = await request.get("/api/agent/chat/status");
     expect(res.ok()).toBeTruthy();

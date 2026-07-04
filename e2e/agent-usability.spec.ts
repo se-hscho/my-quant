@@ -65,9 +65,54 @@ test.describe("Agent usability", () => {
     await expect(page).toHaveURL(/\/agent\/holdings/);
   });
 
+  test("안 1 설명해줘 quick prompt returns playbook answer", async ({ page }) => {
+    const btn = page.getByRole("button", { name: "안 1 설명해줘" });
+    await expect(btn).toBeVisible({ timeout: 30_000 });
+    await btn.click();
+    await expect(page.getByText(/Playbook:/).first()).toBeVisible({
+      timeout: 90_000,
+    });
+    await expect(page.getByText(/Follow|안 1/).first()).toBeVisible();
+  });
+
+  test("after registration user can open detail report", async ({ page }) => {
+    const input = page.getByLabel("에이전트에게 질문");
+    await expect(input).toBeEnabled({ timeout: 30_000 });
+    await input.fill("삼전 10주");
+    await page.getByLabel("질문 보내기").click();
+
+    await expect(page.getByText(REGISTER_REPLY).first()).toBeVisible({
+      timeout: 90_000,
+    });
+    await expect(page.getByRole("link", { name: "상세 레포트 보기" })).toBeVisible({
+      timeout: 60_000,
+    });
+
+    await page.getByRole("link", { name: "상세 레포트 보기" }).click();
+    await expect(page).toHaveURL(/\/agent\/report\//);
+    await expect(page.getByTestId("report-layout")).toBeVisible({
+      timeout: 90_000,
+    });
+  });
+
   test("chat dock shows rules-first or offline badge", async ({ page }) => {
     await expect(
       page.getByText(/규칙 우선|오프라인 규칙|AI 확인/)
     ).toBeVisible({ timeout: 30_000 });
+  });
+
+  test("history empty state links back to agent home", async ({ page }) => {
+    await page.route("**/api/agent/briefing", async (route) => {
+      if (route.request().method() === "GET" && !route.request().url().includes("/api/agent/briefing/")) {
+        await route.fulfill({ json: { dates: [] } });
+        return;
+      }
+      await route.continue();
+    });
+    await page.goto("/agent/history");
+    await expect(page.getByTestId("briefing-history")).toBeVisible();
+    const cta = page.getByRole("link", { name: "오늘 브리핑 보러 가기" });
+    await expect(cta).toBeVisible();
+    await expect(cta).toHaveAttribute("href", "/agent");
   });
 });

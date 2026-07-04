@@ -2,8 +2,7 @@ import { after, NextResponse } from "next/server";
 import { generateBriefing } from "@/services/briefing/generate";
 import { getBriefing, saveBriefing } from "@/services/briefing/kv";
 import { formatMorningSummary } from "@/services/notifications/format-summary";
-import { sendEmail } from "@/services/notifications/email";
-import { sendSlackWebhook } from "@/services/notifications/slack";
+import { dispatchNotification } from "@/services/notifications/dispatch";
 import { createEmptySnapshot } from "@/lib/agent/holdings-storage";
 
 export async function GET(request: Request) {
@@ -31,19 +30,7 @@ export async function GET(request: Request) {
   const formatted = formatMorningSummary(briefing, reportUrl);
 
   after(async () => {
-    const emailTo = process.env.NOTIFICATION_EMAIL_TO;
-    if (emailTo) {
-      await sendEmail({
-        to: emailTo,
-        subject: formatted.subject,
-        html: formatted.html,
-        text: formatted.text,
-      });
-    }
-    const slackUrl = process.env.SLACK_WEBHOOK_URL;
-    if (slackUrl) {
-      await sendSlackWebhook(slackUrl, formatted.text);
-    }
+    await dispatchNotification(formatted);
   });
 
   return NextResponse.json({ ok: true, date: today });
