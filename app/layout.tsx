@@ -7,8 +7,12 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
 export const metadata: Metadata = {
-  title: "퀀트 포트폴리오 최적화",
-  description: "큐레이션 번들에서 시작하는 퀀트 포트폴리오 대시보드",
+  title: {
+    default: "MyQuant — 스마트 포트폴리오 최적화",
+    template: "%s · MyQuant",
+  },
+  description:
+    "큐레이션된 주식 번들에서 효율적 프론티어·Max Sharpe·Min Variance·Risk Parity로 최적 포트폴리오를 계산하고 백테스팅·비교까지 한 번에.",
 };
 
 export default function RootLayout({
