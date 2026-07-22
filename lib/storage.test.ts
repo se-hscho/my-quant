@@ -5,6 +5,7 @@ import {
   loadResult,
   listResults,
   clearAllResults,
+  deleteResult,
 } from "./storage";
 import type { PortfolioResult } from "@/types";
 
@@ -46,5 +47,23 @@ describe("storage", () => {
     saveResult(sample("c"));
     const ids = listResults().map((r) => r.id);
     expect(ids).toEqual(["c", "b", "a"]);
+  });
+
+  it("deleteResult는 영구 목록과 임시 캐시 양쪽에서 결과를 제거한다", () => {
+    saveTempResult(sample("d1"));
+    saveResult(sample("d1"));
+    saveResult(sample("d2"));
+    expect(loadResult("d1")?.id).toBe("d1");
+
+    deleteResult("d1");
+
+    expect(loadResult("d1")).toBeNull();
+    expect(listResults().map((r) => r.id)).toEqual(["d2"]);
+  });
+
+  it("deleteResult는 존재하지 않는 id에 대해서도 안전하다", () => {
+    saveResult(sample("only"));
+    expect(() => deleteResult("missing")).not.toThrow();
+    expect(listResults().map((r) => r.id)).toEqual(["only"]);
   });
 });

@@ -7,7 +7,7 @@ import Link from "next/link";
 import { ArrowLeftIcon } from "lucide-react";
 
 export function HistoryPageClient() {
-  const { results, selected, toggle, canCompare } = useHistory();
+  const { results, selected, toggle, remove, canCompare } = useHistory();
   return (
     <main className="container mx-auto max-w-3xl px-4 py-8">
       <header className="mb-6 flex items-center gap-3">
@@ -23,6 +23,7 @@ export function HistoryPageClient() {
         results={results}
         selected={selected}
         onToggle={toggle}
+        onDelete={remove}
         canCompare={canCompare}
       />
     </main>

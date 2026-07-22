@@ -92,4 +92,55 @@ describe("HistoryList", () => {
     );
     expect(screen.getByRole("button", { name: "비교하기" })).not.toBeDisabled();
   });
+
+  it("onDelete prop이 없으면 삭제 버튼을 렌더링하지 않는다", () => {
+    render(
+      <HistoryList
+        results={sample}
+        selected={[]}
+        onToggle={() => {}}
+        canCompare={false}
+      />
+    );
+    expect(screen.queryByLabelText("AI 번들 삭제")).not.toBeInTheDocument();
+  });
+
+  it("삭제 버튼 → 확인 다이얼로그 → 삭제 확정 시 onDelete가 해당 id로 호출된다", async () => {
+    const user = userEvent.setup();
+    const onDelete = vi.fn();
+    render(
+      <HistoryList
+        results={sample}
+        selected={[]}
+        onToggle={() => {}}
+        onDelete={onDelete}
+        canCompare={false}
+      />
+    );
+    await user.click(screen.getByLabelText("AI 번들 삭제"));
+    // 확인 다이얼로그 등장
+    expect(
+      await screen.findByText(/기록을 삭제하시겠어요/)
+    ).toBeInTheDocument();
+    expect(onDelete).not.toHaveBeenCalled();
+    await user.click(screen.getByRole("button", { name: "삭제" }));
+    expect(onDelete).toHaveBeenCalledWith("r1");
+  });
+
+  it("삭제 다이얼로그에서 취소하면 onDelete가 호출되지 않는다", async () => {
+    const user = userEvent.setup();
+    const onDelete = vi.fn();
+    render(
+      <HistoryList
+        results={sample}
+        selected={[]}
+        onToggle={() => {}}
+        onDelete={onDelete}
+        canCompare={false}
+      />
+    );
+    await user.click(screen.getByLabelText("AI 번들 삭제"));
+    await user.click(await screen.findByRole("button", { name: "취소" }));
+    expect(onDelete).not.toHaveBeenCalled();
+  });
 });

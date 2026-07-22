@@ -133,3 +133,23 @@ export function clearAllResults(): void {
     if (key && key.startsWith(TEMP_PREFIX)) localStorage.removeItem(key);
   }
 }
+
+/** 영구 목록과 임시 캐시 양쪽에서 결과를 제거. 로컬 only(sync). */
+export function deleteResult(id: string): void {
+  if (typeof localStorage === "undefined") return;
+  const list = readResultsList().filter((r) => r.id !== id);
+  writeResultsList(list);
+  localStorage.removeItem(`${TEMP_PREFIX}${id}`);
+}
+
+/** 서버(KV)에서도 결과를 제거. 미설정/실패해도 throw 하지 않는다. */
+export async function deleteResultRemote(id: string): Promise<boolean> {
+  try {
+    const res = await fetch(`/api/results/${encodeURIComponent(id)}`, {
+      method: "DELETE",
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
